@@ -26,6 +26,8 @@ jobs:
     steps:
       # ── Free disk space (fixes "No space left on device") ──────────────
       - name: Free disk space
+        # Runs before checkout, so it can't use the job's `mobile/` default.
+        working-directory: ${{ github.workspace }}
         run: |
           df -h /
           sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/.ghcup \
