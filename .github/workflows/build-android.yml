@@ -18,7 +18,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  NODE_VERSION: "20"
+  NODE_VERSION: "22"
   JAVA_VERSION: "17"
   PNPM_VERSION: "11"
 
@@ -103,7 +103,7 @@ jobs:
       # loudly at startup if apiKey/projectId are blank.
       - name: Write .env file
         run: |
-          # Quoted terminator: ${{ secrets.* }} is substituted by Actions
+          # Quoted terminator: secrets are substituted by Actions
           # before bash runs, and the quotes stop the shell from also
           # expanding any `$` that happens to appear inside a secret.
           cat > .env << 'ENVEOF'

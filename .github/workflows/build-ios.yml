@@ -17,7 +17,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  NODE_VERSION: "20"
+  NODE_VERSION: "22"
   PNPM_VERSION: "11"
 
 jobs:
@@ -73,7 +73,7 @@ jobs:
       # ── Environment ────────────────────────────────────────────────────
       - name: Write .env file
         run: |
-          # Quoted terminator: ${{ secrets.* }} is substituted by Actions
+          # Quoted terminator: secrets are substituted by Actions
           # before bash runs, and the quotes stop the shell from also
           # expanding any `$` that happens to appear inside a secret.
           cat > .env << 'ENVEOF'
@@ -101,13 +101,20 @@ jobs:
       # Without the certificate secrets the build still runs, but it targets
       # the simulator — an unsigned generic/platform=iOS archive fails at code
       # signing, which is a confusing way to learn the secret is missing.
+      # `secrets` is not a valid context in a step `if`, so the emptiness
+      # check happens inside the script via `env`.
       - name: Setup iOS signing
-        if: inputs.build_type == 'release' && secrets.IOS_CERTIFICATE_BASE64 != ''
+        if: inputs.build_type == 'release'
         env:
           IOS_CERTIFICATE_BASE64: ${{ secrets.IOS_CERTIFICATE_BASE64 }}
           IOS_CERTIFICATE_PASSWORD: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
           IOS_PROVISIONING_PROFILE_BASE64: ${{ secrets.IOS_PROVISIONING_PROFILE_BASE64 }}
         run: |
+          if [ -z "$IOS_CERTIFICATE_BASE64" ]; then
+            echo "::notice::No iOS certificate secret configured — skipping signing (simulator build)"
+            exit 0
+          fi
+
           # Create temporary keychain
           KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
           KEYCHAIN_PASSWORD=$(openssl rand -hex 16)
