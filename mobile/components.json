@@ -1,0 +1,11 @@
+{
+  "$schema": "https://ui.ahmedbna.com/schema.json",
+  "aliases": {
+    "components": "components",
+    "hooks": "hooks",
+    "providers": "providers",
+    "theme": "theme",
+    "lib": "lib"
+  },
+  "packageManager": "pnpm"
+}

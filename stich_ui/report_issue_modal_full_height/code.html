@@ -1,0 +1,369 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport">
+<title>Report Public Issue - CampaignOS</title>
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "primary": "#2100bd",
+            "primary-container": "#3b2fd6",
+            "on-primary": "#ffffff",
+            "on-primary-container": "#bcbbff",
+            "primary-fixed": "#e2dfff",
+            "primary-fixed-dim": "#c2c1ff",
+            "secondary": "#835400",
+            "secondary-container": "#ffad2e",
+            "on-secondary-container": "#6c4400",
+            "secondary-fixed": "#ffddb5",
+            "secondary-fixed-dim": "#ffb957",
+            "tertiary": "#003c58",
+            "tertiary-container": "#00547a",
+            "background": "#fbf8ff",
+            "on-background": "#181b2b",
+            "surface": "#fbf8ff",
+            "on-surface": "#181b2b",
+            "surface-dim": "#d7d8ef",
+            "surface-bright": "#fbf8ff",
+            "surface-container-lowest": "#ffffff",
+            "surface-container-low": "#f3f2ff",
+            "surface-container": "#ececff",
+            "surface-container-high": "#e5e6fe",
+            "surface-container-highest": "#e0e1f8",
+            "surface-variant": "#e0e1f8",
+            "on-surface-variant": "#464555",
+            "outline": "#777587",
+            "outline-variant": "#c7c4d8",
+            "error": "#ba1a1a",
+            "error-container": "#ffdad6"
+          },
+          fontFamily: {
+            sans: ["Inter", "sans-serif"],
+            "headline-md": ["Inter"],
+            "headline-sm": ["Inter"],
+            "body-md": ["Inter"],
+            "body-sm": ["Inter"],
+            "label-md": ["Inter"],
+            "label-sm": ["Inter"]
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-family: 'Material Symbols Outlined';
+      font-weight: normal;
+      font-style: normal;
+      font-size: 24px;
+      line-height: 1;
+      display: inline-block;
+      text-transform: none;
+      letter-spacing: normal;
+      word-wrap: normal;
+      white-space: nowrap;
+      direction: ltr;
+    }
+    /* Hide scrollbars elegantly */
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+  </style>
+</head>
+<body class="bg-slate-900 font-sans text-on-surface antialiased min-h-screen flex justify-center items-start sm:py-4">
+<!-- Mobile Viewport Frame (390px width) -->
+<div class="relative w-full max-w-[390px] h-[100dvh] sm:h-[844px] bg-surface flex flex-col overflow-hidden sm:rounded-[36px] shadow-2xl border border-slate-700/20">
+<!-- 1. Background Content (Dimmed / Blurred Backdrop) -->
+<div class="absolute inset-0 flex flex-col pointer-events-none select-none z-0 filter blur-[1.5px] opacity-40 bg-surface">
+<!-- Simulated CampaignOS Top Bar -->
+<header class="h-16 px-4 pt-3 flex items-center justify-between border-b border-surface-container-high/60 bg-surface/90">
+<div class="flex items-center gap-2">
+<div class="w-9 h-9 rounded-full bg-surface-container-high flex items-center justify-center text-on-surface">
+<span class="material-symbols-outlined text-[20px]">arrow_back</span>
+</div>
+<span class="font-semibold text-base text-on-surface">Log Urgent Incident</span>
+</div>
+<div class="w-8 h-8 rounded-full overflow-hidden ring-2 ring-primary/20">
+<img alt="User Profile" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida/AEtjO1VIk8rzSgqmwjC8xf_kgezmqibqtIgVjAPBEQyIsMuzpx7VmPmAOvbaIuqwZs_9InkNj5kmttlyL7BypmBoVpi_X__v3qfa0xIa85Yj2wyEAmp3O11vdL1jFU99-9iHVhbVaevmfDxRRoAYRXOMX4kbO-5J5mx5iB_9SCR-6Usz2HtO0sVbN9_flWhGCbtZ2z3cPu_UOFe-Idy1pw-W61JskvFbSzY5LGYdxsRMnsUNESjrNVrks9u5GG0">
+</div>
+</header>
+<!-- Background Sample Activity Content -->
+<div class="p-4 space-y-3">
+<div class="bg-surface-container-lowest p-3.5 rounded-xl border border-outline-variant/40 shadow-sm space-y-1">
+<div class="flex items-center justify-between">
+<span class="text-xs font-semibold text-primary">Ward 9 Intelligence Feed</span>
+<span class="text-[11px] bg-secondary-fixed text-on-secondary-fixed font-bold px-2 py-0.5 rounded-full">In Progress</span>
+</div>
+<p class="text-sm font-bold text-on-surface">Main Line Pressure Surge</p>
+<p class="text-xs text-on-surface-variant">Sector 4 valve telemetry indicates drop in throughput.</p>
+</div>
+<div class="bg-surface-container-lowest p-3.5 rounded-xl border border-outline-variant/40 shadow-sm space-y-1">
+<div class="flex items-center justify-between">
+<span class="text-xs font-semibold text-outline">Civic Dispatch #089</span>
+<span class="text-[11px] bg-surface-container-high text-on-surface-variant font-bold px-2 py-0.5 rounded-full">Resolved</span>
+</div>
+<p class="text-sm font-bold text-on-surface">Streetlight Grid Junction #12</p>
+<p class="text-xs text-on-surface-variant">Replaced burnt luminaire controller at crossroads.</p>
+</div>
+</div>
+</div>
+<!-- Dark Semi-transparent Overlay -->
+<div class="absolute inset-0 bg-on-surface/35 backdrop-blur-[2px] z-10"></div>
+<!-- 2. Expansive 92% Height Bottom Sheet Modal -->
+<div class="relative z-20 mt-auto h-[92%] w-full bg-surface-container-lowest rounded-t-[28px] shadow-[0_-12px_40px_rgba(24,27,43,0.18)] flex flex-col overflow-hidden">
+<!-- 3. Sheet Header -->
+<div class="px-5 pt-3 pb-2.5 flex-shrink-0 border-b border-surface-container/60 bg-surface-container-lowest">
+<!-- Drag Handle Indicator -->
+<div class="w-12 h-1.5 rounded-full bg-surface-variant mx-auto mb-3"></div>
+<div class="flex items-start justify-between">
+<div class="space-y-0.5 pr-2">
+<h2 class="text-xl font-bold text-on-surface tracking-tight leading-tight">Report Public Issue</h2>
+<p class="text-xs text-on-surface-variant leading-relaxed">Log citizen grievance or civic bottleneck for campaign escalation</p>
+</div>
+<button aria-label="Close" class="w-9 h-9 rounded-full bg-surface-container hover:bg-surface-container-high flex items-center justify-center text-on-surface-variant transition-colors flex-shrink-0" onclick="alert('Close modal requested');" type="button">
+<span class="material-symbols-outlined text-[19px]">close</span>
+</button>
+</div>
+</div>
+<!-- Scrollable Form Container -->
+<div class="flex-1 overflow-y-auto px-5 py-3 space-y-4 no-scrollbar">
+<!-- 4. Category Selector (4x2 visual grid) -->
+<section class="space-y-2">
+<div class="flex items-center justify-between">
+<span class="text-[11px] font-bold uppercase tracking-wider text-on-surface-variant">Grievance Category</span>
+<span class="text-xs font-semibold text-primary">Water Selected</span>
+</div>
+<div class="grid grid-cols-4 gap-2" id="category-grid">
+<!-- Road -->
+<button class="cat-pill flex flex-col items-center justify-center py-2.5 px-1.5 rounded-xl bg-surface-container-low hover:bg-surface-container transition-all text-center border border-transparent" type="button">
+<span class="text-lg leading-none mb-1">🛣️</span>
+<span class="text-[11px] font-medium text-on-surface">Road</span>
+</button>
+<!-- Water (Active Selected State with badge & indigo ring) -->
+<button class="cat-pill relative flex flex-col items-center justify-center py-2.5 px-1.5 rounded-xl bg-primary-fixed text-primary ring-2 ring-primary/40 border border-primary/20 shadow-sm transition-all text-center" type="button">
+<span class="absolute top-1 right-1 w-3.5 h-3.5 bg-primary text-on-primary rounded-full flex items-center justify-center shadow-xs">
+<span class="material-symbols-outlined text-[9px] font-bold">check</span>
+</span>
+<span class="text-lg leading-none mb-1">💧</span>
+<span class="text-[11px] font-bold text-primary">Water</span>
+</button>
+<!-- Electricity -->
+<button class="cat-pill flex flex-col items-center justify-center py-2.5 px-1.5 rounded-xl bg-surface-container-low hover:bg-surface-container transition-all text-center border border-transparent" type="button">
+<span class="text-lg leading-none mb-1">⚡</span>
+<span class="text-[11px] font-medium text-on-surface">Power</span>
+</button>
+<!-- Drainage -->
+<button class="cat-pill flex flex-col items-center justify-center py-2.5 px-1.5 rounded-xl bg-surface-container-low hover:bg-surface-container transition-all text-center border border-transparent" type="button">
+<span class="text-lg leading-none mb-1">🌊</span>
+<span class="text-[11px] font-medium text-on-surface">Drainage</span>
+</button>
+<!-- Street Light -->
+<button class="cat-pill flex flex-col items-center justify-center py-2.5 px-1.5 rounded-xl bg-surface-container-low hover:bg-surface-container transition-all text-center border border-transparent" type="button">
+<span class="text-lg leading-none mb-1">💡</span>
+<span class="text-[11px] font-medium text-on-surface">Streetlight</span>
+</button>
+<!-- Sanitation -->
+<button class="cat-pill flex flex-col items-center justify-center py-2.5 px-1.5 rounded-xl bg-surface-container-low hover:bg-surface-container transition-all text-center border border-transparent" type="button">
+<span class="text-lg leading-none mb-1">🚯</span>
+<span class="text-[11px] font-medium text-on-surface">Sanitation</span>
+</button>
+<!-- Health -->
+<button class="cat-pill flex flex-col items-center justify-center py-2.5 px-1.5 rounded-xl bg-surface-container-low hover:bg-surface-container transition-all text-center border border-transparent" type="button">
+<span class="text-lg leading-none mb-1">🏥</span>
+<span class="text-[11px] font-medium text-on-surface">Health</span>
+</button>
+<!-- Other -->
+<button class="cat-pill flex flex-col items-center justify-center py-2.5 px-1.5 rounded-xl bg-surface-container-low hover:bg-surface-container transition-all text-center border border-transparent" type="button">
+<span class="text-lg leading-none mb-1">📌</span>
+<span class="text-[11px] font-medium text-on-surface">Other</span>
+</button>
+</div>
+</section>
+<!-- 5. Photo Evidence & Geotagged Proof -->
+<section class="space-y-2">
+<div class="flex items-center justify-between">
+<span class="text-[11px] font-bold uppercase tracking-wider text-on-surface-variant">Photo Evidence &amp; Geotagged Proof</span>
+<span class="text-[11px] font-semibold text-on-surface-variant bg-surface-container px-2 py-0.5 rounded-full">1 attached · JPG</span>
+</div>
+<div class="grid grid-cols-2 gap-3">
+<!-- Left: GPS-tagged Photo Preview Card -->
+<div class="relative h-[110px] rounded-2xl overflow-hidden bg-surface-container-high border border-outline-variant/50 shadow-sm group">
+<img alt="Pothole and drain waterlogging evidence photo" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAz6Y19ZZ07cy7S3KjPxblE17Z5iQ-YXB1vByfIUyNP2z4vO1O3e2lqsA2LG0zyJ-8thUcvXcbg6_Wrs72cUnq99Xp5jGdvcK2lkfwvDETHnrBeHJ2u8TjDE1B8sZRDSylhKyGT_oeMRd0RDasHD4PaLxXBP1CDR2dnrOSV8TpZqkXwa_HuC0FGTfKeNmfOFIixV1RJuV_S_FlyL3zevPI59Y9H4xYD1LY_TkYBE_6ftaKtoD6cBQIG">
+<div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
+<!-- GPS Tagged Badge -->
+<div class="absolute top-2 left-2 bg-surface-container-lowest/95 backdrop-blur-md px-2 py-0.5 rounded-full flex items-center gap-1 shadow-sm">
+<span class="text-[10px]">📍</span>
+<span class="text-[10px] font-bold text-on-surface">GPS Tagged</span>
+</div>
+<!-- Timestamp & Note -->
+<div class="absolute bottom-1.5 left-2 right-2 text-white">
+<p class="text-[10px] font-semibold truncate leading-tight">Pothole &amp; Drain Block</p>
+<p class="text-[9px] text-white/80">10:42 AM · Sector 4</p>
+</div>
+</div>
+<!-- Right: Interactive dashed '+ Add Photo' camera/gallery tile -->
+<button class="h-[110px] rounded-2xl border-2 border-dashed border-primary/30 bg-primary/5 hover:bg-primary/10 active:scale-[0.98] transition-all flex flex-col items-center justify-center gap-1.5 text-center px-2 group" type="button">
+<div class="w-8 h-8 rounded-full bg-primary-container text-white flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-[18px]">add_a_photo</span>
+</div>
+<span class="text-xs font-bold text-primary-container">+ Add Photo</span>
+<span class="text-[10px] text-on-surface-variant font-medium">Camera or Gallery</span>
+</button>
+</div>
+</section>
+<!-- 6. Auto-Detected Location -->
+<section class="space-y-1.5">
+<div class="flex items-center justify-between">
+<span class="text-[11px] font-bold uppercase tracking-wider text-on-surface-variant">Auto-Detected Location</span>
+<div class="flex items-center gap-1 bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full border border-emerald-200">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+<span class="text-[10px] font-bold">±4m Accuracy</span>
+</div>
+</div>
+<div class="bg-surface-container-low border border-surface-container-high rounded-2xl p-3 flex items-center justify-between gap-2.5">
+<div class="flex items-center gap-2.5 min-w-0">
+<div class="w-10 h-10 rounded-xl bg-primary-fixed flex items-center justify-center text-primary flex-shrink-0 shadow-sm">
+<span class="material-symbols-outlined text-[22px]" style="font-variation-settings: 'FILL' 1;">location_on</span>
+</div>
+<div class="min-w-0">
+<p class="text-xs font-bold text-on-surface truncate">Near Shiv Mandir, Sector 4</p>
+<p class="text-[11px] text-on-surface-variant truncate">Ward 9 Civic Arterial Road</p>
+</div>
+</div>
+<button class="flex-shrink-0 px-2.5 py-1.5 rounded-lg bg-surface-container-lowest border border-outline-variant/60 text-primary text-xs font-bold hover:bg-surface-container transition-colors flex items-center gap-1" type="button">
+<span>Edit Pin</span>
+<span class="material-symbols-outlined text-[13px]">tune</span>
+</button>
+</div>
+</section>
+<!-- 7. Area / Ward Selector -->
+<section class="space-y-1.5">
+<span class="text-[11px] font-bold uppercase tracking-wider text-on-surface-variant">Jurisdiction &amp; Ward</span>
+<div class="h-11 w-full bg-surface-container-low hover:bg-surface-container border border-surface-container-high rounded-xl px-3.5 flex items-center justify-between cursor-pointer transition-colors">
+<div class="flex items-center gap-2.5">
+<span class="material-symbols-outlined text-primary-container text-[18px]">how_to_vote</span>
+<span class="text-xs font-bold text-on-surface">Ward 9 · Sector 4</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="bg-primary-fixed text-primary font-semibold text-[10px] px-2 py-0.5 rounded-full">Auto-mapped</span>
+<span class="material-symbols-outlined text-on-surface-variant text-[18px]">expand_more</span>
+</div>
+</div>
+</section>
+<!-- 8. Grievance Description -->
+<section class="space-y-1.5">
+<div class="flex items-center justify-between">
+<label class="text-[11px] font-bold uppercase tracking-wider text-on-surface-variant" for="desc-field">Description</label>
+<button class="flex items-center gap-1 text-primary-container hover:text-primary font-semibold text-xs px-2 py-0.5 rounded-lg bg-primary-fixed/50 hover:bg-primary-fixed transition-colors" type="button">
+<span class="text-xs">🎤</span>
+<span>Dictate</span>
+</button>
+</div>
+<div class="relative">
+<textarea class="w-full bg-surface-container-low border border-surface-container-high rounded-xl p-3 text-xs leading-relaxed text-on-surface placeholder:text-on-surface-variant/60 focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all resize-none" id="desc-field" rows="2">Severe waterlogging blocking pedestrian access to Temple gate and primary polling route. Choked drainage causing backflow onto main street.</textarea>
+</div>
+</section>
+<!-- 9. Priority / Urgency Toggle -->
+<section class="space-y-1.5 pb-1">
+<div class="flex items-center justify-between">
+<span class="text-[11px] font-bold uppercase tracking-wider text-on-surface-variant">Escalation SLA</span>
+</div>
+<div class="bg-amber-50 border border-amber-200/90 rounded-xl p-2.5 flex items-center justify-between gap-3">
+<div class="flex items-center gap-2 min-w-0">
+<span class="w-2.5 h-2.5 rounded-full bg-amber-500 animate-ping"></span>
+<div class="min-w-0">
+<span class="text-xs font-bold text-amber-950 block truncate">Critical Severity (High Priority SLA - 2h)</span>
+<span class="text-[10px] text-amber-800">Directly escalates to field mobilizer team</span>
+</div>
+</div>
+<!-- Switch UI Indicator -->
+<div class="w-10 h-6 bg-secondary-container rounded-full p-0.5 flex items-center justify-end cursor-pointer flex-shrink-0 shadow-inner">
+<div class="w-5 h-5 bg-white rounded-full shadow-sm"></div>
+</div>
+</div>
+</section>
+</div>
+<!-- 10. Sticky Bottom Primary Action Dock -->
+<div class="p-4 pt-2.5 pb-5 bg-surface-container-lowest border-t border-surface-container/80 flex flex-col gap-1.5 flex-shrink-0">
+<button class="w-full h-12 bg-primary-container hover:bg-primary text-white py-3.5 rounded-xl font-bold text-sm shadow-lg shadow-primary-container/25 flex items-center justify-center gap-2 active:scale-[0.98] transition-all" id="submit-report-btn" type="button">
+<span>Submit Report</span>
+<span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+</button>
+<p class="text-[10px] text-center text-on-surface-variant">
+          Ticket <span class="font-semibold text-primary">ISS-0142</span> will be auto-dispatched to Ward Mobilizer squad
+        </p>
+</div>
+</div>
+<!-- Success Modal Notification (Interactivity Demo) -->
+<div class="absolute inset-x-4 bottom-24 bg-on-surface text-surface px-4 py-3 rounded-2xl shadow-2xl flex items-center justify-between gap-3 opacity-0 translate-y-8 pointer-events-none transition-all duration-300 z-50" id="success-toast">
+<div class="flex items-center gap-2.5">
+<div class="w-8 h-8 rounded-full bg-emerald-500 text-white flex items-center justify-center flex-shrink-0">
+<span class="material-symbols-outlined text-[18px]">check</span>
+</div>
+<div>
+<p class="text-xs font-bold text-white">Ticket ISS-0142 Dispatched!</p>
+<p class="text-[10px] text-slate-300">Ward 9 Mobilizer team notified.</p>
+</div>
+</div>
+<button class="text-xs text-primary-fixed font-bold hover:underline" onclick="document.getElementById('success-toast').classList.add('opacity-0', 'translate-y-8', 'pointer-events-none');" type="button">
+        Dismiss
+      </button>
+</div>
+</div>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // Category grid selection toggle
+      const catPills = document.querySelectorAll('.cat-pill');
+      catPills.forEach(pill => {
+        pill.addEventListener('click', () => {
+          catPills.forEach(p => {
+            p.className = 'cat-pill flex flex-col items-center justify-center py-2.5 px-1.5 rounded-xl bg-surface-container-low hover:bg-surface-container transition-all text-center border border-transparent';
+            const check = p.querySelector('.material-symbols-outlined');
+            if (check && check.innerText.trim() === 'check') {
+              check.parentElement.remove();
+            }
+            const label = p.querySelector('span:last-child');
+            if (label) {
+              label.className = 'text-[11px] font-medium text-on-surface';
+            }
+          });
+
+          pill.className = 'cat-pill relative flex flex-col items-center justify-center py-2.5 px-1.5 rounded-xl bg-primary-fixed text-primary ring-2 ring-primary/40 border border-primary/20 shadow-sm transition-all text-center';
+          const label = pill.querySelector('span:last-child');
+          if (label) {
+            label.className = 'text-[11px] font-bold text-primary';
+          }
+          if (!pill.querySelector('.material-symbols-outlined')) {
+            const badge = document.createElement('span');
+            badge.className = 'absolute top-1 right-1 w-3.5 h-3.5 bg-primary text-on-primary rounded-full flex items-center justify-center shadow-xs';
+            badge.innerHTML = '<span class="material-symbols-outlined text-[9px] font-bold">check</span>';
+            pill.appendChild(badge);
+          }
+        });
+      });
+
+      // Submit feedback simulation
+      const submitBtn = document.getElementById('submit-report-btn');
+      const toast = document.getElementById('success-toast');
+      if (submitBtn && toast) {
+        submitBtn.addEventListener('click', () => {
+          toast.classList.remove('opacity-0', 'translate-y-8', 'pointer-events-none');
+          setTimeout(() => {
+            toast.classList.add('opacity-0', 'translate-y-8', 'pointer-events-none');
+          }, 3500);
+        });
+      }
+    });
+  </script>
+</body></html>

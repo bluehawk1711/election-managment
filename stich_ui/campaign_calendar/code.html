@@ -1,0 +1,545 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"><meta content="mobile_tab" name="shell-type"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"><link href="https://fonts.googleapis.com" rel="preconnect"><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><style>@layer base{html,body{width:100vw;margin:0;padding:0;background-color:#fbf8ff;color:#181b2b;}body{overscroll-behavior:none;font-family:'Inter',sans-serif;}.pb-safe{padding-bottom:calc(env(safe-area-inset-bottom,0px) + 80px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: 'class', theme: { extend: { colors: { 'surface-variant': '#e0e1f8', 'background': '#fbf8ff', 'on-surface-variant': '#464555', 'surface-container-lowest': '#ffffff', 'inverse-primary': '#c2c1ff', 'on-secondary-fixed': '#2a1800', 'on-primary-container': '#bcbbff', 'surface-bright': '#fbf8ff', 'surface-container-highest': '#e0e1f8', 'on-tertiary-fixed-variant': '#004c6e', 'surface': '#fbf8ff', 'error-container': '#ffdad6', 'primary': '#2100bd', 'secondary': '#835400', 'on-surface': '#181b2b', 'tertiary-fixed-dim': '#89ceff', 'secondary-fixed': '#ffddb5', 'secondary-fixed-dim': '#ffb957', 'on-secondary-fixed-variant': '#643f00', 'primary-fixed-dim': '#c2c1ff', 'primary-fixed': '#e2dfff', 'tertiary-fixed': '#c9e6ff', 'inverse-surface': '#2d2f41', 'tertiary-container': '#00547a', 'outline': '#777587', 'secondary-container': '#ffad2e', 'on-error': '#ffffff', 'outline-variant': '#c7c4d8', 'error': '#ba1a1a', 'surface-container-low': '#f3f2ff', 'on-error-container': '#93000a', 'on-tertiary-container': '#79c9ff', 'surface-dim': '#d7d8ef', 'on-secondary': '#ffffff', 'on-primary-fixed-variant': '#3121ce', 'surface-container-high': '#e5e6fe', 'on-secondary-container': '#6c4400', 'surface-container': '#ececff', 'primary-container': '#3b2fd6', 'on-tertiary-fixed': '#001e2f', 'on-background': '#181b2b', 'on-tertiary': '#ffffff', 'on-primary-fixed': '#0e006a', 'surface-tint': '#4c43e5', 'inverse-on-surface': '#f0efff', 'tertiary': '#003c58', 'on-primary': '#ffffff' }, borderRadius: { DEFAULT: '0.25rem', lg: '0.5rem', xl: '0.75rem', full: '9999px' }, spacing: { 'margin-mobile': '1rem', 'space-lg': '1.25rem', 'margin': '1.25rem', 'gutter': '1rem', 'space-xs': '0.25rem', 'gutter-mobile': '0.75rem', 'space-md': '0.75rem', 'space-xl': '1.75rem', 'space-sm': '0.5rem' }, fontFamily: { 'headline-xl-mobile': ['Inter'], 'headline-xl': ['Inter'], 'body-lg': ['Inter'], 'label-lg': ['Inter'], 'body-md': ['Inter'], 'metric-tabular': ['Inter'], 'label-sm': ['Inter'], 'body-sm': ['Inter'], 'label-md': ['Inter'], 'headline-lg': ['Inter'], 'headline-md': ['Inter'], 'headline-sm': ['Inter'] }, fontSize: { 'headline-xl-mobile': ['26px', { lineHeight: '32px', letterSpacing: '-0.02em', fontWeight: '600' }], 'headline-xl': ['32px', { lineHeight: '40px', letterSpacing: '-0.025em', fontWeight: '600' }], 'body-lg': ['16px', { lineHeight: '24px', letterSpacing: '-0.005em', fontWeight: '400' }], 'label-lg': ['14px', { lineHeight: '20px', letterSpacing: '0.005em', fontWeight: '500' }], 'body-md': ['14px', { lineHeight: '20px', letterSpacing: '0em', fontWeight: '400' }], 'metric-tabular': ['20px', { lineHeight: '24px', letterSpacing: '-0.02em', fontWeight: '600' }], 'label-sm': ['10px', { lineHeight: '14px', letterSpacing: '0.04em', fontWeight: '600' }], 'body-sm': ['12px', { lineHeight: '16px', letterSpacing: '0.005em', fontWeight: '400' }], 'label-md': ['12px', { lineHeight: '16px', letterSpacing: '0.01em', fontWeight: '500' }], 'headline-lg': ['24px', { lineHeight: '32px', letterSpacing: '-0.02em', fontWeight: '600' }], 'headline-md': ['20px', { lineHeight: '28px', letterSpacing: '-0.015em', fontWeight: '600' }], 'headline-sm': ['16px', { lineHeight: '24px', letterSpacing: '-0.01em', fontWeight: '600' }] } } } };</script><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head><body class="bg-surface font-body-md text-on-surface flex flex-col min-h-screen antialiased"><header class="fixed top-0 inset-x-0 z-50 bg-surface/85 backdrop-blur-xl pt-safe shadow-[0_1px_8px_rgba(0,0,0,0.03)]"><div class="h-16 px-margin-mobile flex items-center justify-between"><div class="flex items-center gap-space-sm"><img alt="Brand logo. - Primary color: #3b2fd6
+- Font: inter
+- Mode: light
+- Roundness: rounded-md
+" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1V9Gcq5FSm4c35aHrh0BGyWwTyX2hJo4SacNcuCV1HvsbyuOohwFfGHaEizHjtr-wsgJqiMdlM5CeWFITUK6FLcKTH6rx33K-ah2Lj9HkR0xkVNaN5kqHGGrl0kil76OY1qnrK_j7_QTcw32fAdWRHCEGE1M7yekiAZVDGjcxvgFIB0eklBz3Qio_s7Y691Jhyk3W9SFfq05999DCvPLaBsuryiia9YFDwm9BCFc8BmDsNKzgP6vTXsePc"><div class="flex flex-col"><span class="font-label-sm text-label-sm tracking-wider uppercase text-on-surface-variant font-semibold">Vanguard Ops</span><h1 class="font-headline-sm text-headline-sm text-on-surface leading-none tracking-tight">Calendar</h1></div></div><div class="flex items-center gap-space-sm"><div class="flex items-center gap-space-xs px-2 py-1 rounded-full bg-surface-container"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span><span class="font-label-sm text-label-sm text-on-surface font-semibold tabular-nums">HQ SYNC</span></div><img alt="Profile" class="w-8 h-8 rounded-full object-cover ring-2 ring-surface-variant" src="https://lh3.googleusercontent.com/aida/AEtjO1UkWKyA8MEJc333zz720CggwBbxd9r7HRvEMdFT-fEjEOg2f_2BaLIQb2AezHIbsIhYYsm-wu7U6g2u2ePoPHUwIdxOLoXaLRCGGo6n9bJ4F0vNAUlOBKI31y9RuQMGfSToHAvhgvWTMYa_h7jZV3q0ErGXNSAMW-GsPXoHf6874v3XiZ-yq8vSaG8eioKSht1CPRforx0G5KbsI-4CqhFtlTP4WhqYeI6xDkU_gC25HJZX8x3Z5oLdUek"></div></div></header><main class="flex-1 flex flex-col relative w-full px-margin-mobile pt-16 pb-safe bg-surface"><div class="flex flex-col w-full pb-6 space-y-4">
+<!-- Top Operational Control Strip -->
+<div class="flex flex-col space-y-3 pt-1">
+<div class="flex items-center justify-between">
+<div class="flex items-center space-x-2">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full bg-surface-container font-label-sm text-label-sm text-primary-container font-semibold uppercase tracking-wider">
+          AC-72 Assembly Command
+        </span>
+</div>
+<div class="flex items-center space-x-2">
+<button class="px-3 py-1.5 rounded-full bg-surface-container-high hover:bg-surface-variant text-primary-container font-label-md text-label-md font-semibold transition-all active:scale-95 shadow-sm" id="today-btn" type="button">
+          Today
+        </button>
+<button class="flex items-center justify-center w-8 h-8 rounded-full bg-primary-container text-on-primary hover:opacity-90 active:scale-95 transition-all shadow-sm" id="open-sheet-btn" type="button">
+<span class="material-symbols-outlined text-[20px]">add</span>
+</button>
+</div>
+</div>
+<!-- Segmented View Switcher -->
+<div class="grid grid-cols-3 p-1 rounded-xl bg-surface-container-low shadow-sm">
+<button class="py-1.5 rounded-lg bg-surface-container-lowest text-primary-container font-label-md text-label-md font-semibold shadow-sm transition-all text-center">
+        Month
+      </button>
+<button class="py-1.5 rounded-lg text-on-surface-variant hover:text-on-surface font-label-md text-label-md font-medium transition-all text-center">
+        Week
+      </button>
+<button class="py-1.5 rounded-lg text-on-surface-variant hover:text-on-surface font-label-md text-label-md font-medium transition-all text-center">
+        Agenda
+      </button>
+</div>
+</div>
+<!-- Compact Month Grid Card -->
+<div class="rounded-2xl bg-surface-container-lowest p-4 shadow-sm flex flex-col space-y-3">
+<!-- Month Navigation -->
+<div class="flex items-center justify-between px-1">
+<div>
+<h2 class="font-headline-sm text-headline-sm text-on-surface font-semibold tracking-tight">October 2024</h2>
+<p class="font-label-sm text-label-sm text-on-surface-variant">General Election Cycle · Phase 2</p>
+</div>
+<div class="flex items-center space-x-1">
+<button class="w-7 h-7 flex items-center justify-center rounded-full bg-surface-container text-on-surface-variant hover:text-on-surface active:scale-95 transition-transform" type="button">
+<span class="material-symbols-outlined text-[18px]">chevron_left</span>
+</button>
+<button class="w-7 h-7 flex items-center justify-center rounded-full bg-surface-container text-on-surface-variant hover:text-on-surface active:scale-95 transition-transform" type="button">
+<span class="material-symbols-outlined text-[18px]">chevron_right</span>
+</button>
+</div>
+</div>
+<!-- Calendar Table -->
+<div class="w-full">
+<!-- Weekday Labels -->
+<div class="grid grid-cols-7 text-center mb-1">
+<span class="font-label-sm text-label-sm text-on-surface-variant font-semibold">S</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant font-semibold">M</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant font-semibold">T</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant font-semibold">W</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant font-semibold">T</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant font-semibold">F</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant font-semibold">S</span>
+</div>
+<!-- Calendar Days Grid (October 2024 starts on Tuesday) -->
+<div class="grid grid-cols-7 gap-y-1 text-center font-metric-tabular text-sm">
+<!-- Prev month trailing -->
+<div class="py-1 text-on-surface-variant/40 font-label-md text-label-md">29</div>
+<div class="py-1 text-on-surface-variant/40 font-label-md text-label-md">30</div>
+<!-- Oct 1 - 5 -->
+<div class="py-1 flex flex-col items-center justify-center rounded-lg hover:bg-surface-container-low transition-colors">
+<span class="font-label-md text-label-md text-on-surface font-medium">1</span>
+<span class="h-1 w-1 rounded-full bg-primary-container mt-0.5"></span>
+</div>
+<div class="py-1 flex flex-col items-center justify-center rounded-lg hover:bg-surface-container-low transition-colors">
+<span class="font-label-md text-label-md text-on-surface font-medium">2</span>
+<span class="h-1 w-1 rounded-full bg-transparent mt-0.5"></span>
+</div>
+<div class="py-1 flex flex-col items-center justify-center rounded-lg hover:bg-surface-container-low transition-colors">
+<span class="font-label-md text-label-md text-on-surface font-medium">3</span>
+<span class="h-1 w-1 rounded-full bg-tertiary mt-0.5"></span>
+</div>
+<div class="py-1 flex flex-col items-center justify-center rounded-lg hover:bg-surface-container-low transition-colors">
+<span class="font-label-md text-label-md text-on-surface font-medium">4</span>
+<span class="h-1 w-1 rounded-full bg-transparent mt-0.5"></span>
+</div>
+<div class="py-1 flex flex-col items-center justify-center rounded-lg hover:bg-surface-container-low transition-colors">
+<span class="font-label-md text-label-md text-on-surface font-medium">5</span>
+<span class="h-1 w-1 rounded-full bg-secondary-container mt-0.5"></span>
+</div>
+<!-- Oct 6 - 12 -->
+<div class="py-1 flex flex-col items-center justify-center"><span class="font-label-md text-label-md text-on-surface font-medium">6</span><span class="h-1 w-1"></span></div>
+<div class="py-1 flex flex-col items-center justify-center"><span class="font-label-md text-label-md text-on-surface font-medium">7</span><span class="h-1 w-1 rounded-full bg-primary-container mt-0.5"></span></div>
+<div class="py-1 flex flex-col items-center justify-center"><span class="font-label-md text-label-md text-on-surface font-medium">8</span><span class="h-1 w-1"></span></div>
+<div class="py-1 flex flex-col items-center justify-center"><span class="font-label-md text-label-md text-on-surface font-medium">9</span><span class="h-1 w-1 rounded-full bg-tertiary mt-0.5"></span></div>
+<div class="py-1 flex flex-col items-center justify-center"><span class="font-label-md text-label-md text-on-surface font-medium">10</span><span class="h-1 w-1"></span></div>
+<div class="py-1 flex flex-col items-center justify-center"><span class="font-label-md text-label-md text-on-surface font-medium">11</span><span class="h-1 w-1 rounded-full bg-secondary-container mt-0.5"></span></div>
+<div class="py-1 flex flex-col items-center justify-center"><span class="font-label-md text-label-md text-on-surface font-medium">12</span><span class="h-1 w-1"></span></div>
+<!-- Oct 13 - 19 -->
+<div class="py-1 flex flex-col items-center justify-center"><span class="font-label-md text-label-md text-on-surface font-medium">13</span><span class="h-1 w-1"></span></div>
+<div class="py-1 flex flex-col items-center justify-center"><span class="font-label-md text-label-md text-on-surface font-medium">14</span><span class="h-1 w-1 rounded-full bg-primary-container mt-0.5"></span></div>
+<div class="py-1 flex flex-col items-center justify-center"><span class="font-label-md text-label-md text-on-surface font-medium">15</span><span class="h-1 w-1"></span></div>
+<div class="py-1 flex flex-col items-center justify-center"><span class="font-label-md text-label-md text-on-surface font-medium">16</span><span class="h-1 w-1 rounded-full bg-tertiary mt-0.5"></span></div>
+<div class="py-1 flex flex-col items-center justify-center"><span class="font-label-md text-label-md text-on-surface font-medium">17</span><span class="h-1 w-1"></span></div>
+<div class="py-1 flex flex-col items-center justify-center"><span class="font-label-md text-label-md text-error font-semibold">18</span><span class="h-1 w-1 rounded-full bg-error mt-0.5"></span></div>
+<div class="py-1 flex flex-col items-center justify-center"><span class="font-label-md text-label-md text-on-surface font-medium">19</span><span class="h-1 w-1"></span></div>
+<!-- Oct 20 - 26 -->
+<div class="py-1 flex flex-col items-center justify-center"><span class="font-label-md text-label-md text-on-surface font-medium">20</span><span class="h-1 w-1"></span></div>
+<div class="py-1 flex flex-col items-center justify-center"><span class="font-label-md text-label-md text-error font-semibold">21</span><span class="h-1 w-1 rounded-full bg-error mt-0.5"></span></div>
+<div class="py-1 flex flex-col items-center justify-center"><span class="font-label-md text-label-md text-on-surface font-medium">22</span><span class="h-1 w-1 rounded-full bg-secondary-container mt-0.5"></span></div>
+<div class="py-1 flex flex-col items-center justify-center"><span class="font-label-md text-label-md text-on-surface font-medium">23</span><span class="h-1 w-1 rounded-full bg-primary-container mt-0.5"></span></div>
+<!-- TODAY Oct 24 Selected -->
+<div class="py-1 flex flex-col items-center justify-center">
+<div class="w-8 h-8 rounded-full bg-primary-container text-on-primary flex items-center justify-center font-headline-sm text-headline-sm font-bold shadow-md">
+            24
+          </div>
+<div class="flex items-center space-x-0.5 mt-0.5">
+<span class="h-1 w-1 rounded-full bg-primary-container"></span>
+<span class="h-1 w-1 rounded-full bg-error"></span>
+<span class="h-1 w-1 rounded-full bg-secondary-container"></span>
+</div>
+</div>
+<div class="py-1 flex flex-col items-center justify-center"><span class="font-label-md text-label-md text-on-surface font-medium">25</span><span class="h-1 w-1 rounded-full bg-primary-container mt-0.5"></span></div>
+<div class="py-1 flex flex-col items-center justify-center"><span class="font-label-md text-label-md text-on-surface font-medium">26</span><span class="h-1 w-1"></span></div>
+<!-- Oct 27 - 31 -->
+<div class="py-1 flex flex-col items-center justify-center"><span class="font-label-md text-label-md text-on-surface font-medium">27</span><span class="h-1 w-1"></span></div>
+<div class="py-1 flex flex-col items-center justify-center"><span class="font-label-md text-label-md text-on-surface font-medium">28</span><span class="h-1 w-1 rounded-full bg-tertiary mt-0.5"></span></div>
+<div class="py-1 flex flex-col items-center justify-center"><span class="font-label-md text-label-md text-on-surface font-medium">29</span><span class="h-1 w-1"></span></div>
+<div class="py-1 flex flex-col items-center justify-center"><span class="font-label-md text-label-md text-on-surface font-medium">30</span><span class="h-1 w-1 rounded-full bg-secondary-container mt-0.5"></span></div>
+<div class="py-1 flex flex-col items-center justify-center"><span class="font-label-md text-label-md text-on-surface font-medium">31</span><span class="h-1 w-1 rounded-full bg-primary-container mt-0.5"></span></div>
+<div class="py-1 text-on-surface-variant/40 font-label-md text-label-md">1</div>
+<div class="py-1 text-on-surface-variant/40 font-label-md text-label-md">2</div>
+</div>
+</div>
+<!-- Event Category Legend Filter -->
+<div class="flex items-center space-x-2 overflow-x-auto pt-2 pb-0.5 no-scrollbar">
+<div class="flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-surface-container font-label-sm text-label-sm text-on-surface font-medium whitespace-nowrap">
+<span class="w-2 h-2 rounded-full bg-primary-container"></span>
+<span>Candidate</span>
+</div>
+<div class="flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-surface-container font-label-sm text-label-sm text-on-surface font-medium whitespace-nowrap">
+<span class="w-2 h-2 rounded-full bg-tertiary"></span>
+<span>Booth</span>
+</div>
+<div class="flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-surface-container font-label-sm text-label-sm text-on-surface font-medium whitespace-nowrap">
+<span class="w-2 h-2 rounded-full bg-secondary-container"></span>
+<span>Training</span>
+</div>
+<div class="flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-surface-container font-label-sm text-label-sm text-on-surface font-medium whitespace-nowrap">
+<span class="w-2 h-2 rounded-full bg-error"></span>
+<span>Statutory</span>
+</div>
+</div>
+</div>
+<!-- Statutory Election Milestones & Deadlines Card -->
+<div class="rounded-2xl bg-surface-container-low p-4 shadow-sm space-y-3">
+<div class="flex items-center justify-between">
+<div class="flex items-center space-x-2">
+<span class="flex items-center justify-center w-6 h-6 rounded-lg bg-error-container text-on-error-container">
+<span class="material-symbols-outlined text-[16px]">gavel</span>
+</span>
+<h3 class="font-headline-sm text-headline-sm text-on-surface font-semibold tracking-tight">Statutory Election Milestones</h3>
+</div>
+<span class="px-2 py-0.5 rounded-full bg-surface-container-high font-label-sm text-label-sm text-on-surface-variant font-semibold">ECI Form 4A</span>
+</div>
+<!-- Milestones Stack -->
+<div class="flex flex-col space-y-2">
+<!-- Milestone 1 -->
+<div class="flex items-center justify-between p-2.5 rounded-xl bg-surface-container-lowest">
+<div class="flex items-center space-x-2.5 min-w-0">
+<span class="w-5 h-5 rounded-full bg-surface-container text-on-surface-variant flex items-center justify-center">
+<span class="material-symbols-outlined text-[14px]">check</span>
+</span>
+<div class="min-w-0">
+<p class="font-label-md text-label-md text-on-surface font-medium truncate">Nomination Filing Deadline</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Closed on Oct 18 · Sub-Division RO</p>
+</div>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant font-semibold uppercase px-2 py-0.5 rounded bg-surface-container">Passed</span>
+</div>
+<!-- Milestone 2 -->
+<div class="flex items-center justify-between p-2.5 rounded-xl bg-surface-container-lowest">
+<div class="flex items-center space-x-2.5 min-w-0">
+<span class="w-5 h-5 rounded-full bg-surface-container text-on-surface-variant flex items-center justify-center">
+<span class="material-symbols-outlined text-[14px]">check</span>
+</span>
+<div class="min-w-0">
+<p class="font-label-md text-label-md text-on-surface font-medium truncate">Scrutiny of Nominations</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Cleared on Oct 21 · No Objections</p>
+</div>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant font-semibold uppercase px-2 py-0.5 rounded bg-surface-container">Verified</span>
+</div>
+<!-- Milestone 3: Active Alert -->
+<div class="flex items-center justify-between p-2.5 rounded-xl bg-surface-container-lowest shadow-sm">
+<div class="flex items-center space-x-2.5 min-w-0">
+<span class="w-5 h-5 rounded-full bg-error-container text-on-error-container flex items-center justify-center animate-pulse">
+<span class="material-symbols-outlined text-[14px]">alarm</span>
+</span>
+<div class="min-w-0">
+<p class="font-label-md text-label-md text-on-surface font-semibold truncate">Withdrawal of Candidature</p>
+<p class="font-body-sm text-body-sm text-error font-medium">Cutoff today · 03:00 PM</p>
+</div>
+</div>
+<span class="font-label-sm text-label-sm text-on-error-container font-semibold px-2 py-0.5 rounded-full bg-error-container">Expires in 4h 30m</span>
+</div>
+<!-- Milestone 4: Countdown -->
+<div class="flex items-center justify-between p-2.5 rounded-xl bg-surface-container-lowest">
+<div class="flex items-center space-x-2.5 min-w-0">
+<span class="w-5 h-5 rounded-full bg-primary-fixed text-on-primary-fixed flex items-center justify-center">
+<span class="material-symbols-outlined text-[14px]">how_to_vote</span>
+</span>
+<div class="min-w-0">
+<p class="font-label-md text-label-md text-on-surface font-semibold truncate">Final Polling Day (D-Day)</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Nov 12 · 07:00 AM - 06:00 PM</p>
+</div>
+</div>
+<span class="font-label-sm text-label-sm text-on-primary font-semibold px-2.5 py-0.5 rounded-full bg-primary-container">19 Days Left</span>
+</div>
+</div>
+</div>
+<!-- Agenda Header -->
+<div class="flex items-center justify-between pt-1 px-1">
+<div class="flex items-center space-x-2">
+<span class="material-symbols-outlined text-primary-container text-[20px]">calendar_today</span>
+<h3 class="font-headline-sm text-headline-sm text-on-surface font-semibold">Thursday, Oct 24</h3>
+</div>
+<span class="px-2.5 py-0.5 rounded-full bg-primary-fixed text-on-primary-fixed font-label-sm text-label-sm font-semibold">5 Events Scheduled</span>
+</div>
+<!-- Chronological Agenda Event Cards -->
+<div class="flex flex-col space-y-3">
+<!-- Event 1: Candidate Meeting (Indigo) -->
+<div class="flex rounded-2xl bg-surface-container-lowest overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+<div class="w-1.5 bg-primary-container shrink-0"></div>
+<div class="flex-1 p-3.5 flex flex-col space-y-2">
+<div class="flex items-start justify-between">
+<div class="flex items-center space-x-2">
+<span class="font-metric-tabular font-headline-sm text-headline-sm text-primary-container font-bold">09:30 AM</span>
+<span class="px-2 py-0.5 rounded-full bg-primary-fixed text-on-primary-fixed font-label-sm text-label-sm font-semibold">Candidate Meeting</span>
+</div>
+<button class="text-primary-container hover:opacity-80" type="button">
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">notifications_active</span>
+</button>
+</div>
+<div>
+<h4 class="font-label-lg text-label-lg text-on-surface font-semibold">Strategy session with AC-72 Core Cabinet</h4>
+<div class="flex items-center space-x-1.5 text-on-surface-variant font-body-sm text-body-sm mt-0.5">
+<span class="material-symbols-outlined text-[15px]">location_on</span>
+<span class="truncate">Ward 9 Central Election HQ · War Room 1</span>
+</div>
+</div>
+<div class="flex items-center justify-between pt-1">
+<div class="flex items-center -space-x-2">
+<img class="w-6 h-6 rounded-full object-cover shadow-sm bg-surface-variant" data-alt="Senior campaign strategist portrait in smart casual executive attire for field operations dashboard" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCrJI1G0Wj7odHpdggM_UYMlq8CXkSN8E0YlNOL6C1Dn4Rz-fAgw30OuA7xiEOjSUW8Rmu2TJ_bZV97UA2jDhJMXBNJ2YGE6wuQVq-NOHil6QzDJYpeg_NbmtaRTnjTfmJo36HPuAXZP2GEoGjTdL4cUUuN14MgL2umn022PGMKy1un6-3BD8jcUhvYDz-keO67It8gngXkE_FcB5u8hocD-y6_DejrjiLDcwGj4_dn4yNO_H71jmWT">
+<img class="w-6 h-6 rounded-full object-cover shadow-sm bg-surface-variant" data-alt="Political data analyst professional woman in campaign headquarters office setting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCnda6AXNwxpNpsUXVqzzFI7tJOhqvNv802nCJ09RF3Fky_fqs9hYgTXbgBj_H7vUgWnb5FPIHvIubbVfrORtnLkTqzcc2BXhN6iXALgPTx77W5Ej2b-2yBvCSn3TWPsjZnzggOqQXMAaBKkX8kk_nX0kK5p2JdKDuaMS2eH4r6Ct0Zu-RNxLSdl64xd9s81J-BUYF16fVE5OmPuH7RCxiTpEEuPml3rcTMjrYO-JHcSH69WtxkdKQW">
+<img class="w-6 h-6 rounded-full object-cover shadow-sm bg-surface-variant" data-alt="District constituency coordinator professional man reviewing election strategy files" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBpgJzNf1vyegbxJ2zgimAWqtRr1Oy_6UtPMUdgszprC1BFE2mn7G_jf3Y58rLHSP5paltYIfHRGkL4N3cziVxPtCPRdsImh8OeMc-e923mG9ObHZ4pwrXnLcn7IB8ekeDkoo0eu_BMa9cIxtSPrzM5HOKQ-97IsZR9PtrrqrgYNyL8BUJMGcxus42ct-MVwhB05uagIANJDGG-s9qycfR3L4XIa7kXRD_XxnHAOCxi97lNzjVdU9EG">
+<span class="flex items-center justify-center w-6 h-6 rounded-full bg-surface-container text-on-surface font-label-sm text-[10px] font-semibold">+4</span>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Duration: 1h 15m</span>
+</div>
+</div>
+</div>
+<!-- Event 2: Election Deadline (Red) -->
+<div class="flex rounded-2xl bg-surface-container-lowest overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+<div class="w-1.5 bg-error shrink-0"></div>
+<div class="flex-1 p-3.5 flex flex-col space-y-2">
+<div class="flex items-start justify-between">
+<div class="flex items-center space-x-2">
+<span class="font-metric-tabular font-headline-sm text-headline-sm text-error font-bold">11:30 AM</span>
+<span class="px-2 py-0.5 rounded-full bg-error-container text-on-error-container font-label-sm text-label-sm font-semibold">ECI Deadline</span>
+</div>
+<div class="flex items-center space-x-1 text-error">
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">warning</span>
+</div>
+</div>
+<div>
+<h4 class="font-label-lg text-label-lg text-on-surface font-semibold">Final Scrutiny &amp; Form 7A Verification cutoff</h4>
+<div class="flex items-center space-x-1.5 text-on-surface-variant font-body-sm text-body-sm mt-0.5">
+<span class="material-symbols-outlined text-[15px]">account_balance</span>
+<span class="truncate">Returning Officer Office, District Collectorate</span>
+</div>
+</div>
+<div class="flex items-center justify-between pt-1">
+<div class="flex items-center -space-x-2">
+<img class="w-6 h-6 rounded-full object-cover shadow-sm bg-surface-variant" data-alt="Legal counsel lawyer in formal election chamber suit holding compliance affidavit folder" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBOdkvqTz0-u4rEDhkzJ_a73rinx-L1krZo28unnooId-lrTeAMC-SKn7XsqhWi8KYkXay3lcV1zAprg3pNoCgJoGqtVyIjwiQTaxjTE5tubTGkNwyfAHgRj8X0koi-SDYdEu46gNmkTL1_JkHygCsXkG-oKLhXHXyMzdDN6PI-DjfCSwfKnQfWiYJUqkEqGI-D4833Wo31DanzAQbBiLtA-Y80piAvLD9HKZ4I1xEDAiB1mF3cTCgj">
+<img class="w-6 h-6 rounded-full object-cover shadow-sm bg-surface-variant" data-alt="Election agent certified attorney reviewing official electoral nomination documents" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBaop2kcuziZDkufnc9ye9RoYn1iMfuQAZAUEV69b0XAadXXhzsyrhTk5wDMeXaxnTtUtXwUXJkst7YnqQ4cOWuIbkLKiCvQQZECx8MyXgJgRojb6UBb_1xp2gf-r68I3PaMSXSYJITwjikYfDkeq5ugl5Q8b0uO2WVHhJj96ITAlRekjFGH09EXHYulPJQGtZ2r1olhMxpRyIidtTE5cyqG_OHk5IBol-qBYsDsDZRsu6hJd621xYP">
+<span class="flex items-center justify-center w-6 h-6 rounded-full bg-surface-container text-on-surface font-label-sm text-[10px] font-semibold">Legal</span>
+</div>
+<span class="font-label-sm text-label-sm text-error font-semibold uppercase tracking-wider">Mandatory RO Presence</span>
+</div>
+</div>
+</div>
+<!-- Event 3: Booth Meeting (Teal) -->
+<div class="flex rounded-2xl bg-surface-container-lowest overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+<div class="w-1.5 bg-tertiary-container shrink-0"></div>
+<div class="flex-1 p-3.5 flex flex-col space-y-2">
+<div class="flex items-start justify-between">
+<div class="flex items-center space-x-2">
+<span class="font-metric-tabular font-headline-sm text-headline-sm text-tertiary-container font-bold">02:00 PM</span>
+<span class="px-2 py-0.5 rounded-full bg-tertiary-fixed text-on-tertiary-fixed font-label-sm text-label-sm font-semibold">Booth Meeting</span>
+</div>
+<button class="text-on-surface-variant hover:text-on-surface" type="button">
+<span class="material-symbols-outlined text-[18px]">notifications</span>
+</button>
+</div>
+<div>
+<h4 class="font-label-lg text-label-lg text-on-surface font-semibold">Booth 118 &amp; 119 Field Mobilizers Sync</h4>
+<div class="flex items-center space-x-1.5 text-on-surface-variant font-body-sm text-body-sm mt-0.5">
+<span class="material-symbols-outlined text-[15px]">meeting_room</span>
+<span class="truncate">Community Hall, Sector 4</span>
+</div>
+</div>
+<div class="flex items-center justify-between pt-1">
+<div class="flex items-center space-x-1.5">
+<span class="material-symbols-outlined text-tertiary-container text-[16px]">groups</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant font-medium">12 Booth Captains confirmed</span>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Target: Voter Slips</span>
+</div>
+</div>
+</div>
+<!-- Event 4: Worker Training (Amber) -->
+<div class="flex rounded-2xl bg-surface-container-lowest overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+<div class="w-1.5 bg-secondary-container shrink-0"></div>
+<div class="flex-1 p-3.5 flex flex-col space-y-2">
+<div class="flex items-start justify-between">
+<div class="flex items-center space-x-2">
+<span class="font-metric-tabular font-headline-sm text-headline-sm text-secondary font-bold">04:30 PM</span>
+<span class="px-2 py-0.5 rounded-full bg-secondary-fixed text-on-secondary-fixed font-label-sm text-label-sm font-semibold">Worker Training</span>
+</div>
+<button class="text-on-surface-variant hover:text-on-surface" type="button">
+<span class="material-symbols-outlined text-[18px]">notifications</span>
+</button>
+</div>
+<div>
+<h4 class="font-label-lg text-label-lg text-on-surface font-semibold">EVM &amp; VVPAT Mock Poll Hands-on Demo</h4>
+<div class="flex items-center space-x-1.5 text-on-surface-variant font-body-sm text-body-sm mt-0.5">
+<span class="material-symbols-outlined text-[15px]">school</span>
+<span class="truncate">Ward 12 Camp Office Training Wing</span>
+</div>
+</div>
+<div class="flex items-center justify-between pt-1">
+<div class="flex items-center space-x-1.5">
+<span class="material-symbols-outlined text-secondary text-[16px]">how_to_reg</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant font-medium">18 polling agents registered</span>
+</div>
+<span class="px-2 py-0.5 rounded bg-surface-container font-label-sm text-label-sm text-on-surface font-semibold">Kit Ready</span>
+</div>
+</div>
+</div>
+<!-- Event 5: Public Event (Green/Tertiary) -->
+<div class="flex rounded-2xl bg-surface-container-lowest overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+<div class="w-1.5 bg-primary shrink-0"></div>
+<div class="flex-1 p-3.5 flex flex-col space-y-2">
+<div class="flex items-start justify-between">
+<div class="flex items-center space-x-2">
+<span class="font-metric-tabular font-headline-sm text-headline-sm text-primary font-bold">07:00 PM</span>
+<span class="px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface font-label-sm text-label-sm font-semibold">Public Town Hall</span>
+</div>
+<button class="text-primary-container hover:opacity-80" type="button">
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">notifications_active</span>
+</button>
+</div>
+<div>
+<h4 class="font-label-lg text-label-lg text-on-surface font-semibold">Ward 8 Town Hall &amp; Citizen Interaction</h4>
+<div class="flex items-center space-x-1.5 text-on-surface-variant font-body-sm text-body-sm mt-0.5">
+<span class="material-symbols-outlined text-[15px]">campaign</span>
+<span class="truncate">Shiv Mandir Public Square, Main Stage</span>
+</div>
+</div>
+<div class="flex items-center justify-between pt-1">
+<div class="flex items-center space-x-1.5">
+<span class="material-symbols-outlined text-primary text-[16px]">mic</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant font-medium">Candidate + Public Liaison Squad</span>
+</div>
+<span class="font-label-sm text-label-sm text-primary-container font-semibold">Live Streamed</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Interactive "Create Event" Bottom Sheet Backdrop and Container -->
+<div class="fixed inset-0 z-50 bg-inverse-surface/40 backdrop-blur-sm hidden transition-opacity" id="create-event-backdrop">
+<div class="fixed inset-x-0 bottom-0 max-w-lg mx-auto bg-surface-container-lowest rounded-t-3xl shadow-2xl p-5 flex flex-col max-h-[795px] overflow-y-auto transform transition-transform duration-300">
+<!-- Top Drag Handle -->
+<div class="w-12 h-1.5 rounded-full bg-surface-variant mx-auto mb-3"></div>
+<!-- Sheet Header -->
+<div class="flex items-center justify-between pb-3">
+<div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface font-bold">Schedule Campaign Event</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Synchronize operational diary across precinct teams</p>
+</div>
+<button class="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant hover:text-on-surface" id="close-sheet-btn" type="button">
+<span class="material-symbols-outlined text-[20px]">close</span>
+</button>
+</div>
+<!-- Sheet Form Inputs -->
+<form class="space-y-4 pt-1" onsubmit="event.preventDefault();">
+<!-- Event Title -->
+<div>
+<label class="block font-label-sm text-label-sm text-on-surface-variant font-semibold uppercase mb-1">Event Title</label>
+<input class="w-full h-12 px-3.5 rounded-xl bg-surface-container-low text-on-surface font-body-md text-body-md focus:outline-none focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary-container transition-all" type="text" value="Corner meeting with Trader Association">
+</div>
+<!-- Event Type Selector Chips -->
+<div>
+<label class="block font-label-sm text-label-sm text-on-surface-variant font-semibold uppercase mb-1.5">Category</label>
+<div class="flex flex-wrap gap-2">
+<button class="category-chip px-3 py-1.5 rounded-full bg-primary-container text-on-primary font-label-sm text-label-sm font-semibold shadow-sm" type="button">
+              Candidate Meeting
+            </button>
+<button class="category-chip px-3 py-1.5 rounded-full bg-surface-container text-on-surface font-label-sm text-label-sm font-medium hover:bg-surface-variant transition-colors" type="button">
+              Booth Meeting
+            </button>
+<button class="category-chip px-3 py-1.5 rounded-full bg-surface-container text-on-surface font-label-sm text-label-sm font-medium hover:bg-surface-variant transition-colors" type="button">
+              Worker Training
+            </button>
+<button class="category-chip px-3 py-1.5 rounded-full bg-surface-container text-on-surface font-label-sm text-label-sm font-medium hover:bg-surface-variant transition-colors" type="button">
+              Public Event
+            </button>
+<button class="category-chip px-3 py-1.5 rounded-full bg-surface-container text-on-surface font-label-sm text-label-sm font-medium hover:bg-surface-variant transition-colors" type="button">
+              Election Deadline
+            </button>
+</div>
+</div>
+<!-- Date & Time Row -->
+<div class="grid grid-cols-2 gap-2.5">
+<div>
+<label class="block font-label-sm text-label-sm text-on-surface-variant font-semibold uppercase mb-1">Date</label>
+<div class="flex items-center h-12 px-3 rounded-xl bg-surface-container-low text-on-surface font-body-md text-body-md">
+<span class="material-symbols-outlined text-[18px] text-on-surface-variant mr-2">event</span>
+<span class="font-medium text-sm">Oct 25, 2024</span>
+</div>
+</div>
+<div>
+<label class="block font-label-sm text-label-sm text-on-surface-variant font-semibold uppercase mb-1">Window</label>
+<div class="flex items-center h-12 px-3 rounded-xl bg-surface-container-low text-on-surface font-body-md text-body-md">
+<span class="material-symbols-outlined text-[18px] text-on-surface-variant mr-2">schedule</span>
+<span class="font-medium text-xs truncate">05:00 PM - 06:30 PM</span>
+</div>
+</div>
+</div>
+<!-- Location Input -->
+<div>
+<label class="block font-label-sm text-label-sm text-on-surface-variant font-semibold uppercase mb-1">Venue / Precinct Location</label>
+<div class="relative flex items-center">
+<span class="material-symbols-outlined absolute left-3 text-[18px] text-on-surface-variant">pin_drop</span>
+<input class="w-full h-12 pl-10 pr-3 rounded-xl bg-surface-container-low text-on-surface font-body-md text-body-md focus:outline-none focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary-container transition-all" type="text" value="Sector 3 Market Pavilion, North Gate">
+</div>
+</div>
+<!-- Attendees Multi-Selector -->
+<div>
+<label class="block font-label-sm text-label-sm text-on-surface-variant font-semibold uppercase mb-1.5">Assigned Squad &amp; Attendees</label>
+<div class="flex items-center space-x-2">
+<div class="flex items-center -space-x-2">
+<img class="w-8 h-8 rounded-full object-cover shadow-sm bg-surface-variant" data-alt="Ward level volunteer coordinator headshot badge" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDkFXCEY_D4N2NXNC6pjr20G9hY-bZDlMQEsNkNEfrpPK0oF6AjZqv1gEZsXF9zryOYXGqt5bgaQd16PrGR5WK0CLrdwYf7y1Rtwf4xNI3WUwADNogPSpXuXXP5dpjC5F0XTNAmkQ1WP2ElrVNtZ4_9oMIcMQ2YcBFUWVt8PQTpp3GV4OdSPc3raJo6LcuTJ6IdWJzKGHUmnwwOLBACAdm_nS-qlQ1LKr1VS8PIBgAb7KXEoQqMTZY5">
+<img class="w-8 h-8 rounded-full object-cover shadow-sm bg-surface-variant" data-alt="Constituency campaign volunteer team member headshot badge" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBOacsgh14LZzGG-q58GoIr4sFMMzdhooz7ig1vuNmtDh7bxS9oSJ6A75nb51-5CdcHkPPIaXnla-yfeAVolMkRgSMPS7_f-ikm65xuFfIptxL3Ul8FFFNPryjiv5F5Yq5CKGOolZ14gqIh-ZWSmShv33jjn7d_LLpQILDzOQrMQSck6LqtH-WBvyDkQiXISYB2Nhgj7WSWEvhaRn_TaFzHkACJ488DygPqQW3172P7DKzBDv1KfJAV">
+<img class="w-8 h-8 rounded-full object-cover shadow-sm bg-surface-variant" data-alt="Field operations polling agent woman headshot badge" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBy_-2hrBHczTPTlX-xtYGVOFF3_z0upcwEtG4a8UFvKJzLtZ0OP8OJjqL7lcfA67MotUDx9m779wPZzTZ7ST2CwfVg7V-_5Ja1qgl8pdchVeGxHL9c_9Vo3qr7kdHQzv-MfldHjNNqzqKzVge8mf5KJgUrsKCCKJe4MJuSPi5Rb0249PMG-GFnoe7oLa9jyW4chjZnTbbGbA97uMAgW2UJ3ghTaqvIuA-55hpHG5pwfmq8j2lphNtl">
+</div>
+<button class="h-8 px-3 rounded-full bg-surface-container hover:bg-surface-variant flex items-center space-x-1 text-primary-container font-label-sm text-label-sm font-semibold" type="button">
+<span class="material-symbols-outlined text-[16px]">group_add</span>
+<span>Add Squad</span>
+</button>
+</div>
+</div>
+<!-- Notification Dispatch Trigger -->
+<div>
+<label class="block font-label-sm text-label-sm text-on-surface-variant font-semibold uppercase mb-1">Notification Protocol</label>
+<div class="flex items-center justify-between h-12 px-3.5 rounded-xl bg-surface-container-low text-on-surface font-body-md text-body-md">
+<div class="flex items-center space-x-2">
+<span class="material-symbols-outlined text-primary-container text-[20px]">notifications_active</span>
+<span class="font-medium text-sm">30 min before (Push + WhatsApp)</span>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant text-[18px]">expand_more</span>
+</div>
+</div>
+<!-- Primary Submit Button -->
+<div class="pt-2">
+<button class="w-full h-12 rounded-xl bg-primary-container text-on-primary font-label-lg text-label-lg font-bold flex items-center justify-center space-x-2 shadow-md active:scale-[0.98] transition-transform" id="submit-event-btn" type="button">
+<span class="material-symbols-outlined text-[20px]">send</span>
+<span>Create &amp; Broadcast Event</span>
+</button>
+</div>
+</form>
+</div>
+</div>
+</div>
+<script>
+  (function() {
+    const openBtn = document.getElementById('open-sheet-btn');
+    const closeBtn = document.getElementById('close-sheet-btn');
+    const submitBtn = document.getElementById('submit-event-btn');
+    const backdrop = document.getElementById('create-event-backdrop');
+    const todayBtn = document.getElementById('today-btn');
+
+    function toggleSheet(show) {
+      if (!backdrop) return;
+      if (show) {
+        backdrop.classList.remove('hidden');
+      } else {
+        backdrop.classList.add('hidden');
+      }
+    }
+
+    if (openBtn) openBtn.addEventListener('click', () => toggleSheet(true));
+    if (closeBtn) closeBtn.addEventListener('click', () => toggleSheet(false));
+    if (submitBtn) {
+      submitBtn.addEventListener('click', () => {
+        toggleSheet(false);
+      });
+    }
+
+    if (backdrop) {
+      backdrop.addEventListener('click', (e) => {
+        if (e.target === backdrop) {
+          toggleSheet(false);
+        }
+      });
+    }
+
+    // Micro-interaction for Category Chips
+    const chips = document.querySelectorAll('.category-chip');
+    chips.forEach(chip => {
+      chip.addEventListener('click', () => {
+        chips.forEach(c => {
+          c.classList.remove('bg-primary-container', 'text-on-primary');
+          c.classList.add('bg-surface-container', 'text-on-surface');
+        });
+        chip.classList.remove('bg-surface-container', 'text-on-surface');
+        chip.classList.add('bg-primary-container', 'text-on-primary');
+      });
+    });
+
+    if (todayBtn) {
+      todayBtn.addEventListener('click', () => {
+        todayBtn.classList.add('scale-95');
+        setTimeout(() => todayBtn.classList.remove('scale-95'), 150);
+      });
+    }
+  })();
+</script></main><nav class="fixed bottom-0 inset-x-0 z-50 px-margin-mobile pb-3 pointer-events-none" data-active-classes="text-primary-container font-semibold"><div class="pointer-events-auto mx-auto max-w-lg bg-surface-container-lowest/85 backdrop-blur-2xl rounded-2xl shadow-[0_8px_30px_rgba(15,18,34,0.08)] px-2 py-1.5 flex items-center justify-between"><a class="flex flex-col items-center justify-center min-w-[48px] min-h-[48px] px-1 text-on-surface-variant hover:text-on-surface transition-colors" data-path="dashboard" href="#"><span class="material-symbols-outlined text-[20px]">space_dashboard</span><span class="font-label-sm text-[10px] mt-0.5 tracking-tight">Home</span></a><a class="flex flex-col items-center justify-center min-w-[48px] min-h-[48px] px-1 text-on-surface-variant hover:text-on-surface transition-colors" data-path="booths" href="#"><span class="material-symbols-outlined text-[20px]">how_to_vote</span><span class="font-label-sm text-[10px] mt-0.5 tracking-tight">Booths</span></a><a class="flex flex-col items-center justify-center min-w-[48px] min-h-[48px] px-1 text-on-surface-variant hover:text-on-surface transition-colors" data-path="tasks" href="#"><span class="material-symbols-outlined text-[20px]">checklist</span><span class="font-label-sm text-[10px] mt-0.5 tracking-tight">Tasks</span></a><a class="flex flex-col items-center justify-center min-w-[48px] min-h-[48px] px-1 text-on-surface-variant hover:text-on-surface transition-colors" data-path="team" href="#"><span class="material-symbols-outlined text-[20px]">badge</span><span class="font-label-sm text-[10px] mt-0.5 tracking-tight">Team</span></a><a aria-current="page" class="flex flex-col items-center justify-center min-w-[48px] min-h-[48px] px-1 transition-colors text-primary-container font-semibold" data-path="calendar" href="#"><span class="material-symbols-outlined text-[20px]">event</span><span class="font-label-sm text-[10px] mt-0.5 tracking-tight">Calendar</span></a><a class="flex flex-col items-center justify-center min-w-[48px] min-h-[48px] px-1 text-on-surface-variant hover:text-on-surface transition-colors" data-path="settings" href="#"><span class="material-symbols-outlined text-[20px]">tune</span><span class="font-label-sm text-[10px] mt-0.5 tracking-tight">Settings</span></a></div></nav></body></html>

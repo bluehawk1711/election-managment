@@ -1,0 +1,7 @@
+allowBuilds:
+  '@firebase/util': true
+  protobufjs: true
+  unrs-resolver: true
+# Where pnpm 10.16 and newer read settings from — .npmrc now carries only auth
+# and registry keys. See .npmrc for why Expo needs a flat node_modules.
+nodeLinker: hoisted

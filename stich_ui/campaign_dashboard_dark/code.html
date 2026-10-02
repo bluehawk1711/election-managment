@@ -1,0 +1,559 @@
+<!DOCTYPE html><html class="h-full" lang="en"><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"><meta content="mobile_tab" name="shell-type"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><style>@layer base{html,body{width:100%;min-height:100%;margin:0;padding:0;}body{overscroll-behavior:none;-webkit-tap-highlight-color:transparent;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}.material-symbols-outlined{font-variation-settings:'FILL' 0,'wght' 300,'GRAD' 0,'opsz' 24;font-size:22px;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{"colors":{"on-tertiary-fixed":"#001e2f","inverse-surface":"#2d2f41","surface-container-highest":"#e0e1f8","error-container":"#ffdad6","secondary":"#835400","on-primary":"#ffffff","on-surface-variant":"#464555","primary-fixed-dim":"#c2c1ff","on-tertiary-fixed-variant":"#004c6e","primary-fixed":"#e2dfff","surface-container-high":"#e5e6fe","inverse-primary":"#c2c1ff","on-secondary-fixed":"#2a1800","secondary-container":"#ffad2e","tertiary-fixed-dim":"#89ceff","tertiary-fixed":"#c9e6ff","tertiary-container":"#00547a","on-error":"#ffffff","on-tertiary":"#ffffff","secondary-fixed-dim":"#ffb957","background":"#fbf8ff","primary-container":"#3b2fd6","tertiary":"#003c58","surface-tint":"#4c43e5","outline":"#777587","surface-variant":"#e0e1f8","surface-container-lowest":"#ffffff","surface-dim":"#d7d8ef","secondary-fixed":"#ffddb5","primary":"#2100bd","on-background":"#181b2b","on-primary-fixed-variant":"#3121ce","on-secondary":"#ffffff","on-tertiary-container":"#79c9ff","surface":"#fbf8ff","on-error-container":"#93000a","inverse-on-surface":"#f0efff","on-secondary-fixed-variant":"#643f00","error":"#ba1a1a","surface-bright":"#fbf8ff","surface-container-low":"#f3f2ff","on-primary-container":"#bcbbff","on-primary-fixed":"#0e006a","on-secondary-container":"#6c4400","outline-variant":"#c7c4d8","surface-container":"#ececff","on-surface":"#181b2b"},"borderRadius":{"DEFAULT":"0.25rem","lg":"0.5rem","xl":"0.75rem","full":"9999px"},"spacing":{"gutter":"1rem","space-xs":"0.25rem","gutter-mobile":"0.75rem","margin":"1.25rem","space-lg":"1.25rem","margin-mobile":"1rem","space-xl":"1.75rem","space-sm":"0.5rem","space-md":"0.75rem"},"fontFamily":{"metric-tabular":["Inter"],"headline-sm":["Inter"],"body-lg":["Inter"],"label-lg":["Inter"],"label-md":["Inter"],"headline-xl-mobile":["Inter"],"body-md":["Inter"],"headline-xl":["Inter"],"body-sm":["Inter"],"headline-lg":["Inter"],"headline-md":["Inter"],"label-sm":["Inter"]},"fontSize":{"metric-tabular":["20px",{"lineHeight":"24px","letterSpacing":"-0.02em","fontWeight":"600"}],"headline-sm":["16px",{"lineHeight":"24px","letterSpacing":"-0.01em","fontWeight":"600"}],"body-lg":["16px",{"lineHeight":"24px","letterSpacing":"-0.005em","fontWeight":"400"}],"label-lg":["14px",{"lineHeight":"20px","letterSpacing":"0.005em","fontWeight":"500"}],"label-md":["12px",{"lineHeight":"16px","letterSpacing":"0.01em","fontWeight":"500"}],"headline-xl-mobile":["26px",{"lineHeight":"32px","letterSpacing":"-0.02em","fontWeight":"600"}],"body-md":["14px",{"lineHeight":"20px","letterSpacing":"0em","fontWeight":"400"}],"headline-xl":["32px",{"lineHeight":"40px","letterSpacing":"-0.025em","fontWeight":"600"}],"body-sm":["12px",{"lineHeight":"16px","letterSpacing":"0.005em","fontWeight":"400"}],"headline-lg":["24px",{"lineHeight":"32px","letterSpacing":"-0.02em","fontWeight":"600"}],"headline-md":["20px",{"lineHeight":"28px","letterSpacing":"-0.015em","fontWeight":"600"}],"label-sm":["10px",{"lineHeight":"14px","letterSpacing":"0.04em","fontWeight":"600"}]}}}};</script><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head><body class="bg-surface text-on-surface antialiased flex flex-col min-h-screen"><header class="fixed top-0 w-full z-50 pt-safe bg-surface/80 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="h-14 px-margin-mobile flex items-center justify-between"><div class="flex items-center gap-space-sm min-w-0"><img alt="Vanguard Operations Brandmark" class="h-8 w-auto object-contain shrink-0" src="https://lh3.googleusercontent.com/aida/AEtjO1VSgT0qOyjug6Z-LzxIQNPnbNUeinL7ztuA-PSXWGZ1I1ueeYIwX1Fe7VdWby9AefTkk19zvJXjLKdqX4JEnjp6vhIE_O9jsav7dO6RQHi-59fXM7lmLCkn7FD_ajK7Hl42AeNXR0rfd8M4IrmUxltgMHGho3iraH3mvHuP0eyssAsI-WXjmJ-jDdS_11AzvuZQyRbRoYKir9q1MVUbSNcSQj4YsZgDrrW4WvuD0OWBYEa30x-i0WCrZVk"><div class="flex flex-col min-w-0"><span class="font-label-sm text-label-sm text-outline tracking-wider uppercase truncate">Campaign Ops</span><h1 class="font-headline-sm text-headline-sm text-on-surface truncate">Dashboard</h1></div></div><div class="flex items-center gap-space-xs"><button aria-label="Command search" class="w-11 h-11 flex items-center justify-center text-on-surface-variant hover:text-on-surface rounded-full transition-colors" type="button"><span class="material-symbols-outlined">search</span></button><div class="w-11 h-11 flex items-center justify-center"><img alt="Profile" class="w-8 h-8 rounded-full object-cover ring-2 ring-surface-container-high" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBm3uBMdQsvGOiR5Zr2QlhG_0MubgubN4Meq_gujqMGfmSBH_DZYObPWkau_tYirzPh8QkF-XRBzOV6OfYjj4dA36DyJgQeP1dQLnGEnhkAv5L2x0WL7Xxuipurh40_btiuBPsF1EShCVpJ03KwhwrLtuHBJN8IeA4SiWNGD0y3qdbaTn02iwR6T9ui3NJuQcJ5LC3HzJTGRS8GWNPz00Duam8JQZbhEnBR3NKhoiTbT17rTlw7ey7L"></div></div></div></header><main class="flex-1 flex flex-col relative w-full pt-14 pb-28 px-margin-mobile bg-surface"><div class="flex flex-col w-full text-[#F2F4FA] font-['Inter'] antialiased pb-8 space-y-4">
+<!-- 1. Top Section Greeting -->
+<section class="flex items-center justify-between pt-1">
+<div class="flex items-center gap-3 min-w-0">
+<div class="relative shrink-0">
+<div class="w-12 h-12 rounded-full overflow-hidden p-0.5 bg-gradient-to-tr from-[#7C74FF] via-[#3B2FD6] to-[#F5A524]">
+<img class="w-full h-full object-cover rounded-full" data-alt="Close up professional portrait of Rajendra, a charismatic Indian campaign leader in dignified dark navy traditional kurta, confident smile, warm studio lighting with soft indigo rim light, crisp focal clarity." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBkDqaxcugLwTFygXwOhEVMEevpB9Qxp3D1FU7UrNS--fLJLhajyiLFtZNR9WF-aEFh47rH9AWMAHzjwaBgwgyMoH0I8-DVK0D52fhRBa-qdZP14FCj6uqbKDyBMXD1AoNK6R0-mr_Uew9LB4Hv0K0GNw64owXP7GJkm7irDcvlrPGKnKFnyY4mpurnXKR70fW6-ABCkRZNtCOcqA5K_phE2Xd24nfFfHkQag0TOpVVtE-5CxXNrqly">
+</div>
+<span class="absolute bottom-0 right-0 w-3.5 h-3.5 bg-emerald-500 rounded-full border-2 border-[#0B0D14]" title="Active in Field"></span>
+</div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-1.5">
+<h2 class="font-headline-sm text-headline-sm text-[#F2F4FA] tracking-tight truncate">Good morning, Rajendra</h2>
+<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-[#7C74FF]/15 text-[#7C74FF]">HQ</span>
+</div>
+<p class="font-body-sm text-body-sm text-[#9AA2BC] truncate">Campaign Day 18 · 24 days to polling</p>
+</div>
+</div>
+<div class="flex items-center gap-1.5 shrink-0">
+<button aria-label="Quick Search" class="w-9 h-9 rounded-xl bg-[#141824] border border-[#262C3F] flex items-center justify-center text-[#9AA2BC] hover:text-[#F2F4FA] hover:border-[#7C74FF]/50 transition-colors" type="button">
+<span class="material-symbols-outlined text-[19px]">search</span>
+</button>
+<button aria-label="Notifications" class="w-9 h-9 rounded-xl bg-[#141824] border border-[#262C3F] relative flex items-center justify-center text-[#9AA2BC] hover:text-[#F2F4FA] hover:border-[#7C74FF]/50 transition-colors" type="button">
+<span class="material-symbols-outlined text-[19px]">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 rounded-full bg-[#FFAD2E] ring-2 ring-[#141824]"></span>
+</button>
+</div>
+</section>
+<!-- 2. Hero Summary Card (Readiness Gauge & Core Counters) -->
+<section class="relative overflow-hidden rounded-[20px] bg-gradient-to-br from-[#1F195C] via-[#161245] to-[#110E38] border border-[#342D7A] shadow-[0_12px_36px_rgba(17,14,56,0.55)] p-4 text-white">
+<!-- Subtle architectural isometric vector background -->
+<div class="absolute -right-12 -bottom-16 w-60 h-60 opacity-[0.07] pointer-events-none">
+<svg fill="none" stroke="currentColor" stroke-width="1.2" viewBox="0 0 200 200">
+<pattern height="20" id="topo" patternUnits="userSpaceOnUse" width="20">
+<path d="M0 10h20M10 0v20"></path>
+</pattern>
+<rect fill="url(#topo)" height="200" width="200"></rect>
+<circle cx="100" cy="100" r="70"></circle>
+<circle cx="100" cy="100" r="45"></circle>
+</svg>
+</div>
+<div class="relative z-10 flex flex-col gap-3.5">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-[#7C74FF] shadow-[0_0_8px_#7C74FF]"></span>
+<span class="text-[11px] font-semibold uppercase tracking-wider text-[#C2C1FF]">Campaign Readiness</span>
+</div>
+<span class="px-2 py-0.5 rounded-full text-[11px] font-medium bg-[#7C74FF]/25 text-[#E2DFFF] border border-[#7C74FF]/30 flex items-center gap-1">
+<span class="material-symbols-outlined text-[13px]">trending_up</span> +6% this week
+        </span>
+</div>
+<div class="flex items-center gap-4">
+<!-- Radial Gauge -->
+<div class="relative w-24 h-24 shrink-0 flex items-center justify-center">
+<svg class="w-full h-full -rotate-90 transform" viewBox="0 0 96 96">
+<circle cx="48" cy="48" fill="none" r="40" stroke="#251F6E" stroke-width="8"></circle>
+<circle cx="48" cy="48" fill="none" r="40" stroke="#7C74FF" stroke-dasharray="251.3" stroke-dashoffset="70.36" stroke-linecap="round" stroke-width="8"></circle>
+</svg>
+<div class="absolute inset-0 flex flex-col items-center justify-center text-center">
+<span class="font-headline-lg text-headline-lg font-bold tracking-tight text-white leading-none [font-feature-settings:'tnum']">72<span class="text-sm font-normal text-[#C2C1FF]">%</span></span>
+<span class="text-[9px] uppercase tracking-wider text-[#A5A0F5] font-medium mt-0.5">Target Met</span>
+</div>
+</div>
+<!-- 3 Tabular stats -->
+<div class="flex flex-col flex-1 divide-y divide-white/10">
+<div class="pb-1.5 flex items-center justify-between">
+<span class="font-body-sm text-body-sm text-[#C2C1FF]">Booths covered</span>
+<span class="font-metric-tabular text-[13px] text-white font-semibold"><span class="text-[#7C74FF]">184</span> / 240</span>
+</div>
+<div class="py-1.5 flex items-center justify-between">
+<span class="font-body-sm text-body-sm text-[#C2C1FF]">Active field workers</span>
+<span class="font-metric-tabular text-[13px] text-white font-semibold">96</span>
+</div>
+<div class="pt-1.5 flex items-center justify-between">
+<span class="font-body-sm text-body-sm text-[#C2C1FF]">Tasks done today</span>
+<span class="font-metric-tabular text-[13px] text-emerald-400 font-semibold">+38</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- 3. Quick Actions Row -->
+<section class="grid grid-cols-4 gap-2">
+<button class="group flex flex-col items-center justify-center p-2.5 rounded-[14px] bg-[#141824] border border-[#262C3F] active:scale-95 hover:border-[#7C74FF]/60 transition-all text-center" type="button">
+<div class="w-8 h-8 rounded-lg bg-[#7C74FF]/10 text-[#7C74FF] group-hover:bg-[#7C74FF] group-hover:text-white transition-colors flex items-center justify-center mb-1">
+<span class="material-symbols-outlined text-[18px]">add_task</span>
+</div>
+<span class="font-label-sm text-[11px] text-[#F2F4FA] font-medium">New Task</span>
+</button>
+<button class="group flex flex-col items-center justify-center p-2.5 rounded-[14px] bg-[#141824] border border-[#262C3F] active:scale-95 hover:border-[#FFAD2E]/60 transition-all text-center" type="button">
+<div class="w-8 h-8 rounded-lg bg-[#FFAD2E]/10 text-[#FFAD2E] group-hover:bg-[#FFAD2E] group-hover:text-[#0B0D14] transition-colors flex items-center justify-center mb-1">
+<span class="material-symbols-outlined text-[18px]">warning</span>
+</div>
+<span class="font-label-sm text-[11px] text-[#F2F4FA] font-medium">Report Issue</span>
+</button>
+<button class="group flex flex-col items-center justify-center p-2.5 rounded-[14px] bg-[#141824] border border-[#262C3F] active:scale-95 hover:border-[#7C74FF]/60 transition-all text-center" type="button">
+<div class="w-8 h-8 rounded-lg bg-[#7C74FF]/10 text-[#7C74FF] group-hover:bg-[#7C74FF] group-hover:text-white transition-colors flex items-center justify-center mb-1">
+<span class="material-symbols-outlined text-[18px]">event_available</span>
+</div>
+<span class="font-label-sm text-[11px] text-[#F2F4FA] font-medium">Add Event</span>
+</button>
+<button class="group flex flex-col items-center justify-center p-2.5 rounded-[14px] bg-[#141824] border border-[#262C3F] active:scale-95 hover:border-[#7C74FF]/60 transition-all text-center" type="button">
+<div class="w-8 h-8 rounded-lg bg-[#7C74FF]/10 text-[#7C74FF] group-hover:bg-[#7C74FF] group-hover:text-white transition-colors flex items-center justify-center mb-1">
+<span class="material-symbols-outlined text-[18px]">location_on</span>
+</div>
+<span class="font-label-sm text-[11px] text-[#F2F4FA] font-medium">Check-in</span>
+</button>
+</section>
+<!-- 4. Key Metric Tiles (2 x 2 grid) -->
+<section class="grid grid-cols-2 gap-2.5">
+<!-- Card 1: Pending Tasks -->
+<div class="rounded-[20px] bg-[#141824] border border-[#262C3F] p-3.5 flex flex-col justify-between">
+<div class="flex items-center justify-between">
+<span class="text-[10px] font-semibold uppercase tracking-wider text-[#9AA2BC]">Pending Tasks</span>
+<div class="w-6 h-6 rounded-md bg-[#FFAD2E]/10 flex items-center justify-center text-[#FFAD2E]">
+<span class="material-symbols-outlined text-[15px]">pending_actions</span>
+</div>
+</div>
+<div class="my-2 flex items-baseline justify-between">
+<span class="font-headline-xl-mobile text-headline-xl-mobile font-bold text-[#F2F4FA] [font-feature-settings:'tnum']">54</span>
+<span class="text-[11px] font-medium text-[#FFAD2E] flex items-center">
+          +4 today
+        </span>
+</div>
+<!-- Mini Sparkline (Amber) -->
+<div class="h-6 w-full">
+<svg class="w-full h-full overflow-visible" preserveAspectRatio="none" viewBox="0 0 100 24">
+<path d="M0,18 Q16,8 32,14 T64,6 T100,12" fill="none" stroke="#FFAD2E" stroke-linecap="round" stroke-width="2"></path>
+<circle cx="100" cy="12" fill="#FFAD2E" r="2.5"></circle>
+</svg>
+</div>
+</div>
+<!-- Card 2: Open Civic Issues -->
+<div class="rounded-[20px] bg-[#141824] border border-[#262C3F] p-3.5 flex flex-col justify-between">
+<div class="flex items-center justify-between">
+<span class="text-[10px] font-semibold uppercase tracking-wider text-[#9AA2BC]">Open Issues</span>
+<div class="w-6 h-6 rounded-md bg-rose-500/10 flex items-center justify-center text-rose-400">
+<span class="material-symbols-outlined text-[15px]">report_problem</span>
+</div>
+</div>
+<div class="my-2 flex items-baseline justify-between">
+<span class="font-headline-xl-mobile text-headline-xl-mobile font-bold text-[#F2F4FA] [font-feature-settings:'tnum']">17</span>
+<span class="text-[11px] font-medium text-rose-400 flex items-center">
+          3 critical
+        </span>
+</div>
+<!-- Mini Sparkline (Red) -->
+<div class="h-6 w-full">
+<svg class="w-full h-full overflow-visible" preserveAspectRatio="none" viewBox="0 0 100 24">
+<path d="M0,10 Q25,20 50,14 T80,4 T100,8" fill="none" stroke="#F43F5E" stroke-linecap="round" stroke-width="2"></path>
+<circle cx="100" cy="8" fill="#F43F5E" r="2.5"></circle>
+</svg>
+</div>
+</div>
+<!-- Card 3: Meetings this week -->
+<div class="rounded-[20px] bg-[#141824] border border-[#262C3F] p-3.5 flex flex-col justify-between">
+<div class="flex items-center justify-between">
+<span class="text-[10px] font-semibold uppercase tracking-wider text-[#9AA2BC]">Meetings Week</span>
+<div class="w-6 h-6 rounded-md bg-[#7C74FF]/10 flex items-center justify-center text-[#7C74FF]">
+<span class="material-symbols-outlined text-[15px]">groups</span>
+</div>
+</div>
+<div class="my-2 flex items-baseline justify-between">
+<span class="font-headline-xl-mobile text-headline-xl-mobile font-bold text-[#F2F4FA] [font-feature-settings:'tnum']">9</span>
+<span class="text-[11px] font-medium text-[#7C74FF]">
+          2 scheduled today
+        </span>
+</div>
+<!-- Mini Sparkline (Indigo) -->
+<div class="h-6 w-full">
+<svg class="w-full h-full overflow-visible" preserveAspectRatio="none" viewBox="0 0 100 24">
+<path d="M0,16 Q20,16 40,8 T70,14 T100,4" fill="none" stroke="#7C74FF" stroke-linecap="round" stroke-width="2"></path>
+<circle cx="100" cy="4" fill="#7C74FF" r="2.5"></circle>
+</svg>
+</div>
+</div>
+<!-- Card 4: Expenses Logged -->
+<div class="rounded-[20px] bg-[#141824] border border-[#262C3F] p-3.5 flex flex-col justify-between">
+<div class="flex items-center justify-between">
+<span class="text-[10px] font-semibold uppercase tracking-wider text-[#9AA2BC]">Expenses Logged</span>
+<div class="w-6 h-6 rounded-md bg-emerald-500/10 flex items-center justify-center text-emerald-400">
+<span class="material-symbols-outlined text-[15px]">receipt_long</span>
+</div>
+</div>
+<div class="my-2 flex items-baseline justify-between">
+<span class="font-headline-xl-mobile text-headline-xl-mobile font-bold text-[#F2F4FA] [font-feature-settings:'tnum']">&amp;#8377;1.2L</span>
+<span class="text-[11px] font-medium text-emerald-400">
+          68% budget
+        </span>
+</div>
+<!-- Mini Sparkline (Green) -->
+<div class="h-6 w-full">
+<svg class="w-full h-full overflow-visible" preserveAspectRatio="none" viewBox="0 0 100 24">
+<path d="M0,20 Q30,15 60,18 T90,8 T100,6" fill="none" stroke="#10B981" stroke-linecap="round" stroke-width="2"></path>
+<circle cx="100" cy="6" fill="#10B981" r="2.5"></circle>
+</svg>
+</div>
+</div>
+</section>
+<!-- 5a. Task Completion This Week Card -->
+<section class="rounded-[20px] bg-[#141824] border border-[#262C3F] p-4">
+<div class="flex items-center justify-between mb-3">
+<div>
+<h3 class="font-headline-sm text-headline-sm text-[#F2F4FA]">Task completion</h3>
+<p class="font-body-sm text-body-sm text-[#9AA2BC]">Daily canonical field logs</p>
+</div>
+<!-- Segmented Control Toggle -->
+<div class="flex items-center bg-[#0B0D14] p-0.5 rounded-lg border border-[#262C3F]">
+<button class="px-2.5 py-1 text-[11px] font-semibold rounded-md bg-[#7C74FF] text-white shadow-sm" type="button">7D</button>
+<button class="px-2.5 py-1 text-[11px] font-medium text-[#9AA2BC] hover:text-[#F2F4FA] transition-colors" type="button">30D</button>
+</div>
+</div>
+<!-- Area Chart Canvas Container -->
+<div class="relative w-full h-44 mt-4">
+<svg class="w-full h-full overflow-visible" preserveAspectRatio="none" viewBox="0 0 320 140">
+<defs>
+<linearGradient id="areaGradientDark" x1="0" x2="0" y1="0" y2="1">
+<stop offset="0%" stop-color="#7C74FF" stop-opacity="0.38"></stop>
+<stop offset="100%" stop-color="#7C74FF" stop-opacity="0.00"></stop>
+</linearGradient>
+</defs>
+<!-- Gridlines -->
+<line stroke="#262C3F" stroke-dasharray="3 3" stroke-width="1" x1="0" x2="320" y1="30" y2="30"></line>
+<line stroke="#262C3F" stroke-dasharray="3 3" stroke-width="1" x1="0" x2="320" y1="75" y2="75"></line>
+<line stroke="#262C3F" stroke-width="1" x1="0" x2="320" y1="120" y2="120"></line>
+<!-- Gradient Fill Path -->
+<path d="M10,105 C40,95 70,80 110,35 C150,65 190,45 230,85 C270,75 295,30 310,24 L310,120 L10,120 Z" fill="url(#areaGradientDark)"></path>
+<!-- Main Stroke Line -->
+<path d="M10,105 C40,95 70,80 110,35 C150,65 190,45 230,85 C270,75 295,30 310,24" fill="none" stroke="#7C74FF" stroke-linecap="round" stroke-width="2.5"></path>
+<!-- Data Nodes -->
+<circle cx="10" cy="105" fill="#141824" r="3" stroke="#7C74FF" stroke-width="2"></circle>
+<circle cx="60" cy="88" fill="#141824" r="3" stroke="#7C74FF" stroke-width="2"></circle>
+<circle cx="110" cy="35" fill="#7C74FF" r="5" stroke="#FFFFFF" stroke-width="2"></circle>
+<circle cx="160" cy="62" fill="#141824" r="3" stroke="#7C74FF" stroke-width="2"></circle>
+<circle cx="210" cy="65" fill="#141824" r="3" stroke="#7C74FF" stroke-width="2"></circle>
+<circle cx="260" cy="78" fill="#141824" r="3" stroke="#7C74FF" stroke-width="2"></circle>
+<circle cx="310" cy="24" fill="#141824" r="3" stroke="#7C74FF" stroke-width="2"></circle>
+</svg>
+<!-- Tooltip Bubble on Wed -->
+<div class="absolute left-[88px] top-0 -translate-y-1 bg-[#1F195C] border border-[#7C74FF] rounded-lg px-2 py-0.5 shadow-lg flex items-center gap-1.5 pointer-events-none">
+<span class="w-1.5 h-1.5 rounded-full bg-[#7C74FF]"></span>
+<span class="text-[10px] font-semibold text-white tracking-wide">Wed · 42 done</span>
+</div>
+<!-- X-axis Labels -->
+<div class="flex justify-between items-center text-[10px] font-medium text-[#9AA2BC] pt-2 px-1">
+<span>Mon</span>
+<span>Tue</span>
+<span class="text-[#7C74FF] font-bold">Wed</span>
+<span>Thu</span>
+<span>Fri</span>
+<span>Sat</span>
+<span>Sun</span>
+</div>
+</div>
+</section>
+<!-- 5b. Booth Coverage by Ward -->
+<section class="rounded-[20px] bg-[#141824] border border-[#262C3F] p-4">
+<div class="flex items-center justify-between mb-3.5">
+<div>
+<h3 class="font-headline-sm text-headline-sm text-[#F2F4FA]">Booth coverage by ward</h3>
+<p class="font-body-sm text-body-sm text-[#9AA2BC]">Target: ≥ 70% per zone before Day 20</p>
+</div>
+<span class="material-symbols-outlined text-[#9AA2BC]">analytics</span>
+</div>
+<div class="space-y-3">
+<!-- Ward 4 -->
+<div>
+<div class="flex justify-between text-[12px] font-medium mb-1">
+<span class="text-[#F2F4FA]">Ward 4 (Shivaji Nagar)</span>
+<span class="font-metric-tabular text-[12px] font-semibold text-[#7C74FF]">88%</span>
+</div>
+<div class="w-full h-2 rounded-full bg-[#0B0D14] overflow-hidden">
+<div class="h-full rounded-full bg-[#7C74FF]" style="width: 88%"></div>
+</div>
+</div>
+<!-- Ward 7 -->
+<div>
+<div class="flex justify-between text-[12px] font-medium mb-1">
+<span class="text-[#F2F4FA]">Ward 7 (Kothrud North)</span>
+<span class="font-metric-tabular text-[12px] font-semibold text-[#7C74FF]">75%</span>
+</div>
+<div class="w-full h-2 rounded-full bg-[#0B0D14] overflow-hidden">
+<div class="h-full rounded-full bg-[#7C74FF]" style="width: 75%"></div>
+</div>
+</div>
+<!-- Ward 12 -->
+<div>
+<div class="flex justify-between text-[12px] font-medium mb-1">
+<span class="text-[#F2F4FA]">Ward 12 (Central Market)</span>
+<span class="font-metric-tabular text-[12px] font-semibold text-[#7C74FF]">64%</span>
+</div>
+<div class="w-full h-2 rounded-full bg-[#0B0D14] overflow-hidden">
+<div class="h-full rounded-full bg-[#7C74FF]/80" style="width: 64%"></div>
+</div>
+</div>
+<!-- Ward 9 -->
+<div>
+<div class="flex justify-between text-[12px] font-medium mb-1">
+<span class="text-[#F2F4FA]">Ward 9 (Industrial Belt)</span>
+<span class="font-metric-tabular text-[12px] font-semibold text-[#9AA2BC]">52%</span>
+</div>
+<div class="w-full h-2 rounded-full bg-[#0B0D14] overflow-hidden">
+<div class="h-full rounded-full bg-[#7C74FF]/60" style="width: 52%"></div>
+</div>
+</div>
+<!-- Ward 15 -->
+<div>
+<div class="flex justify-between text-[12px] font-medium mb-1">
+<span class="text-[#F2F4FA]">Ward 15 (University Hills)</span>
+<span class="font-metric-tabular text-[12px] font-semibold text-[#9AA2BC]">48%</span>
+</div>
+<div class="w-full h-2 rounded-full bg-[#0B0D14] overflow-hidden">
+<div class="h-full rounded-full bg-[#7C74FF]/50" style="width: 48%"></div>
+</div>
+</div>
+<!-- Ward 18 (Amber Attention) -->
+<div>
+<div class="flex justify-between text-[12px] font-medium mb-1">
+<span class="text-[#FFAD2E] flex items-center gap-1">Ward 18 (Cantonment) <span class="material-symbols-outlined text-[13px]">priority_high</span></span>
+<span class="font-metric-tabular text-[12px] font-semibold text-[#FFAD2E]">34%</span>
+</div>
+<div class="w-full h-2 rounded-full bg-[#0B0D14] overflow-hidden">
+<div class="h-full rounded-full bg-[#FFAD2E]" style="width: 34%"></div>
+</div>
+</div>
+</div>
+</section>
+<!-- 5c. Issues by Category Card -->
+<section class="rounded-[20px] bg-[#141824] border border-[#262C3F] p-4">
+<div class="flex items-center justify-between mb-3">
+<div>
+<h3 class="font-headline-sm text-headline-sm text-[#F2F4FA]">Issues by category</h3>
+<p class="font-body-sm text-body-sm text-[#9AA2BC]">Field grievance reports</p>
+</div>
+<button class="text-[11px] font-semibold text-[#7C74FF] hover:underline" type="button">View All</button>
+</div>
+<div class="flex items-center gap-4 pt-1">
+<!-- SVG Donut Chart with Center Label -->
+<div class="relative w-28 h-28 shrink-0">
+<svg class="w-full h-full -rotate-90 transform" viewBox="0 0 100 100">
+<!-- Water: 6 / 17 (35%) -> ~79 -->
+<circle cx="50" cy="50" fill="none" r="36" stroke="#7C74FF" stroke-dasharray="226.2" stroke-dashoffset="147" stroke-width="12"></circle>
+<!-- Roads: 4 / 17 (23%) -> ~53 -->
+<circle cx="50" cy="50" fill="none" r="36" stroke="#FFAD2E" stroke-dasharray="226.2" stroke-dashoffset="0" stroke-width="12" style="transform-origin: center; transform: rotate(126deg);"></circle>
+<!-- Power: 3 / 17 (18%) -->
+<circle cx="50" cy="50" fill="none" r="36" stroke="#10B981" stroke-dasharray="226.2" stroke-dashoffset="185" stroke-width="12" style="transform-origin: center; transform: rotate(209deg);"></circle>
+<!-- Sanitation: 2 / 17 (12%) -->
+<circle cx="50" cy="50" fill="none" r="36" stroke="#F43F5E" stroke-dasharray="226.2" stroke-dashoffset="199" stroke-width="12" style="transform-origin: center; transform: rotate(273deg);"></circle>
+<!-- Other: 2 / 17 (12%) -->
+<circle cx="50" cy="50" fill="none" r="36" stroke="#64748B" stroke-dasharray="226.2" stroke-dashoffset="199" stroke-width="12" style="transform-origin: center; transform: rotate(316deg);"></circle>
+</svg>
+<div class="absolute inset-0 flex flex-col items-center justify-center text-center">
+<span class="font-metric-tabular text-[17px] font-bold text-white leading-none">17</span>
+<span class="text-[9px] uppercase tracking-wide text-[#9AA2BC] font-medium mt-0.5">Issues</span>
+</div>
+</div>
+<!-- Donut Legend Grid -->
+<div class="flex-1 grid grid-cols-1 gap-1.5 text-[11px]">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-1.5">
+<span class="w-2.5 h-2.5 rounded-sm bg-[#7C74FF]"></span>
+<span class="text-[#F2F4FA]">Water Supply</span>
+</div>
+<span class="font-metric-tabular font-semibold text-[#9AA2BC]">6</span>
+</div>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-1.5">
+<span class="w-2.5 h-2.5 rounded-sm bg-[#FFAD2E]"></span>
+<span class="text-[#F2F4FA]">Road repairs</span>
+</div>
+<span class="font-metric-tabular font-semibold text-[#9AA2BC]">4</span>
+</div>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-1.5">
+<span class="w-2.5 h-2.5 rounded-sm bg-[#10B981]"></span>
+<span class="text-[#F2F4FA]">Electricity</span>
+</div>
+<span class="font-metric-tabular font-semibold text-[#9AA2BC]">3</span>
+</div>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-1.5">
+<span class="w-2.5 h-2.5 rounded-sm bg-[#F43F5E]"></span>
+<span class="text-[#F2F4FA]">Sanitation</span>
+</div>
+<span class="font-metric-tabular font-semibold text-[#9AA2BC]">2</span>
+</div>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-1.5">
+<span class="w-2.5 h-2.5 rounded-sm bg-[#64748B]"></span>
+<span class="text-[#F2F4FA]">Other civic</span>
+</div>
+<span class="font-metric-tabular font-semibold text-[#9AA2BC]">2</span>
+</div>
+</div>
+</div>
+</section>
+<!-- 6. Needs Attention Card -->
+<section class="rounded-[20px] bg-[#141824] border border-[#262C3F] p-4">
+<div class="flex items-center justify-between mb-3">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span>
+<h3 class="font-headline-sm text-headline-sm text-[#F2F4FA]">Needs attention</h3>
+</div>
+<span class="text-[11px] font-semibold text-rose-400 bg-rose-500/10 px-2 py-0.5 rounded-full border border-rose-500/20">3 Urgent</span>
+</div>
+<div class="divide-y divide-[#262C3F]/60">
+<!-- Item 1 -->
+<div class="py-2.5 flex items-start justify-between gap-2.5">
+<div class="flex items-start gap-2.5 min-w-0">
+<span class="w-2 h-2 rounded-full bg-rose-500 mt-1.5 shrink-0"></span>
+<div class="min-w-0">
+<h4 class="font-label-lg text-[13px] text-[#F2F4FA] font-medium truncate">Shortage of voter slips</h4>
+<p class="font-body-sm text-body-sm text-[#9AA2BC] truncate">Booth 142 · Ward 18 (Govt High School)</p>
+</div>
+</div>
+<span class="text-[10px] font-medium text-[#9AA2BC] shrink-0 mt-0.5">14m ago</span>
+</div>
+<!-- Item 2 -->
+<div class="py-2.5 flex items-start justify-between gap-2.5">
+<div class="flex items-start gap-2.5 min-w-0">
+<span class="w-2 h-2 rounded-full bg-[#FFAD2E] mt-1.5 shrink-0"></span>
+<div class="min-w-0">
+<h4 class="font-label-lg text-[13px] text-[#F2F4FA] font-medium truncate">Canvasser no-show reported</h4>
+<p class="font-body-sm text-body-sm text-[#9AA2BC] truncate">Booth 89 · Ward 7 (Kothrud Colony)</p>
+</div>
+</div>
+<span class="text-[10px] font-medium text-[#9AA2BC] shrink-0 mt-0.5">42m ago</span>
+</div>
+<!-- Item 3 -->
+<div class="pt-2.5 flex items-start justify-between gap-2.5">
+<div class="flex items-start gap-2.5 min-w-0">
+<span class="w-2 h-2 rounded-full bg-[#FFAD2E] mt-1.5 shrink-0"></span>
+<div class="min-w-0">
+<h4 class="font-label-lg text-[13px] text-[#F2F4FA] font-medium truncate">Micro-pamphlets replenishment pending</h4>
+<p class="font-body-sm text-body-sm text-[#9AA2BC] truncate">Booth 33 · Ward 4 (Station Road Hub)</p>
+</div>
+</div>
+<span class="text-[10px] font-medium text-[#9AA2BC] shrink-0 mt-0.5">1h ago</span>
+</div>
+</div>
+</section>
+<!-- 7. Upcoming Card (Timeline Events) -->
+<section class="rounded-[20px] bg-[#141824] border border-[#262C3F] p-4">
+<div class="flex items-center justify-between mb-3">
+<h3 class="font-headline-sm text-headline-sm text-[#F2F4FA]">Upcoming today</h3>
+<span class="font-label-md text-label-md text-[#7C74FF] font-medium">Calendar view</span>
+</div>
+<div class="space-y-3">
+<!-- Event 1 -->
+<div class="flex items-center gap-3 p-2 rounded-xl bg-[#0B0D14]/60 border border-[#262C3F]/70">
+<div class="w-12 h-12 rounded-lg bg-[#7C74FF]/15 border border-[#7C74FF]/30 flex flex-col items-center justify-center shrink-0 text-center">
+<span class="text-[10px] font-bold uppercase text-[#7C74FF]">11:00</span>
+<span class="text-[9px] font-medium text-[#C2C1FF]">AM</span>
+</div>
+<div class="flex-1 min-w-0">
+<h4 class="font-label-lg text-[13px] text-[#F2F4FA] font-medium truncate">Senior Citizen Federation Townhall</h4>
+<p class="font-body-sm text-body-sm text-[#9AA2BC] truncate">Community Hall, Ward 4 · 120 expected</p>
+</div>
+<span class="material-symbols-outlined text-[#9AA2BC] text-[18px]">chevron_right</span>
+</div>
+<!-- Event 2 -->
+<div class="flex items-center gap-3 p-2 rounded-xl bg-[#0B0D14]/60 border border-[#262C3F]/70">
+<div class="w-12 h-12 rounded-lg bg-[#141824] border border-[#262C3F] flex flex-col items-center justify-center shrink-0 text-center">
+<span class="text-[10px] font-bold uppercase text-[#F2F4FA]">03:30</span>
+<span class="text-[9px] font-medium text-[#9AA2BC]">PM</span>
+</div>
+<div class="flex-1 min-w-0">
+<h4 class="font-label-lg text-[13px] text-[#F2F4FA] font-medium truncate">Ward 18 Core Volunteer Sync</h4>
+<p class="font-body-sm text-body-sm text-[#9AA2BC] truncate">Zone 3 Field Office · In-person</p>
+</div>
+<span class="material-symbols-outlined text-[#9AA2BC] text-[18px]">chevron_right</span>
+</div>
+<!-- Event 3 -->
+<div class="flex items-center gap-3 p-2 rounded-xl bg-[#0B0D14]/60 border border-[#262C3F]/70">
+<div class="w-12 h-12 rounded-lg bg-[#141824] border border-[#262C3F] flex flex-col items-center justify-center shrink-0 text-center">
+<span class="text-[10px] font-bold uppercase text-[#F2F4FA]">07:00</span>
+<span class="text-[9px] font-medium text-[#9AA2BC]">PM</span>
+</div>
+<div class="flex-1 min-w-0">
+<h4 class="font-label-lg text-[13px] text-[#F2F4FA] font-medium truncate">Door-to-Door Padyatra Wave 3</h4>
+<p class="font-body-sm text-body-sm text-[#9AA2BC] truncate">Sector 9 Chowk to Main Market</p>
+</div>
+<span class="material-symbols-outlined text-[#9AA2BC] text-[18px]">chevron_right</span>
+</div>
+</div>
+</section>
+<!-- 8. Recent Activity Feed -->
+<section class="rounded-[20px] bg-[#141824] border border-[#262C3F] p-4">
+<div class="flex items-center justify-between mb-3">
+<h3 class="font-headline-sm text-headline-sm text-[#F2F4FA]">Live field telemetry</h3>
+<span class="text-[10px] font-semibold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Streaming
+      </span>
+</div>
+<div class="divide-y divide-[#262C3F]/60">
+<!-- Activity 1 -->
+<div class="py-2.5 flex items-center justify-between gap-3">
+<div class="flex items-center gap-2.5 min-w-0">
+<div class="w-8 h-8 rounded-full bg-[#7C74FF]/20 text-[#7C74FF] font-semibold text-[11px] flex items-center justify-center shrink-0">
+            VK
+          </div>
+<div class="min-w-0">
+<p class="font-label-lg text-[12px] text-[#F2F4FA] truncate">
+<span class="font-semibold text-white">Vikram K.</span> completed voter canvas
+            </p>
+<p class="text-[11px] text-[#9AA2BC] truncate">46 houses covered in Booth 112</p>
+</div>
+</div>
+<span class="text-[10px] font-medium text-[#9AA2BC] shrink-0">2m ago</span>
+</div>
+<!-- Activity 2 -->
+<div class="py-2.5 flex items-center justify-between gap-3">
+<div class="flex items-center gap-2.5 min-w-0">
+<div class="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-400 font-semibold text-[11px] flex items-center justify-center shrink-0">
+            PS
+          </div>
+<div class="min-w-0">
+<p class="font-label-lg text-[12px] text-[#F2F4FA] truncate">
+<span class="font-semibold text-white">Pooja S.</span> resolved civic issue #104
+            </p>
+<p class="text-[11px] text-[#9AA2BC] truncate">Streetlight outage verified fixed</p>
+</div>
+</div>
+<span class="text-[10px] font-medium text-[#9AA2BC] shrink-0">11m ago</span>
+</div>
+<!-- Activity 3 -->
+<div class="pt-2.5 flex items-center justify-between gap-3">
+<div class="flex items-center gap-2.5 min-w-0">
+<div class="w-8 h-8 rounded-full bg-[#FFAD2E]/20 text-[#FFAD2E] font-semibold text-[11px] flex items-center justify-center shrink-0">
+            AM
+          </div>
+<div class="min-w-0">
+<p class="font-label-lg text-[12px] text-[#F2F4FA] truncate">
+<span class="font-semibold text-white">Anand M.</span> logged logistics expense
+            </p>
+<p class="text-[11px] text-[#9AA2BC] truncate">&amp;#8377;4,200 for sound system permits</p>
+</div>
+</div>
+<span class="text-[10px] font-medium text-[#9AA2BC] shrink-0">28m ago</span>
+</div>
+</div>
+</section>
+</div>
+<script>
+  // Simple interactive feedback for action buttons and segmented control
+  document.querySelectorAll('button').forEach(btn => {
+    btn.addEventListener('click', function() {
+      // Haptic-like visual response
+      this.classList.add('opacity-75');
+      setTimeout(() => this.classList.remove('opacity-75'), 120);
+    });
+  });
+</script></main><div class="fixed bottom-0 w-full z-50 pb-safe pointer-events-none"><div class="px-margin-mobile pb-3 w-full max-w-[420px] mx-auto"><nav class="pointer-events-auto bg-surface-container-lowest/85 backdrop-blur-xl rounded-full shadow-[0_8px_30px_rgba(15,18,34,0.08)] p-1.5 flex items-center justify-between" data-active-classes="bg-primary-container text-on-primary font-semibold shadow-sm"><a aria-current="page" class="flex items-center justify-center gap-space-xs min-h-[44px] px-3.5 rounded-full transition-all shrink-0 bg-primary-container text-on-primary font-semibold shadow-sm" data-path="dashboard" href="#"><span class="material-symbols-outlined">grid_view</span><span class="font-label-md text-label-md">Home</span></a><a class="flex items-center justify-center min-w-[44px] min-h-[44px] px-2.5 rounded-full text-on-surface-variant hover:text-on-surface transition-all shrink-0" data-path="precinct-booths" href="#"><span class="material-symbols-outlined">how_to_vote</span></a><a class="flex items-center justify-center min-w-[44px] min-h-[44px] px-2.5 rounded-full text-on-surface-variant hover:text-on-surface transition-all shrink-0" data-path="field-tasks" href="#"><span class="material-symbols-outlined">checklist</span></a><a class="flex items-center justify-center min-w-[44px] min-h-[44px] px-2.5 rounded-full text-on-surface-variant hover:text-on-surface transition-all shrink-0" data-path="operations-calendar" href="#"><span class="material-symbols-outlined">calendar_today</span></a><a class="flex items-center justify-center min-w-[44px] min-h-[44px] px-2.5 rounded-full text-on-surface-variant hover:text-on-surface transition-all shrink-0" data-path="operations-more" href="#"><span class="material-symbols-outlined">tune</span></a></nav></div></div></body></html>

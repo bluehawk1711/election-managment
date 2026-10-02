@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "645380491584",
+    "project_id": "election-managment",
+    "storage_bucket": "election-managment.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:645380491584:android:ea6c6083c1d2a11ca552a5",
+        "android_client_info": {
+          "package_name": "com.campaignos.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAK3DEXdnwpH78vNV3YLIiizwaAoB0rciA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

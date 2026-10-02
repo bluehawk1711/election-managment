@@ -1,0 +1,22 @@
+# One-off debug tooling output at repo root (PDF/glyph extraction)
+/__pycache__/
+/_*.py
+/_*.txt
+/_*.log
+/_*.png
+/_*.ttf
+/_*.bin
+/_*.ps1
+/pip.done
+/piperr.txt
+/pipout.txt
+
+# Credentials & env — never commit, anywhere (mobile/.gitignore has the
+# in-app copies too; these patterns are the root-level safety net).
+**/.env
+**/.env.*
+**/service-account*.json
+
+# Dependencies & build output
+**/node_modules/
+**/.expo/

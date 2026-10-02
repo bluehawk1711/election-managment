@@ -1,0 +1,26 @@
+{
+  "//": [
+    "Composite indexes. Firestore builds single-field indexes automatically, so",
+    "only queries that combine fields need an entry here.",
+    "",
+    "This file is deliberately empty. Every query in the app is either:",
+    "",
+    "  1. a plain collection read (rules allow it for any signed-in user, so",
+    "     nothing needs proving per-row), or",
+    "  2. a single equality filter — where('boothId','==',x) — which the",
+    "     automatic single-field index serves on its own.",
+    "",
+    "Multi-criteria filtering (status + assignee + text search + ...) happens",
+    "in-memory via lib/filters.ts rather than in the query. That is a",
+    "prototype-scale trade: it keeps this file empty and the deploy free of",
+    "composite-index management. The moment a query needs where(...) on one",
+    "field combined with orderBy on another, Firestore will reject it and the",
+    "error carries a console URL that creates exactly the right index — paste",
+    "the result here and commit it.",
+    "",
+    "Reading a single document needs no index: document reads are never",
+    "indexed queries."
+  ],
+  "indexes": [],
+  "fieldOverrides": []
+}

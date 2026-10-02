@@ -1,0 +1,293 @@
+name: Build Android APK
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_type:
+        description: "Build type"
+        required: true
+        type: choice
+        options:
+          - dev
+          - release
+        default: dev
+
+# Cancel in-progress runs for the same branch
+concurrency:
+  group: android-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: "20"
+  JAVA_VERSION: "17"
+  PNPM_VERSION: "11"
+
+jobs:
+  build:
+    name: "Build ${{ inputs.build_type }} APK"
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    environment: ${{ inputs.build_type == 'release' && 'production' || 'dev' }}
+    defaults:
+      run:
+        shell: bash
+        working-directory: mobile
+
+    steps:
+      # ── Free disk space (release builds need it) ───────────────────────
+      - name: Free disk space
+        if: inputs.build_type == 'release'
+        run: |
+          df -h /
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/.ghcup \
+            /usr/local/share/boost /usr/share/swift /opt/hostedtoolcache/CodeQL \
+            /usr/local/lib/heroku /usr/lib/jvm/temurin-8* /usr/lib/jvm/temurin-11*
+          sudo docker image prune --all --force || true
+          sudo apt-get clean
+          df -h /
+
+      # ── Setup ──────────────────────────────────────────────────────────
+      # fetch-depth: 0 — the versionCode below is derived from the commit
+      # count, which a shallow depth-1 clone would report as 1 forever.
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
+
+      - name: Cache pnpm dependencies
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('mobile/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # ── Java / Gradle ──────────────────────────────────────────────────
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('mobile/pnpm-lock.yaml', 'mobile/app.json', 'mobile/app.config.ts') }}
+          restore-keys: |
+            gradle-${{ runner.os }}-
+
+      # ── Environment ────────────────────────────────────────────────────
+      # EXPO_PUBLIC_* values are inlined into the JS bundle by babel at build
+      # time — Metro reads this file itself, so nothing else has to pass them
+      # along. Missing secrets expand to empty lines; lib/firebase.ts fails
+      # loudly at startup if apiKey/projectId are blank.
+      - name: Write .env file
+        run: |
+          # Quoted terminator: ${{ secrets.* }} is substituted by Actions
+          # before bash runs, and the quotes stop the shell from also
+          # expanding any `$` that happens to appear inside a secret.
+          cat > .env << 'ENVEOF'
+          EXPO_PUBLIC_FIREBASE_API_KEY=${{ secrets.EXPO_PUBLIC_FIREBASE_API_KEY }}
+          EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN=${{ secrets.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN }}
+          EXPO_PUBLIC_FIREBASE_PROJECT_ID=${{ secrets.EXPO_PUBLIC_FIREBASE_PROJECT_ID }}
+          EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET=${{ secrets.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET }}
+          EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=${{ secrets.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }}
+          EXPO_PUBLIC_FIREBASE_APP_ID=${{ secrets.EXPO_PUBLIC_FIREBASE_APP_ID }}
+          EXPO_PUBLIC_FIREBASE_LINK_URL=${{ secrets.EXPO_PUBLIC_FIREBASE_LINK_URL }}
+          EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID=${{ secrets.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID }}
+          EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID=${{ secrets.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID }}
+          EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID=${{ secrets.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID }}
+          ENVEOF
+
+      - name: Generate native Android project
+        run: npx expo prebuild --platform android --clean --no-install
+
+      # ── Package guard ──────────────────────────────────────────────────
+      # constants/brand.json is the single source of truth (app.config.ts
+      # reads it), so the guard reads it rather than duplicating the string
+      # here. brand.ts is a typed re-export of the same JSON.
+      - name: Verify applicationId
+        run: |
+          EXPECTED=$(grep -oE '"packageName": *"[^"]+"' constants/brand.json | sed -E 's/.*"packageName": *"([^"]+)".*/\1/')
+          APP_ID=$(grep -o "applicationId '[^']*'" android/app/build.gradle | head -1 | cut -d"'" -f2)
+          echo "applicationId = $APP_ID (expected $EXPECTED)"
+          echo "package=$EXPECTED" >> $GITHUB_ENV
+          if [ -z "$EXPECTED" ] || [ "$APP_ID" != "$EXPECTED" ]; then
+            echo "::error::Wrong applicationId '$APP_ID' — expected '$EXPECTED' (check constants/brand.json)"
+            exit 1
+          fi
+
+      # ── Version code ───────────────────────────────────────────────────
+      # Commit count is monotonic on an un-rewritten history, and the attempt
+      # offset keeps a re-run from colliding with the previous run's APK.
+      - name: Bump versionCode
+        run: |
+          COMMIT_COUNT=$(git rev-list --count HEAD)
+          VERSION_CODE=$((COMMIT_COUNT * 100 + ${{ github.run_attempt }}))
+          sed -i -E "s/versionCode [0-9]+/versionCode $VERSION_CODE/" android/app/build.gradle
+          echo "versionCode = $VERSION_CODE (commit $COMMIT_COUNT, attempt ${{ github.run_attempt }})"
+
+      # ── Release signing (Gradle-level, signed inline by assembleRelease) ─
+      # android/ is regenerated by prebuild, so the signing config is injected
+      # here rather than committed. The keystore is decoded from the
+      # ANDROID_KEYSTORE_BASE64 secret.
+      - name: Prepare release signing
+        if: inputs.build_type == 'release'
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          STORE_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASS: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          KS=android/app/release.keystore
+
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "$KEYSTORE_BASE64" | base64 -d > "$KS"
+            echo "Keystore decoded from ANDROID_KEYSTORE_BASE64 secret"
+          else
+            echo "::error::ANDROID_KEYSTORE_BASE64 is empty — set the ANDROID_* secrets"
+            exit 1
+          fi
+
+          # ── Fail fast: validate credentials BEFORE the 40-minute build ──
+          # An empty/mistyped secret previously burned a full Gradle build
+          # before failing at signing. keytool catches it in ~5s.
+          for VAR in STORE_PASS ALIAS KEY_PASS; do
+            if [ -z "${!VAR}" ]; then
+              echo "::error::$VAR is empty — set the ANDROID_* secrets"
+              exit 1
+            fi
+          done
+          if ! keytool -list -keystore "$KS" \
+                 -storepass "$STORE_PASS" -alias "$ALIAS" >/dev/null 2>&1; then
+            echo "::error::Keystore credentials check failed — ANDROID_KEYSTORE_PASSWORD or ANDROID_KEY_ALIAS does not match this keystore"
+            exit 1
+          fi
+          echo "Signing credentials verified against keystore (alias: $ALIAS)"
+
+          cat >> android/app/build.gradle <<'EOF'
+
+          // ── Release signing (injected by CI from secrets) ──
+          android {
+              signingConfigs {
+                  release {
+                      storeFile file(findProperty('ANDROID_KEYSTORE_FILE') ?: 'release.keystore')
+                      storePassword findProperty('ANDROID_KEYSTORE_PASSWORD') ?: ''
+                      keyAlias findProperty('ANDROID_KEY_ALIAS') ?: ''
+                      keyPassword findProperty('ANDROID_KEY_PASSWORD') ?: ''
+                  }
+              }
+              buildTypes {
+                  release {
+                      signingConfig signingConfigs.release
+                  }
+              }
+          }
+          EOF
+          echo "Signing config injected into app/build.gradle"
+
+      # ── Build APK ──────────────────────────────────────────────────────
+      # arm64-v8a only on release (test devices are all arm64) — skips
+      # armeabi-v7a/x86 native builds and roughly halves build time.
+      - name: Build Android APK
+        working-directory: mobile/android
+        run: |
+          chmod +x gradlew
+          if [ "${{ inputs.build_type }}" = "release" ]; then
+            ./gradlew assembleRelease \
+              -Dorg.gradle.jvmargs="-Xmx4g -XX:MaxMetaspaceSize=1g" \
+              -PreactNativeArchitectures=arm64-v8a \
+              -Pandroid.lint.enabled=false \
+              -x lintVitalRelease \
+              -PANDROID_KEYSTORE_FILE="${{ github.workspace }}/mobile/android/app/release.keystore" \
+              -PANDROID_KEYSTORE_PASSWORD="${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" \
+              -PANDROID_KEY_ALIAS="${{ secrets.ANDROID_KEY_ALIAS }}" \
+              -PANDROID_KEY_PASSWORD="${{ secrets.ANDROID_KEY_PASSWORD }}" \
+              --no-daemon \
+              --parallel \
+              --build-cache
+          else
+            ./gradlew assembleDebug \
+              -Dorg.gradle.jvmargs="-Xmx4g -XX:MaxMetaspaceSize=1g" \
+              --no-daemon \
+              --parallel \
+              --build-cache
+          fi
+
+      - name: Disk usage after build
+        if: always()
+        run: df -h /
+
+      # ── Verify signature (release only) ────────────────────────────────
+      - name: Verify APK signature
+        if: inputs.build_type == 'release'
+        run: |
+          APK=$(find android -name "*.apk" -path "*/release/*" | head -1)
+          jarsigner -verify "$APK"
+          echo "APK is signed with the upload keystore"
+
+      # ── Cleanup — never let the keystore leak into caches/artifacts ────
+      - name: Remove decoded keystore
+        if: always()
+        run: rm -f android/app/release.keystore
+
+      # ── Upload artifact ────────────────────────────────────────────────
+      - name: Find APK file
+        id: find-apk
+        run: |
+          if [ "${{ inputs.build_type }}" = "release" ]; then
+            APK_PATH=$(find android -name "*.apk" -path "*/release/*" | head -1)
+          else
+            APK_PATH=$(find android -name "*.apk" -path "*/debug/*" | head -1)
+          fi
+          if [ -z "$APK_PATH" ]; then
+            echo "::error::No APK found"
+            exit 1
+          fi
+          echo "apk_path=$APK_PATH" >> $GITHUB_OUTPUT
+          echo "Found APK: $APK_PATH"
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.build_type == 'release' && 'app-release-apk' || 'app-dev-debug' }}-${{ github.sha }}
+          path: ${{ steps.find-apk.outputs.apk_path }}
+          retention-days: 14
+          if-no-files-found: error
+
+      # ── Summary ────────────────────────────────────────────────────────
+      - name: Build summary
+        run: |
+          echo "## Android APK Build Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Property | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| **Build Type** | \`${{ inputs.build_type }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Environment** | \`${{ inputs.build_type == 'release' && 'production' || 'dev' }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Package** | ${{ env.package }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Signing** | \`${{ inputs.build_type == 'release' && 'upload keystore (release)' || 'debug keystore' }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **APK** | \`${{ steps.find-apk.outputs.apk_path }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Commit** | \`${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Download the APK from **Actions** → **Artifacts** and sideload to test." >> $GITHUB_STEP_SUMMARY

@@ -1,0 +1,15 @@
+{
+  "//": [
+    "Single source of truth for the app identity — read by app.config.ts, by",
+    "constants/brand.ts (for in-app surfaces) and by the CI identity guard.",
+    "",
+    "It is JSON rather than TypeScript on purpose: Expo's config loader",
+    "transpiles app.config.ts itself but resolves its `require()`s with plain",
+    "Node, which cannot load a nested .ts file. JSON loads natively in both."
+  ],
+  "name": "Election Campaign",
+  "slug": "election-campaign",
+  "scheme": "election-campaign",
+  "packageName": "com.campaignos.app",
+  "bundleIdentifier": "com.campaignos.app"
+}

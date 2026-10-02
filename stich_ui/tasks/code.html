@@ -1,0 +1,567 @@
+<!DOCTYPE html><html class="h-full" lang="en"><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"><meta content="mobile_tab" name="shell-type"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><style>@layer base{html,body{width:100%;min-height:100%;margin:0;padding:0;}body{overscroll-behavior:none;-webkit-tap-highlight-color:transparent;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}.material-symbols-outlined{font-variation-settings:'FILL' 0,'wght' 300,'GRAD' 0,'opsz' 24;font-size:22px;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{"colors":{"on-tertiary-fixed":"#001e2f","inverse-surface":"#2d2f41","surface-container-highest":"#e0e1f8","error-container":"#ffdad6","secondary":"#835400","on-primary":"#ffffff","on-surface-variant":"#464555","primary-fixed-dim":"#c2c1ff","on-tertiary-fixed-variant":"#004c6e","primary-fixed":"#e2dfff","surface-container-high":"#e5e6fe","inverse-primary":"#c2c1ff","on-secondary-fixed":"#2a1800","secondary-container":"#ffad2e","tertiary-fixed-dim":"#89ceff","tertiary-fixed":"#c9e6ff","tertiary-container":"#00547a","on-error":"#ffffff","on-tertiary":"#ffffff","secondary-fixed-dim":"#ffb957","background":"#fbf8ff","primary-container":"#3b2fd6","tertiary":"#003c58","surface-tint":"#4c43e5","outline":"#777587","surface-variant":"#e0e1f8","surface-container-lowest":"#ffffff","surface-dim":"#d7d8ef","secondary-fixed":"#ffddb5","primary":"#2100bd","on-background":"#181b2b","on-primary-fixed-variant":"#3121ce","on-secondary":"#ffffff","on-tertiary-container":"#79c9ff","surface":"#fbf8ff","on-error-container":"#93000a","inverse-on-surface":"#f0efff","on-secondary-fixed-variant":"#643f00","error":"#ba1a1a","surface-bright":"#fbf8ff","surface-container-low":"#f3f2ff","on-primary-container":"#bcbbff","on-primary-fixed":"#0e006a","on-secondary-container":"#6c4400","outline-variant":"#c7c4d8","surface-container":"#ececff","on-surface":"#181b2b"},"borderRadius":{"DEFAULT":"0.25rem","lg":"0.5rem","xl":"0.75rem","full":"9999px"},"spacing":{"gutter":"1rem","space-xs":"0.25rem","gutter-mobile":"0.75rem","margin":"1.25rem","space-lg":"1.25rem","margin-mobile":"1rem","space-xl":"1.75rem","space-sm":"0.5rem","space-md":"0.75rem"},"fontFamily":{"metric-tabular":["Inter"],"headline-sm":["Inter"],"body-lg":["Inter"],"label-lg":["Inter"],"label-md":["Inter"],"headline-xl-mobile":["Inter"],"body-md":["Inter"],"headline-xl":["Inter"],"body-sm":["Inter"],"headline-lg":["Inter"],"headline-md":["Inter"],"label-sm":["Inter"]},"fontSize":{"metric-tabular":["20px",{"lineHeight":"24px","letterSpacing":"-0.02em","fontWeight":"600"}],"headline-sm":["16px",{"lineHeight":"24px","letterSpacing":"-0.01em","fontWeight":"600"}],"body-lg":["16px",{"lineHeight":"24px","letterSpacing":"-0.005em","fontWeight":"400"}],"label-lg":["14px",{"lineHeight":"20px","letterSpacing":"0.005em","fontWeight":"500"}],"label-md":["12px",{"lineHeight":"16px","letterSpacing":"0.01em","fontWeight":"500"}],"headline-xl-mobile":["26px",{"lineHeight":"32px","letterSpacing":"-0.02em","fontWeight":"600"}],"body-md":["14px",{"lineHeight":"20px","letterSpacing":"0em","fontWeight":"400"}],"headline-xl":["32px",{"lineHeight":"40px","letterSpacing":"-0.025em","fontWeight":"600"}],"body-sm":["12px",{"lineHeight":"16px","letterSpacing":"0.005em","fontWeight":"400"}],"headline-lg":["24px",{"lineHeight":"32px","letterSpacing":"-0.02em","fontWeight":"600"}],"headline-md":["20px",{"lineHeight":"28px","letterSpacing":"-0.015em","fontWeight":"600"}],"label-sm":["10px",{"lineHeight":"14px","letterSpacing":"0.04em","fontWeight":"600"}]}}}};</script><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head><body class="bg-surface text-on-surface antialiased flex flex-col min-h-screen"><header class="fixed top-0 w-full z-50 pt-safe bg-surface/80 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="h-14 px-margin-mobile flex items-center justify-between"><div class="flex items-center gap-space-sm min-w-0"><img alt="Vanguard Operations Brandmark" class="h-8 w-auto object-contain shrink-0" src="https://lh3.googleusercontent.com/aida/AEtjO1VSgT0qOyjug6Z-LzxIQNPnbNUeinL7ztuA-PSXWGZ1I1ueeYIwX1Fe7VdWby9AefTkk19zvJXjLKdqX4JEnjp6vhIE_O9jsav7dO6RQHi-59fXM7lmLCkn7FD_ajK7Hl42AeNXR0rfd8M4IrmUxltgMHGho3iraH3mvHuP0eyssAsI-WXjmJ-jDdS_11AzvuZQyRbRoYKir9q1MVUbSNcSQj4YsZgDrrW4WvuD0OWBYEa30x-i0WCrZVk"><div class="flex flex-col min-w-0"><span class="font-label-sm text-label-sm text-outline tracking-wider uppercase truncate">Campaign Ops</span><h1 class="font-headline-sm text-headline-sm text-on-surface truncate">Team Management</h1></div></div><div class="flex items-center gap-space-xs"><button aria-label="Command search" class="w-11 h-11 flex items-center justify-center text-on-surface-variant hover:text-on-surface rounded-full transition-colors" type="button"><span class="material-symbols-outlined">search</span></button><div class="w-11 h-11 flex items-center justify-center"><img alt="Profile" class="w-8 h-8 rounded-full object-cover ring-2 ring-surface-container-high" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBm3uBMdQsvGOiR5Zr2QlhG_0MubgubN4Meq_gujqMGfmSBH_DZYObPWkau_tYirzPh8QkF-XRBzOV6OfYjj4dA36DyJgQeP1dQLnGEnhkAv5L2x0WL7Xxuipurh40_btiuBPsF1EShCVpJ03KwhwrLtuHBJN8IeA4SiWNGD0y3qdbaTn02iwR6T9ui3NJuQcJ5LC3HzJTGRS8GWNPz00Duam8JQZbhEnBR3NKhoiTbT17rTlw7ey7L"></div></div></div></header><main class="flex-1 flex flex-col relative w-full pt-14 pb-28 px-margin-mobile bg-surface"><div class="flex flex-col w-full pb-6 space-y-space-md">
+<!-- Top Command Action Strip -->
+<div class="flex items-center justify-between pt-1">
+<div class="flex items-center gap-space-sm">
+<div class="flex items-center gap-space-xs">
+<h2 class="font-headline-lg text-headline-lg text-on-surface">Tasks</h2>
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-label-sm font-label-sm bg-surface-container-high text-primary font-semibold">
+          38 total
+        </span>
+</div>
+</div>
+<div class="flex items-center gap-space-xs">
+<button aria-label="Filter tasks" class="relative w-10 h-10 flex items-center justify-center rounded-xl bg-surface-container hover:bg-surface-container-high transition-colors text-on-surface-variant active:scale-95" id="filterBtn">
+<span class="material-symbols-outlined text-[20px]">filter_list</span>
+<span class="absolute top-2 right-2 w-2 h-2 rounded-full bg-secondary-container"></span>
+</button>
+<button aria-label="Create new campaign task" class="flex items-center gap-1.5 px-3.5 h-10 rounded-xl bg-primary-container text-on-primary font-label-md text-label-md shadow-sm active:scale-95 transition-transform">
+<span class="material-symbols-outlined text-[18px]">add</span>
+<span>New</span>
+</button>
+</div>
+</div>
+<!-- Operational Mode View Switcher (Segmented Control) -->
+<div class="w-full p-1 rounded-xl bg-surface-container flex items-center gap-1">
+<button class="flex-1 py-1.5 px-2 rounded-lg font-label-md text-label-md text-center transition-all bg-surface-container-lowest text-on-surface shadow-sm font-semibold flex items-center justify-center gap-1" id="btn-view-list" onclick="switchView('list')">
+<span class="material-symbols-outlined text-[16px]">view_agenda</span>
+<span>List</span>
+</button>
+<button class="flex-1 py-1.5 px-2 rounded-lg font-label-md text-label-md text-center transition-all text-on-surface-variant hover:text-on-surface flex items-center justify-center gap-1" id="btn-view-kanban" onclick="switchView('kanban')">
+<span class="material-symbols-outlined text-[16px]">view_column</span>
+<span>Board</span>
+</button>
+<button class="flex-1 py-1.5 px-2 rounded-lg font-label-md text-label-md text-center transition-all text-on-surface-variant hover:text-on-surface flex items-center justify-center gap-1" id="btn-view-field" onclick="switchView('field')">
+<span class="material-symbols-outlined text-[16px]">person_pin_circle</span>
+<span>Field Ops</span>
+</button>
+</div>
+<!-- Real-time Filter Pills (Tabular Counts) -->
+<div class="flex items-center gap-space-xs overflow-x-auto no-scrollbar -mx-margin-mobile px-margin-mobile py-0.5">
+<button class="shrink-0 h-7 px-3 rounded-full bg-primary-container text-on-primary font-label-md text-label-md font-semibold shadow-sm flex items-center gap-1.5">
+<span>All</span>
+<span class="px-1.5 py-0.2 rounded-full bg-white/20 text-label-sm font-metric-tabular">38</span>
+</button>
+<button class="shrink-0 h-7 px-3 rounded-full bg-surface-container text-on-surface-variant hover:text-on-surface font-label-md text-label-md flex items-center gap-1.5">
+<span>Pending</span>
+<span class="px-1.5 py-0.2 rounded-full bg-surface-container-high text-label-sm font-metric-tabular">14</span>
+</button>
+<button class="shrink-0 h-7 px-3 rounded-full bg-surface-container text-on-surface-variant hover:text-on-surface font-label-md text-label-md flex items-center gap-1.5">
+<span>In Progress</span>
+<span class="px-1.5 py-0.2 rounded-full bg-surface-container-high text-label-sm font-metric-tabular">12</span>
+</button>
+<button class="shrink-0 h-7 px-3 rounded-full bg-surface-container text-on-surface-variant hover:text-on-surface font-label-md text-label-md flex items-center gap-1.5">
+<span>Completed</span>
+<span class="px-1.5 py-0.2 rounded-full bg-surface-container-high text-label-sm font-metric-tabular">9</span>
+</button>
+<button class="shrink-0 h-7 px-3 rounded-full bg-error-container text-on-error-container font-label-md text-label-md font-semibold flex items-center gap-1.5">
+<span>Issue</span>
+<span class="px-1.5 py-0.2 rounded-full bg-error text-on-error text-label-sm font-metric-tabular">3</span>
+</button>
+</div>
+<!-- Operational Telemetry Bar -->
+<div class="grid grid-cols-3 gap-2 p-2.5 rounded-2xl bg-surface-container-low">
+<div class="flex items-center gap-2 px-2 py-1 bg-surface-container-lowest rounded-xl">
+<div class="w-7 h-7 rounded-lg bg-surface-container flex items-center justify-center text-primary shrink-0">
+<span class="material-symbols-outlined text-[16px]">schedule</span>
+</div>
+<div class="min-w-0">
+<p class="font-label-sm text-label-sm text-on-surface-variant uppercase truncate">Due Today</p>
+<p class="font-metric-tabular text-headline-sm text-on-surface leading-none">09</p>
+</div>
+</div>
+<div class="flex items-center gap-2 px-2 py-1 bg-surface-container-lowest rounded-xl">
+<div class="w-7 h-7 rounded-lg bg-error-container flex items-center justify-center text-error shrink-0">
+<span class="material-symbols-outlined text-[16px]">crisis_alert</span>
+</div>
+<div class="min-w-0">
+<p class="font-label-sm text-label-sm text-error truncate">Overdue</p>
+<p class="font-metric-tabular text-headline-sm text-error leading-none">03</p>
+</div>
+</div>
+<div class="flex items-center gap-2 px-2 py-1 bg-surface-container-lowest rounded-xl">
+<div class="w-7 h-7 rounded-lg bg-secondary-fixed flex items-center justify-center text-secondary shrink-0">
+<span class="material-symbols-outlined text-[16px]">insights</span>
+</div>
+<div class="min-w-0">
+<p class="font-label-sm text-label-sm text-on-surface-variant uppercase truncate">Complete</p>
+<p class="font-metric-tabular text-headline-sm text-on-surface leading-none">68%</p>
+</div>
+</div>
+</div>
+<!-- ======================== VIEW 1: LIST VIEW ======================== -->
+<div class="flex flex-col space-y-space-lg" id="view-list">
+<!-- Chronological Section: Today -->
+<div class="space-y-2.5">
+<div class="sticky top-14 z-20 py-1.5 -mx-margin-mobile px-margin-mobile bg-surface/95 backdrop-blur-sm flex items-center justify-between">
+<div class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-error"></span>
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Today</h3>
+<span class="font-label-md text-label-md text-outline">9 tasks · 3 critical</span>
+</div>
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-outline">Priority Sync</span>
+</div>
+<!-- Card 1: High Priority Overdue -->
+<div class="relative bg-surface-container-lowest rounded-[20px] p-4 shadow-sm hover:shadow-md transition-shadow overflow-hidden">
+<div class="absolute left-0 top-3 bottom-3 w-1.5 bg-error rounded-r-full"></div>
+<div class="pl-2 space-y-2.5">
+<div class="flex items-center justify-between gap-2">
+<span class="inline-flex items-center px-2 py-0.5 rounded-md bg-surface-container text-label-sm font-label-sm text-primary font-semibold">
+              Voter Mobilization
+            </span>
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-error-container text-error text-label-sm font-label-sm font-medium">
+<span class="w-1.5 h-1.5 rounded-full bg-error animate-pulse"></span>
+              Overdue · 2h
+            </span>
+</div>
+<div>
+<h4 class="font-headline-sm text-headline-sm text-on-surface leading-snug">Distribute micro-pamphlets – Lane 4 to 9</h4>
+<div class="flex items-center gap-1 text-on-surface-variant mt-1 font-body-sm text-body-sm">
+<span class="material-symbols-outlined text-[14px]">how_to_vote</span>
+<span>Booth 118 · Ward 12 (Ratanada)</span>
+</div>
+</div>
+<!-- Multi-step linear progress -->
+<div class="space-y-1 bg-surface-container-low p-2 rounded-xl">
+<div class="flex justify-between items-center text-label-sm font-label-sm">
+<span class="text-on-surface-variant font-metric-tabular">180 / 300 delivered</span>
+<span class="font-semibold text-primary font-metric-tabular">60%</span>
+</div>
+<div class="w-full h-1.5 bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full bg-primary-container rounded-full" style="width: 60%"></div>
+</div>
+</div>
+<div class="flex items-center justify-between pt-1">
+<div class="flex items-center -space-x-1.5">
+<img class="w-6 h-6 rounded-full object-cover ring-2 ring-surface-container-lowest" data-alt="Close up warm portrait of volunteer coordinator Meera smiling in election campaign polo against neutral studio background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAisu7EYElQBO_6wqqDXj8pkU9RKDr5tnJLvW2WrSnkJ_U8Gegyre-lbO5jm0C6sTK8x7IMBC1DpD1fbKthQKgfczJiyjC4Yx4iJU4W0nn401N8KzW_u3mkoRl6zCPdTRB50fehxFvhhDGC48wKq-xnVCIdAV_de6hQTXskL9YR1b55ZPyI4EvQteErzAxJG_LCrqajq5jsmTQrgryWQ8Nc8BbdO2fxd8lBkMbRZbzoBGtm934njpjq">
+<img class="w-6 h-6 rounded-full object-cover ring-2 ring-surface-container-lowest" data-alt="Portrait of young field worker Amit wearing campaign badge in daytime street canvassing setup" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBn-s0EAVavolZc5oTnu3e52vikRIQUScEO79nuFjFpfWwe-6h6-gUnFCHp6eJ4oKSmB9kuuthJJVmIHM3C3iuMzowHae-NYj_b-D1VsqjfpxHcEz3BoRrx8JSr7a4Dln--gL1WBj6tZO7VGNv9OPTTqh7RY-DfLsoptoU7jp2Vz2Pa5UZERYkJkIJJWh_aDCgCyUm-qYN9TO56YcE7kfV3i61G7HQAR6KMSlxW-EnU2mJxz-wDQQKJ">
+<span class="w-6 h-6 rounded-full bg-surface-container-high text-on-surface-variant flex items-center justify-center text-label-sm font-label-sm ring-2 ring-surface-container-lowest font-medium">+2</span>
+</div>
+<div class="flex items-center gap-1 text-label-sm font-label-sm text-error font-medium">
+<span class="material-symbols-outlined text-[14px]">alarm</span>
+<span>Target: 2:00 PM</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Card 2: Medium Priority On Track -->
+<div class="relative bg-surface-container-lowest rounded-[20px] p-4 shadow-sm hover:shadow-md transition-shadow overflow-hidden">
+<div class="absolute left-0 top-3 bottom-3 w-1.5 bg-secondary-container rounded-r-full"></div>
+<div class="pl-2 space-y-2.5">
+<div class="flex items-center justify-between gap-2">
+<span class="inline-flex items-center px-2 py-0.5 rounded-md bg-surface-container text-label-sm font-label-sm text-secondary font-semibold">
+              Logistics
+            </span>
+<span class="inline-flex items-center px-2 py-0.5 rounded-full bg-secondary-fixed text-on-secondary-fixed text-label-sm font-label-sm font-medium">
+              In Progress
+            </span>
+</div>
+<div>
+<h4 class="font-headline-sm text-headline-sm text-on-surface leading-snug">Booth 118 helpdesk banner &amp; tent canopy setup</h4>
+<div class="flex items-center gap-1 text-on-surface-variant mt-1 font-body-sm text-body-sm">
+<span class="material-symbols-outlined text-[14px]">location_on</span>
+<span>Booth 118 · Community Center Grounds</span>
+</div>
+</div>
+<!-- Multi-step checklist telemetry -->
+<div class="flex items-center justify-between py-1.5 px-2.5 bg-surface-container-low rounded-xl">
+<div class="flex items-center gap-1.5 text-label-sm font-label-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px] text-primary">checklist</span>
+<span>Canopy, chairs, EVM queue rail</span>
+</div>
+<span class="font-metric-tabular text-label-sm font-label-sm font-semibold text-on-surface">3/4 Done</span>
+</div>
+<div class="flex items-center justify-between pt-1">
+<div class="flex items-center gap-1.5">
+<img class="w-6 h-6 rounded-full object-cover ring-2 ring-surface-container-lowest" data-alt="Portrait of senior campaign field logistics lead Sunil wearing clean light jacket outdoor venue" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBAO3vlo9q_IDkqBFUYCXMSKs_d7M0zq80zB182oEPGH6DtvkT9sEsWMQU-UR9r5n5yptZgkFlCiw4bzug97hLgHq3t5TWLjJx3FRo1RW368CZTBCSZNEd8Pyk-z-vSmhV2UFE2h_eV2HB1VHqiPg6z7_fVnVoYf0FHbBvzzXRL1Z6agUIu20fvzZwirixmCNJ0r3y7ezla_OICsECL0opwkUo5loLpGd7QeWYcksth_4BdHa1ZjTNT">
+<span class="font-label-md text-label-md text-on-surface-variant">Sunil Joshi</span>
+</div>
+<div class="flex items-center gap-1 text-label-sm font-label-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-[14px]">schedule</span>
+<span>Today, 4:30 PM</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Card 3: Issue Triage Overdue -->
+<div class="relative bg-surface-container-lowest rounded-[20px] p-4 shadow-sm hover:shadow-md transition-shadow overflow-hidden">
+<div class="absolute left-0 top-3 bottom-3 w-1.5 bg-error rounded-r-full"></div>
+<div class="pl-2 space-y-2.5">
+<div class="flex items-center justify-between gap-2">
+<span class="inline-flex items-center px-2 py-0.5 rounded-md bg-error-container text-label-sm font-label-sm text-error font-semibold">
+              Grievance Triage
+            </span>
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-error text-on-error text-label-sm font-label-sm font-medium">
+<span class="material-symbols-outlined text-[12px]">warning</span>
+              Critical Block
+            </span>
+</div>
+<div>
+<h4 class="font-headline-sm text-headline-sm text-on-surface leading-snug">Escalate drinking water tanker dispatch shortage</h4>
+<div class="flex items-center gap-1 text-on-surface-variant mt-1 font-body-sm text-body-sm">
+<span class="material-symbols-outlined text-[14px]">flag</span>
+<span>Ward 18 (Cantonment Primary Center)</span>
+</div>
+</div>
+<div class="p-2 rounded-xl bg-error-container/40 flex items-center justify-between">
+<span class="text-body-sm font-body-sm text-on-error-container">Voter queue standing in heat; needs municipal push.</span>
+<span class="material-symbols-outlined text-[16px] text-error">priority_high</span>
+</div>
+<div class="flex items-center justify-between pt-1">
+<div class="flex items-center gap-1.5">
+<div class="w-6 h-6 rounded-full bg-surface-container-high text-primary flex items-center justify-center font-label-sm font-bold">VK</div>
+<span class="font-label-md text-label-md text-on-surface-variant">Vikram K.</span>
+</div>
+<button class="px-2.5 py-1 rounded-lg bg-primary-container text-on-primary font-label-sm text-label-sm font-medium active:scale-95 transition-transform">
+              Resolve
+            </button>
+</div>
+</div>
+</div>
+</div>
+<!-- Chronological Section: Tomorrow -->
+<div class="space-y-2.5">
+<div class="sticky top-14 z-20 py-1.5 -mx-margin-mobile px-margin-mobile bg-surface/95 backdrop-blur-sm flex items-center justify-between">
+<div class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-surface-tint"></span>
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Tomorrow</h3>
+<span class="font-label-md text-label-md text-outline">7 scheduled</span>
+</div>
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-outline">Day +1</span>
+</div>
+<!-- Card 4: Normal Priority -->
+<div class="relative bg-surface-container-lowest rounded-[20px] p-4 shadow-sm hover:shadow-md transition-shadow overflow-hidden">
+<div class="absolute left-0 top-3 bottom-3 w-1.5 bg-surface-tint rounded-r-full"></div>
+<div class="pl-2 space-y-2.5">
+<div class="flex items-center justify-between gap-2">
+<span class="inline-flex items-center px-2 py-0.5 rounded-md bg-surface-container text-label-sm font-label-sm text-on-surface-variant font-semibold">
+              Field Canvass
+            </span>
+<span class="inline-flex items-center px-2 py-0.5 rounded-full bg-surface-container text-on-surface-variant text-label-sm font-label-sm">
+              Queued
+            </span>
+</div>
+<div>
+<h4 class="font-headline-sm text-headline-sm text-on-surface leading-snug">Door-to-door senior citizen slip delivery</h4>
+<div class="flex items-center gap-1 text-on-surface-variant mt-1 font-body-sm text-body-sm">
+<span class="material-symbols-outlined text-[14px]">home</span>
+<span>Booth 142 · Ward 14 Residential Sector</span>
+</div>
+</div>
+<div class="space-y-1 bg-surface-container-low p-2 rounded-xl">
+<div class="flex justify-between items-center text-label-sm font-label-sm">
+<span class="text-on-surface-variant font-metric-tabular">0 / 150 delivered</span>
+<span class="font-semibold text-outline font-metric-tabular">0%</span>
+</div>
+<div class="w-full h-1.5 bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full bg-surface-tint rounded-full" style="width: 4%"></div>
+</div>
+</div>
+<div class="flex items-center justify-between pt-1">
+<div class="flex items-center gap-1.5">
+<img class="w-6 h-6 rounded-full object-cover ring-2 ring-surface-container-lowest" data-alt="Portrait of energetic field volunteer Pooja with lanyard and notebook in sunny morning setting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC7WAIkYNhYxP0e_j4Mu3Qoh7JbZ6AZAN_LiQZvAg5jMgHVvqs--6PojmaH4xjV67msCrUF-g0yAYhIZgN3DFVp6_aNvC_MhO_0v-PyGD7ihee_OxiXz1yLJfCgthoXdRYlwXKMBbjGH5Tf00uKAPJNby65nVgSpEtVCBsFOPzNmqewQCDzBXD2WA8Gsyk13LsgufeumRq4MlnhUQHeJPdGxVT95jAoYtI7-M5NhW3iX_0rrn0ZXNm8">
+<span class="font-label-md text-label-md text-on-surface-variant">Pooja S. + 2 others</span>
+</div>
+<div class="flex items-center gap-1 text-label-sm font-label-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-[14px]">event</span>
+<span>09:00 AM</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Card 5: Medium Priority -->
+<div class="relative bg-surface-container-lowest rounded-[20px] p-4 shadow-sm hover:shadow-md transition-shadow overflow-hidden">
+<div class="absolute left-0 top-3 bottom-3 w-1.5 bg-secondary-container rounded-r-full"></div>
+<div class="pl-2 space-y-2.5">
+<div class="flex items-center justify-between gap-2">
+<span class="inline-flex items-center px-2 py-0.5 rounded-md bg-secondary-fixed text-label-sm font-label-sm text-on-secondary-fixed font-semibold">
+              Training &amp; Protocol
+            </span>
+<span class="inline-flex items-center px-2 py-0.5 rounded-full bg-surface-container text-on-surface-variant text-label-sm font-label-sm">
+              Prep Stage
+            </span>
+</div>
+<div>
+<h4 class="font-headline-sm text-headline-sm text-on-surface leading-snug">Conduct ward volunteer EVM walkthrough &amp; demo</h4>
+<div class="flex items-center gap-1 text-on-surface-variant mt-1 font-body-sm text-body-sm">
+<span class="material-symbols-outlined text-[14px]">apartment</span>
+<span>Ward 12 Operations HQ</span>
+</div>
+</div>
+<div class="flex items-center justify-between pt-1">
+<div class="flex items-center gap-1 text-label-sm font-label-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px] text-secondary">assignment_turned_in</span>
+<span>4 agenda checklist items ready</span>
+</div>
+<div class="flex items-center gap-1 text-label-sm font-label-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-[14px]">event</span>
+<span>11:30 AM</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Chronological Section: Later this week -->
+<div class="space-y-2.5">
+<div class="flex items-center justify-between py-1">
+<div class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-outline"></span>
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Later this week</h3>
+<span class="font-label-md text-label-md text-outline">22 tasks</span>
+</div>
+<button class="text-label-sm font-label-sm text-primary font-semibold flex items-center">
+          Expand <span class="material-symbols-outlined text-[16px]">expand_more</span>
+</button>
+</div>
+<div class="bg-surface-container-lowest rounded-[20px] p-3.5 shadow-sm flex items-center justify-between">
+<div class="flex items-center gap-3 min-w-0">
+<div class="w-9 h-9 rounded-xl bg-surface-container flex items-center justify-center text-primary shrink-0">
+<span class="material-symbols-outlined text-[18px]">verified_user</span>
+</div>
+<div class="min-w-0">
+<h4 class="font-headline-sm text-label-lg text-on-surface truncate">Verify final electoral roll revision Part 4</h4>
+<p class="font-body-sm text-body-sm text-outline truncate">Ward 13 · Due Friday 06:00 PM</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline shrink-0">chevron_right</span>
+</div>
+</div>
+</div>
+<!-- ======================== VIEW 2: KANBAN BOARD VIEW (Initially Hidden) ======================== -->
+<div class="hidden flex-col space-y-3" id="view-kanban">
+<div class="flex items-center justify-between px-0.5">
+<span class="font-label-sm text-label-sm uppercase tracking-wide text-outline">Tactical Swimlanes (Swipe sideways)</span>
+<span class="font-label-sm text-label-sm text-primary font-semibold">Live Sync Active</span>
+</div>
+<!-- Horizontal Kanban Flow -->
+<div class="flex gap-3 overflow-x-auto no-scrollbar -mx-margin-mobile px-margin-mobile pb-2 pt-1 items-start">
+<!-- Lane 1: Pending -->
+<div class="w-[260px] shrink-0 bg-surface-container rounded-2xl p-3 space-y-2.5">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-outline"></span>
+<span class="font-headline-sm text-label-lg text-on-surface">Pending</span>
+</div>
+<span class="font-metric-tabular text-label-sm font-label-sm px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface font-semibold">14</span>
+</div>
+<div class="space-y-2">
+<div class="p-3 bg-surface-container-lowest rounded-xl shadow-sm space-y-2">
+<div class="h-1 w-full bg-surface-tint rounded-full"></div>
+<h5 class="font-headline-sm text-label-md text-on-surface leading-tight">Canopy permit clearance from city cell</h5>
+<div class="flex items-center justify-between text-body-sm font-body-sm text-outline">
+<span>Ward 12</span>
+<span class="font-metric-tabular">Tomorrow</span>
+</div>
+</div>
+<div class="p-3 bg-surface-container-lowest rounded-xl shadow-sm space-y-2">
+<div class="h-1 w-full bg-secondary-container rounded-full"></div>
+<h5 class="font-headline-sm text-label-md text-on-surface leading-tight">Megaphone battery checks (12 sets)</h5>
+<div class="flex items-center justify-between text-body-sm font-body-sm text-outline">
+<span>Logistics HQ</span>
+<span class="font-metric-tabular">Fri 10 AM</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Lane 2: In Progress -->
+<div class="w-[260px] shrink-0 bg-surface-container rounded-2xl p-3 space-y-2.5">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+<span class="font-headline-sm text-label-lg text-on-surface">In Progress</span>
+</div>
+<span class="font-metric-tabular text-label-sm font-label-sm px-2 py-0.5 rounded-full bg-primary-container text-on-primary font-semibold">12</span>
+</div>
+<div class="space-y-2">
+<div class="p-3 bg-surface-container-lowest rounded-xl shadow-sm space-y-2">
+<div class="h-1 w-full bg-error rounded-full"></div>
+<h5 class="font-headline-sm text-label-md text-on-surface leading-tight">Distribute pamphlets – Lane 4-9</h5>
+<div class="w-full h-1 bg-surface-container-highest rounded-full overflow-hidden">
+<div class="bg-primary-container h-full w-3/5"></div>
+</div>
+<div class="flex items-center justify-between text-body-sm font-body-sm text-error">
+<span>Booth 118</span>
+<span class="font-semibold">Overdue</span>
+</div>
+</div>
+<div class="p-3 bg-surface-container-lowest rounded-xl shadow-sm space-y-2">
+<div class="h-1 w-full bg-secondary-container rounded-full"></div>
+<h5 class="font-headline-sm text-label-md text-on-surface leading-tight">Booth 118 helpdesk tent setup</h5>
+<div class="flex items-center justify-between text-body-sm font-body-sm text-outline">
+<span>Booth 118</span>
+<span>Today 4:30 PM</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Lane 3: Issues -->
+<div class="w-[260px] shrink-0 bg-error-container/30 rounded-2xl p-3 space-y-2.5">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-error"></span>
+<span class="font-headline-sm text-label-lg text-error">Issues</span>
+</div>
+<span class="font-metric-tabular text-label-sm font-label-sm px-2 py-0.5 rounded-full bg-error text-on-error font-semibold">3</span>
+</div>
+<div class="space-y-2">
+<div class="p-3 bg-surface-container-lowest rounded-xl shadow-sm space-y-2">
+<div class="h-1 w-full bg-error rounded-full"></div>
+<h5 class="font-headline-sm text-label-md text-error leading-tight">Water tanker supply delay in Sector 8</h5>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Escalation filed with SDM Office</p>
+<div class="flex items-center justify-between text-body-sm font-body-sm text-outline pt-1">
+<span>Ward 18</span>
+<span class="font-semibold text-error">Critical</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Lane 4: Completed -->
+<div class="w-[260px] shrink-0 bg-surface-container rounded-2xl p-3 space-y-2.5">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+<span class="font-headline-sm text-label-lg text-on-surface">Completed</span>
+</div>
+<span class="font-metric-tabular text-label-sm font-label-sm px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface font-semibold">9</span>
+</div>
+<div class="space-y-2">
+<div class="p-3 bg-surface-container-lowest rounded-xl opacity-85 shadow-sm space-y-1">
+<div class="flex items-center gap-1 text-primary">
+<span class="material-symbols-outlined text-[14px]">check_circle</span>
+<span class="font-label-sm text-label-sm font-semibold">Done 08:30 AM</span>
+</div>
+<h5 class="font-headline-sm text-label-md text-on-surface line-through">Audio test at Central Ground</h5>
+<p class="font-body-sm text-body-sm text-outline">Verified by Sound Engineer</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- ======================== VIEW 3: FIELD WORKER VIEW (Initially Hidden) ======================== -->
+<div class="hidden flex-col space-y-space-md" id="view-field">
+<!-- Active Focus Hero Card -->
+<div class="bg-primary-container text-on-primary rounded-[24px] p-5 shadow-md relative overflow-hidden">
+<!-- Background subtle decorative wave -->
+<div class="absolute -right-8 -bottom-8 w-36 h-36 rounded-full bg-white/5 pointer-events-none"></div>
+<div class="flex items-center justify-between mb-3">
+<span class="px-2.5 py-0.5 rounded-full bg-white/20 text-on-primary font-label-sm text-label-sm font-semibold uppercase tracking-wider">
+          Current Assigned Task
+        </span>
+<span class="flex items-center gap-1 text-label-sm font-label-sm bg-error/90 px-2 py-0.5 rounded-full font-medium">
+<span class="w-1.5 h-1.5 rounded-full bg-white animate-ping"></span>
+          Due in 45m
+        </span>
+</div>
+<h3 class="font-headline-lg text-headline-lg leading-tight font-bold mb-1">
+        Distribute Voter Slips · Lane 4-9
+      </h3>
+<p class="text-on-primary-container font-body-sm text-body-sm mb-4">
+        Govt Senior Secondary School, Wing A · Ward 12
+      </p>
+<!-- Radial & metric split -->
+<div class="flex items-center justify-between bg-white/10 backdrop-blur-md rounded-2xl p-3.5 mb-4">
+<div>
+<p class="text-label-sm font-label-sm text-on-primary-container uppercase">Canvass Output</p>
+<p class="font-metric-tabular text-headline-xl-mobile leading-none font-bold mt-1">180 <span class="text-headline-sm font-normal text-on-primary-container">/ 300</span></p>
+</div>
+<!-- Progress Circular Indicator via SVG -->
+<div class="relative w-14 h-14 shrink-0 flex items-center justify-center">
+<svg class="w-full h-full -rotate-90" viewBox="0 0 36 36">
+<path class="text-white/20" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-width="3.5"></path>
+<path class="text-white" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-dasharray="60, 100" stroke-linecap="round" stroke-width="3.5"></path>
+</svg>
+<span class="absolute font-metric-tabular font-bold text-label-md">60%</span>
+</div>
+</div>
+<!-- Action Button Group -->
+<div class="flex items-center gap-2">
+<button class="flex-1 h-12 rounded-xl bg-surface-container-lowest text-primary font-headline-sm text-headline-sm font-bold flex items-center justify-center gap-2 shadow-sm active:scale-95 transition-all" id="btnFieldAction" onclick="toggleTaskAction()">
+<span class="material-symbols-outlined text-[20px]">add_task</span>
+<span id="fieldActionText">Log +10 Slips</span>
+</button>
+<button aria-label="Open navigator map" class="w-12 h-12 rounded-xl bg-white/15 text-white flex items-center justify-center active:scale-95 transition-transform">
+<span class="material-symbols-outlined text-[20px]">navigation</span>
+</button>
+</div>
+</div>
+<!-- Up Next Queue -->
+<div class="space-y-2">
+<div class="flex items-center justify-between">
+<h4 class="font-headline-sm text-headline-sm text-on-surface">Up Next in Your Route</h4>
+<span class="font-label-sm text-label-sm text-outline">Queue (2 remaining)</span>
+</div>
+<div class="bg-surface-container-lowest rounded-2xl p-3.5 shadow-sm flex items-center justify-between">
+<div class="flex items-start gap-3 min-w-0">
+<button class="w-6 h-6 mt-0.5 rounded-lg border-2 border-outline-variant hover:border-primary flex items-center justify-center shrink-0 text-transparent hover:text-primary">
+<span class="material-symbols-outlined text-[16px]">check</span>
+</button>
+<div class="min-w-0">
+<h5 class="font-headline-sm text-label-lg text-on-surface truncate">Slip Verification at Apartment Block 4</h5>
+<p class="font-body-sm text-body-sm text-on-surface-variant truncate">Ward 12 · Estimated 1h work</p>
+</div>
+</div>
+<span class="font-label-sm text-label-sm text-outline font-metric-tabular shrink-0">03:30 PM</span>
+</div>
+<div class="bg-surface-container-lowest rounded-2xl p-3.5 shadow-sm flex items-center justify-between">
+<div class="flex items-start gap-3 min-w-0">
+<button class="w-6 h-6 mt-0.5 rounded-lg border-2 border-outline-variant hover:border-primary flex items-center justify-center shrink-0 text-transparent hover:text-primary">
+<span class="material-symbols-outlined text-[16px]">check</span>
+</button>
+<div class="min-w-0">
+<h5 class="font-headline-sm text-label-lg text-on-surface truncate">Return unused voter seals to Booth Officer</h5>
+<p class="font-body-sm text-body-sm text-on-surface-variant truncate">Booth 118 Security Desk</p>
+</div>
+</div>
+<span class="font-label-sm text-label-sm text-outline font-metric-tabular shrink-0">05:00 PM</span>
+</div>
+</div>
+</div>
+<!-- Interactive JavaScript logic for View Switching & Field Updates -->
+<script>
+    function switchView(viewName) {
+      const views = ['list', 'kanban', 'field'];
+      views.forEach(v => {
+        const el = document.getElementById('view-' + v);
+        const btn = document.getElementById('btn-view-' + v);
+        if (v === viewName) {
+          el.classList.remove('hidden');
+          el.classList.add('flex');
+          btn.className = "flex-1 py-1.5 px-2 rounded-lg font-label-md text-label-md text-center transition-all bg-surface-container-lowest text-on-surface shadow-sm font-semibold flex items-center justify-center gap-1";
+        } else {
+          el.classList.add('hidden');
+          el.classList.remove('flex');
+          btn.className = "flex-1 py-1.5 px-2 rounded-lg font-label-md text-label-md text-center transition-all text-on-surface-variant hover:text-on-surface flex items-center justify-center gap-1";
+        }
+      });
+    }
+
+    let slipsCount = 180;
+    function toggleTaskAction() {
+      slipsCount += 10;
+      if (slipsCount > 300) slipsCount = 300;
+      const btnText = document.getElementById('fieldActionText');
+      if (slipsCount === 300) {
+        btnText.innerText = 'Completed!';
+      } else {
+        btnText.innerText = 'Logged (' + slipsCount + '/300)';
+      }
+    }
+  </script>
+</div></main><div class="fixed bottom-0 w-full z-50 pb-safe pointer-events-none"><div class="px-margin-mobile pb-3 w-full max-w-[420px] mx-auto"><nav class="pointer-events-auto bg-surface-container-lowest/85 backdrop-blur-xl rounded-full shadow-[0_8px_30px_rgba(15,18,34,0.08)] p-1.5 flex items-center justify-between" data-active-classes="bg-primary-container text-on-primary font-semibold shadow-sm"><a class="flex items-center justify-center min-w-[44px] min-h-[44px] px-2.5 rounded-full text-on-surface-variant hover:text-on-surface transition-all shrink-0" data-path="campaign-dashboard" href="#"><span class="material-symbols-outlined">grid_view</span></a><a class="flex items-center justify-center min-w-[44px] min-h-[44px] px-2.5 rounded-full text-on-surface-variant hover:text-on-surface transition-all shrink-0" data-path="booths-management" href="#"><span class="material-symbols-outlined">how_to_vote</span></a><a aria-current="page" class="flex items-center justify-center min-w-[44px] min-h-[44px] px-2.5 rounded-full transition-all shrink-0 bg-primary-container text-on-primary font-semibold shadow-sm" data-path="team-management" href="#"><span class="material-symbols-outlined">group</span></a><a class="flex items-center justify-center min-w-[44px] min-h-[44px] px-2.5 rounded-full text-on-surface-variant hover:text-on-surface transition-all shrink-0" data-path="operations-calendar" href="#"><span class="material-symbols-outlined">calendar_today</span></a><a class="flex items-center justify-center min-w-[44px] min-h-[44px] px-2.5 rounded-full text-on-surface-variant hover:text-on-surface transition-all shrink-0" data-path="operations-more" href="#"><span class="material-symbols-outlined">tune</span></a></nav></div></div></body></html>

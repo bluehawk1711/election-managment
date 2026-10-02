@@ -1,0 +1,544 @@
+<!DOCTYPE html><html class="h-full" lang="en"><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"><meta content="mobile_tab" name="shell-type"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><style>@layer base{html,body{width:100%;min-height:100%;margin:0;padding:0;}body{overscroll-behavior:none;-webkit-tap-highlight-color:transparent;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}.material-symbols-outlined{font-variation-settings:'FILL' 0,'wght' 300,'GRAD' 0,'opsz' 24;font-size:22px;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{"colors":{"on-tertiary-fixed":"#001e2f","inverse-surface":"#2d2f41","surface-container-highest":"#e0e1f8","error-container":"#ffdad6","secondary":"#835400","on-primary":"#ffffff","on-surface-variant":"#464555","primary-fixed-dim":"#c2c1ff","on-tertiary-fixed-variant":"#004c6e","primary-fixed":"#e2dfff","surface-container-high":"#e5e6fe","inverse-primary":"#c2c1ff","on-secondary-fixed":"#2a1800","secondary-container":"#ffad2e","tertiary-fixed-dim":"#89ceff","tertiary-fixed":"#c9e6ff","tertiary-container":"#00547a","on-error":"#ffffff","on-tertiary":"#ffffff","secondary-fixed-dim":"#ffb957","background":"#fbf8ff","primary-container":"#3b2fd6","tertiary":"#003c58","surface-tint":"#4c43e5","outline":"#777587","surface-variant":"#e0e1f8","surface-container-lowest":"#ffffff","surface-dim":"#d7d8ef","secondary-fixed":"#ffddb5","primary":"#2100bd","on-background":"#181b2b","on-primary-fixed-variant":"#3121ce","on-secondary":"#ffffff","on-tertiary-container":"#79c9ff","surface":"#fbf8ff","on-error-container":"#93000a","inverse-on-surface":"#f0efff","on-secondary-fixed-variant":"#643f00","error":"#ba1a1a","surface-bright":"#fbf8ff","surface-container-low":"#f3f2ff","on-primary-container":"#bcbbff","on-primary-fixed":"#0e006a","on-secondary-container":"#6c4400","outline-variant":"#c7c4d8","surface-container":"#ececff","on-surface":"#181b2b"},"borderRadius":{"DEFAULT":"0.25rem","lg":"0.5rem","xl":"0.75rem","full":"9999px"},"spacing":{"gutter":"1rem","space-xs":"0.25rem","gutter-mobile":"0.75rem","margin":"1.25rem","space-lg":"1.25rem","margin-mobile":"1rem","space-xl":"1.75rem","space-sm":"0.5rem","space-md":"0.75rem"},"fontFamily":{"metric-tabular":["Inter"],"headline-sm":["Inter"],"body-lg":["Inter"],"label-lg":["Inter"],"label-md":["Inter"],"headline-xl-mobile":["Inter"],"body-md":["Inter"],"headline-xl":["Inter"],"body-sm":["Inter"],"headline-lg":["Inter"],"headline-md":["Inter"],"label-sm":["Inter"]},"fontSize":{"metric-tabular":["20px",{"lineHeight":"24px","letterSpacing":"-0.02em","fontWeight":"600"}],"headline-sm":["16px",{"lineHeight":"24px","letterSpacing":"-0.01em","fontWeight":"600"}],"body-lg":["16px",{"lineHeight":"24px","letterSpacing":"-0.005em","fontWeight":"400"}],"label-lg":["14px",{"lineHeight":"20px","letterSpacing":"0.005em","fontWeight":"500"}],"label-md":["12px",{"lineHeight":"16px","letterSpacing":"0.01em","fontWeight":"500"}],"headline-xl-mobile":["26px",{"lineHeight":"32px","letterSpacing":"-0.02em","fontWeight":"600"}],"body-md":["14px",{"lineHeight":"20px","letterSpacing":"0em","fontWeight":"400"}],"headline-xl":["32px",{"lineHeight":"40px","letterSpacing":"-0.025em","fontWeight":"600"}],"body-sm":["12px",{"lineHeight":"16px","letterSpacing":"0.005em","fontWeight":"400"}],"headline-lg":["24px",{"lineHeight":"32px","letterSpacing":"-0.02em","fontWeight":"600"}],"headline-md":["20px",{"lineHeight":"28px","letterSpacing":"-0.015em","fontWeight":"600"}],"label-sm":["10px",{"lineHeight":"14px","letterSpacing":"0.04em","fontWeight":"600"}]}}}};</script><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head><body class="bg-surface text-on-surface antialiased flex flex-col min-h-screen"><header class="fixed top-0 w-full z-50 pt-safe bg-surface/80 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="h-14 px-margin-mobile flex items-center justify-between"><div class="flex items-center gap-space-sm min-w-0"><img alt="Vanguard Operations Brandmark" class="h-8 w-auto object-contain shrink-0" src="https://lh3.googleusercontent.com/aida/AEtjO1VSgT0qOyjug6Z-LzxIQNPnbNUeinL7ztuA-PSXWGZ1I1ueeYIwX1Fe7VdWby9AefTkk19zvJXjLKdqX4JEnjp6vhIE_O9jsav7dO6RQHi-59fXM7lmLCkn7FD_ajK7Hl42AeNXR0rfd8M4IrmUxltgMHGho3iraH3mvHuP0eyssAsI-WXjmJ-jDdS_11AzvuZQyRbRoYKir9q1MVUbSNcSQj4YsZgDrrW4WvuD0OWBYEa30x-i0WCrZVk"><div class="flex flex-col min-w-0"><span class="font-label-sm text-label-sm text-outline tracking-wider uppercase truncate">Campaign Ops</span><h1 class="font-headline-sm text-headline-sm text-on-surface truncate">Dashboard</h1></div></div><div class="flex items-center gap-space-xs"><button aria-label="Command search" class="w-11 h-11 flex items-center justify-center text-on-surface-variant hover:text-on-surface rounded-full transition-colors" type="button"><span class="material-symbols-outlined">search</span></button><div class="w-11 h-11 flex items-center justify-center"><img alt="Profile" class="w-8 h-8 rounded-full object-cover ring-2 ring-surface-container-high" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBm3uBMdQsvGOiR5Zr2QlhG_0MubgubN4Meq_gujqMGfmSBH_DZYObPWkau_tYirzPh8QkF-XRBzOV6OfYjj4dA36DyJgQeP1dQLnGEnhkAv5L2x0WL7Xxuipurh40_btiuBPsF1EShCVpJ03KwhwrLtuHBJN8IeA4SiWNGD0y3qdbaTn02iwR6T9ui3NJuQcJ5LC3HzJTGRS8GWNPz00Duam8JQZbhEnBR3NKhoiTbT17rTlw7ey7L"></div></div></div></header><main class="flex-1 flex flex-col relative w-full pt-14 pb-28 px-margin-mobile bg-surface"><div class="flex flex-col w-full gap-6">
+<!-- Top Section Greeting -->
+<section class="flex items-center justify-between pt-1">
+<div class="flex items-center gap-3 min-w-0">
+<div class="relative shrink-0">
+<img class="w-12 h-12 rounded-full object-cover shadow-sm bg-surface-container-high" data-alt="Close up professional editorial headshot of Rajendra, an Indian campaign director in crisp formal attire against an architectural neutral studio background, calm authoritative expression, natural studio lighting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBRRwBKwUIjvfRMxLu7tDULWOSYdBpQ1aszl2-FDb7OBCcv29SLT_wOwMr_2dHITz7tOZsspTpfN-0pfNlN653asaDIgMcfGgm0IQR8Ysxa_6Jy3resJq8Eb3p_M6ihvtckZjeNeP18-eXgWQDFZ4R7VY80K5X6d5Mz5dI1OW5UTO7CzMAc0Hjx4xBs_vB51FaHsxVdZE7cmEo9idY5agnJ-8btpqczp2_CuA3_ER2BJGuFK8XfnHfR">
+<span class="absolute bottom-0 right-0 w-3 h-3 bg-secondary-container rounded-full ring-2 ring-surface"></span>
+</div>
+<div class="flex flex-col min-w-0">
+<h2 class="font-headline-md text-headline-md text-on-surface tracking-tight truncate">Good morning, Rajendra</h2>
+<p class="font-label-md text-label-md text-outline font-medium tracking-tight truncate">Campaign Day 18 · <span class="font-semibold text-on-surface-variant">24 days to polling</span></p>
+</div>
+</div>
+<div class="flex items-center gap-1.5 shrink-0">
+<button aria-label="Notifications" class="relative w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:text-on-surface bg-surface-container-lowest shadow-sm transition-colors" type="button">
+<span class="material-symbols-outlined text-[20px]">notifications</span>
+<span class="absolute top-2.5 right-2.5 w-2 h-2 bg-secondary-container rounded-full"></span>
+</button>
+<button aria-label="Search records" class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:text-on-surface bg-surface-container-lowest shadow-sm transition-colors" type="button">
+<span class="material-symbols-outlined text-[20px]">tune</span>
+</button>
+</div>
+</section>
+<!-- Hero Summary Card -->
+<section class="relative overflow-hidden rounded-[20px] bg-gradient-to-br from-[#3B2FD6] via-[#2F24B8] to-[#2100BD] text-on-primary p-5 shadow-md">
+<!-- Topographic / precision grid subtle texture -->
+<svg class="absolute inset-0 w-full h-full opacity-10 pointer-events-none stroke-current" fill="none" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<pattern height="28" id="grid-pattern" patternUnits="userSpaceOnUse" width="28">
+<path d="M 28 0 L 0 0 0 28" fill="none" stroke="currentColor" stroke-width="0.75"></path>
+</pattern>
+</defs>
+<rect fill="url(#grid-pattern)" height="100%" width="100%"></rect>
+<path d="M-20 60 Q 80 120 180 80 T 380 90" fill="none" stroke="currentColor" stroke-width="1.5"></path>
+<path d="M-40 110 Q 70 170 200 130 T 400 140" fill="none" stroke="currentColor" stroke-width="1.5"></path>
+</svg>
+<div class="relative z-10 flex flex-col gap-4">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-on-primary-container font-semibold">Campaign Readiness</span>
+<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-white/15 backdrop-blur-md text-[11px] font-medium text-white">
+<span class="material-symbols-outlined text-[14px]">trending_up</span> +6% this week
+        </span>
+</div>
+<div class="flex items-center gap-5 pt-1">
+<!-- Radial Circular Progress Ring -->
+<div class="relative w-24 h-24 shrink-0 flex items-center justify-center">
+<svg class="w-full h-full -rotate-90 transform" viewBox="0 0 96 96">
+<circle cx="48" cy="48" fill="none" r="40" stroke="rgba(255, 255, 255, 0.2)" stroke-width="7"></circle>
+<circle cx="48" cy="48" fill="none" r="40" stroke="#FFFFFF" stroke-dasharray="251.2" stroke-dashoffset="70.33" stroke-linecap="round" stroke-width="7.5"></circle>
+</svg>
+<div class="absolute inset-0 flex flex-col items-center justify-center">
+<span class="font-headline-xl-mobile text-headline-xl-mobile font-bold tracking-tight text-white leading-none">72<span class="text-sm font-normal opacity-90">%</span></span>
+<span class="text-[9px] uppercase tracking-wider text-on-primary-container font-semibold mt-0.5">Index</span>
+</div>
+</div>
+<!-- Tabular Metrics Beside Gauge -->
+<div class="flex flex-col justify-center gap-2 flex-1 min-w-0">
+<div class="flex items-baseline justify-between border-b border-white/10 pb-1.5">
+<span class="font-body-sm text-body-sm text-on-primary-container truncate">Booths covered</span>
+<span class="font-metric-tabular text-metric-tabular text-white font-semibold">184<span class="text-xs text-white/70 font-normal"> / 240</span></span>
+</div>
+<div class="flex items-baseline justify-between border-b border-white/10 pb-1.5">
+<span class="font-body-sm text-body-sm text-on-primary-container truncate">Active workers</span>
+<span class="font-metric-tabular text-metric-tabular text-white font-semibold">96</span>
+</div>
+<div class="flex items-baseline justify-between">
+<span class="font-body-sm text-body-sm text-on-primary-container truncate">Tasks done today</span>
+<span class="font-metric-tabular text-metric-tabular text-white font-semibold">38</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Quick Actions Row -->
+<section class="grid grid-cols-4 gap-2.5">
+<button class="group flex flex-col items-center justify-center py-3 px-1 rounded-[14px] bg-surface-container-lowest shadow-sm hover:shadow active:scale-[0.98] transition-all" type="button">
+<div class="w-10 h-10 rounded-xl bg-primary-fixed flex items-center justify-center text-primary group-hover:scale-105 transition-transform mb-1.5">
+<span class="material-symbols-outlined text-[20px]">add_task</span>
+</div>
+<span class="font-label-md text-label-md text-on-surface font-semibold text-center leading-tight">New Task</span>
+</button>
+<button class="group flex flex-col items-center justify-center py-3 px-1 rounded-[14px] bg-surface-container-lowest shadow-sm hover:shadow active:scale-[0.98] transition-all" type="button">
+<div class="w-10 h-10 rounded-xl bg-error-container flex items-center justify-center text-error group-hover:scale-105 transition-transform mb-1.5">
+<span class="material-symbols-outlined text-[20px]">warning</span>
+</div>
+<span class="font-label-md text-label-md text-on-surface font-semibold text-center leading-tight">Report Issue</span>
+</button>
+<button class="group flex flex-col items-center justify-center py-3 px-1 rounded-[14px] bg-surface-container-lowest shadow-sm hover:shadow active:scale-[0.98] transition-all" type="button">
+<div class="w-10 h-10 rounded-xl bg-secondary-fixed flex items-center justify-center text-secondary group-hover:scale-105 transition-transform mb-1.5">
+<span class="material-symbols-outlined text-[20px]">event</span>
+</div>
+<span class="font-label-md text-label-md text-on-surface font-semibold text-center leading-tight">Add Event</span>
+</button>
+<button class="group flex flex-col items-center justify-center py-3 px-1 rounded-[14px] bg-surface-container-lowest shadow-sm hover:shadow active:scale-[0.98] transition-all" type="button">
+<div class="w-10 h-10 rounded-xl bg-tertiary-fixed flex items-center justify-center text-tertiary group-hover:scale-105 transition-transform mb-1.5">
+<span class="material-symbols-outlined text-[20px]">qr_code_scanner</span>
+</div>
+<span class="font-label-md text-label-md text-on-surface font-semibold text-center leading-tight">Booth In</span>
+</button>
+</section>
+<!-- Key Metric Tiles (2 x 2 grid) -->
+<section class="grid grid-cols-2 gap-3">
+<!-- Card 1: Pending Tasks -->
+<div class="flex flex-col justify-between p-4 rounded-[20px] bg-surface-container-lowest shadow-sm">
+<div class="flex items-center justify-between">
+<span class="w-8 h-8 rounded-lg bg-surface-container flex items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined text-[18px]">assignment_late</span>
+</span>
+<span class="font-label-sm text-[10px] px-2 py-0.5 rounded-full bg-secondary-fixed text-on-secondary-fixed font-bold tracking-tight">Active</span>
+</div>
+<div class="my-2.5">
+<div class="font-headline-xl-mobile text-headline-xl-mobile font-semibold text-on-surface tracking-tight">54</div>
+<div class="font-label-md text-label-md text-outline truncate">Pending tasks</div>
+</div>
+<div class="h-6 w-full pt-1">
+<svg class="w-full h-full stroke-secondary" fill="none" preserveAspectRatio="none" viewBox="0 0 100 24">
+<path d="M0,18 Q20,10 40,15 T80,8 T100,5" stroke-linecap="round" stroke-width="2" vector-effect="non-scaling-stroke"></path>
+</svg>
+</div>
+</div>
+<!-- Card 2: Open Civic Issues -->
+<div class="flex flex-col justify-between p-4 rounded-[20px] bg-surface-container-lowest shadow-sm">
+<div class="flex items-center justify-between">
+<span class="w-8 h-8 rounded-lg bg-error-container flex items-center justify-center text-error">
+<span class="material-symbols-outlined text-[18px]">report_problem</span>
+</span>
+<span class="font-label-sm text-[10px] px-2 py-0.5 rounded-full bg-error-container text-on-error-container font-bold tracking-tight">Critical</span>
+</div>
+<div class="my-2.5">
+<div class="font-headline-xl-mobile text-headline-xl-mobile font-semibold text-on-surface tracking-tight">17</div>
+<div class="font-label-md text-label-md text-outline truncate">Open civic issues</div>
+</div>
+<div class="h-6 w-full pt-1">
+<svg class="w-full h-full stroke-error" fill="none" preserveAspectRatio="none" viewBox="0 0 100 24">
+<path d="M0,12 Q25,20 50,14 T80,18 T100,4" stroke-linecap="round" stroke-width="2" vector-effect="non-scaling-stroke"></path>
+</svg>
+</div>
+</div>
+<!-- Card 3: Meetings this week -->
+<div class="flex flex-col justify-between p-4 rounded-[20px] bg-surface-container-lowest shadow-sm">
+<div class="flex items-center justify-between">
+<span class="w-8 h-8 rounded-lg bg-surface-container flex items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined text-[18px]">groups</span>
+</span>
+<span class="font-label-sm text-[10px] px-2 py-0.5 rounded-full bg-surface-container text-on-surface-variant font-medium">Synced</span>
+</div>
+<div class="my-2.5">
+<div class="font-headline-xl-mobile text-headline-xl-mobile font-semibold text-on-surface tracking-tight">9</div>
+<div class="font-label-md text-label-md text-outline truncate">Meetings this week</div>
+</div>
+<div class="h-6 w-full pt-1">
+<svg class="w-full h-full stroke-primary-container" fill="none" preserveAspectRatio="none" viewBox="0 0 100 24">
+<path d="M0,20 Q25,18 45,10 T85,12 T100,2" stroke-linecap="round" stroke-width="2" vector-effect="non-scaling-stroke"></path>
+</svg>
+</div>
+</div>
+<!-- Card 4: Expenses Logged -->
+<div class="flex flex-col justify-between p-4 rounded-[20px] bg-surface-container-lowest shadow-sm">
+<div class="flex items-center justify-between">
+<span class="w-8 h-8 rounded-lg bg-surface-container flex items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined text-[18px]">account_balance_wallet</span>
+</span>
+<span class="font-label-sm text-[10px] px-2 py-0.5 rounded-full bg-surface-container text-on-surface-variant font-medium">Audit OK</span>
+</div>
+<div class="my-2.5">
+<div class="font-headline-xl-mobile text-headline-xl-mobile font-semibold text-on-surface tracking-tight">₹1.2L</div>
+<div class="font-label-md text-label-md text-outline truncate">Expenses logged</div>
+</div>
+<div class="h-6 w-full pt-1">
+<svg class="w-full h-full stroke-tertiary-container" fill="none" preserveAspectRatio="none" viewBox="0 0 100 24">
+<path d="M0,16 Q30,16 55,9 T85,14 T100,6" stroke-linecap="round" stroke-width="2" vector-effect="non-scaling-stroke"></path>
+</svg>
+</div>
+</div>
+</section>
+<!-- Charts Section -->
+<section class="flex flex-col gap-4">
+<!-- Chart A: Task Completion Trend -->
+<div class="flex flex-col p-5 rounded-[20px] bg-surface-container-lowest shadow-sm">
+<div class="flex items-center justify-between mb-4">
+<div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Task completion</h3>
+<p class="font-label-sm text-label-sm text-outline">Velocity vs weekly operational benchmark</p>
+</div>
+<div class="inline-flex p-0.5 bg-surface-container rounded-full text-xs font-medium">
+<button class="px-2.5 py-1 rounded-full bg-primary-container text-on-primary shadow-xs font-semibold" type="button">7D</button>
+<button class="px-2.5 py-1 rounded-full text-on-surface-variant hover:text-on-surface" type="button">30D</button>
+</div>
+</div>
+<!-- Area Chart SVG -->
+<div class="relative w-full h-44">
+<svg class="w-full h-full overflow-visible" viewBox="0 0 320 140">
+<defs>
+<linearGradient id="areaGradient" x1="0%" x2="0%" y1="0%" y2="100%">
+<stop offset="0%" stop-color="#3B2FD6" stop-opacity="0.28"></stop>
+<stop offset="100%" stop-color="#3B2FD6" stop-opacity="0.0"></stop>
+</linearGradient>
+</defs>
+<!-- Dashed subtle horizontal grid lines -->
+<line stroke="#ECECFF" stroke-dasharray="3 3" stroke-width="1" x1="0" x2="320" y1="20" y2="20"></line>
+<line stroke="#ECECFF" stroke-dasharray="3 3" stroke-width="1" x1="0" x2="320" y1="60" y2="60"></line>
+<line stroke="#ECECFF" stroke-dasharray="3 3" stroke-width="1" x1="0" x2="320" y1="100" y2="100"></line>
+<!-- Area under curve -->
+<polygon fill="url(#areaGradient)" points="10,110 55,90 105,50 155,62 205,40 255,58 305,72 305,130 10,130"></polygon>
+<!-- Main Curve -->
+<path d="M10,110 C35,100 40,90 55,90 C85,90 85,50 105,50 C125,50 135,62 155,62 C180,62 185,40 205,40 C230,40 235,58 255,58 C280,58 285,72 305,72" fill="none" stroke="#3B2FD6" stroke-linecap="round" stroke-width="2.5"></path>
+<!-- Indicator dot on Wednesday (105, 50) -->
+<circle class="shadow-sm" cx="105" cy="50" fill="#3B2FD6" r="5"></circle>
+<circle cx="105" cy="50" fill="#FFFFFF" r="2"></circle>
+</svg>
+<!-- Tooltip Bubble placed over Wednesday point -->
+<div class="absolute left-[33%] top-4 -translate-x-1/2 flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-inverse-surface text-inverse-on-surface shadow-md pointer-events-none">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary-container"></span>
+<span class="font-label-sm text-label-sm font-semibold tracking-tight">Wed · 42 done</span>
+</div>
+<!-- Axis Labels -->
+<div class="flex justify-between items-center text-[11px] font-metric-tabular text-outline pt-2 px-1">
+<span>Mon</span>
+<span>Tue</span>
+<span class="font-bold text-primary-container">Wed</span>
+<span>Thu</span>
+<span>Fri</span>
+<span>Sat</span>
+<span>Sun</span>
+</div>
+</div>
+</div>
+<!-- Chart B: Booth Coverage by Ward -->
+<div class="flex flex-col p-5 rounded-[20px] bg-surface-container-lowest shadow-sm">
+<div class="flex items-center justify-between mb-4">
+<div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Booth coverage by ward</h3>
+<p class="font-label-sm text-label-sm text-outline">Target threshold: 60% per sector</p>
+</div>
+<span class="font-label-md text-label-md font-semibold text-primary">6 Wards</span>
+</div>
+<div class="flex flex-col gap-3">
+<!-- Ward 4 -->
+<div class="flex flex-col gap-1">
+<div class="flex items-center justify-between text-xs">
+<span class="font-medium text-on-surface">Ward 4</span>
+<span class="font-metric-tabular font-semibold text-on-surface">88%</span>
+</div>
+<div class="w-full h-2 rounded-full bg-surface-container overflow-hidden">
+<div class="h-full rounded-full bg-primary-container" style="width: 88%"></div>
+</div>
+</div>
+<!-- Ward 7 -->
+<div class="flex flex-col gap-1">
+<div class="flex items-center justify-between text-xs">
+<span class="font-medium text-on-surface">Ward 7</span>
+<span class="font-metric-tabular font-semibold text-on-surface">75%</span>
+</div>
+<div class="w-full h-2 rounded-full bg-surface-container overflow-hidden">
+<div class="h-full rounded-full bg-primary-container" style="width: 75%"></div>
+</div>
+</div>
+<!-- Ward 12 -->
+<div class="flex flex-col gap-1">
+<div class="flex items-center justify-between text-xs">
+<span class="font-medium text-on-surface">Ward 12</span>
+<span class="font-metric-tabular font-semibold text-on-surface">64%</span>
+</div>
+<div class="w-full h-2 rounded-full bg-surface-container overflow-hidden">
+<div class="h-full rounded-full bg-primary-container" style="width: 64%"></div>
+</div>
+</div>
+<!-- Ward 9 -->
+<div class="flex flex-col gap-1">
+<div class="flex items-center justify-between text-xs">
+<span class="font-medium text-on-surface">Ward 9</span>
+<span class="font-metric-tabular font-semibold text-on-surface">52%</span>
+</div>
+<div class="w-full h-2 rounded-full bg-surface-container overflow-hidden">
+<div class="h-full rounded-full bg-surface-tint" style="width: 52%"></div>
+</div>
+</div>
+<!-- Ward 15 -->
+<div class="flex flex-col gap-1">
+<div class="flex items-center justify-between text-xs">
+<span class="font-medium text-on-surface">Ward 15</span>
+<span class="font-metric-tabular font-semibold text-on-surface">48%</span>
+</div>
+<div class="w-full h-2 rounded-full bg-surface-container overflow-hidden">
+<div class="h-full rounded-full bg-surface-tint" style="width: 48%"></div>
+</div>
+</div>
+<!-- Ward 18 (Needs attention) -->
+<div class="flex flex-col gap-1 p-2 rounded-xl bg-secondary-fixed/30 -mx-2">
+<div class="flex items-center justify-between text-xs">
+<span class="font-semibold text-on-surface flex items-center gap-1.5">
+              Ward 18
+              <span class="font-label-sm text-[9px] px-1.5 py-0.5 rounded-full bg-secondary-container text-on-secondary-container uppercase tracking-wider font-bold">Needs attention</span>
+</span>
+<span class="font-metric-tabular font-bold text-secondary">34%</span>
+</div>
+<div class="w-full h-2 rounded-full bg-surface-container overflow-hidden">
+<div class="h-full rounded-full bg-secondary-container" style="width: 34%"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Chart C: Issues by Category -->
+<div class="flex flex-col p-5 rounded-[20px] bg-surface-container-lowest shadow-sm">
+<div class="flex items-center justify-between mb-4">
+<div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Issues by category</h3>
+<p class="font-label-sm text-label-sm text-outline">Grievance distribution across voter desks</p>
+</div>
+<span class="material-symbols-outlined text-outline">pie_chart</span>
+</div>
+<div class="flex items-center gap-4">
+<!-- SVG Donut Chart -->
+<div class="relative w-32 h-32 shrink-0 flex items-center justify-center">
+<svg class="w-full h-full -rotate-90" viewBox="0 0 100 100">
+<!-- Road 35% (stroke-dasharray="35 65" offset 0) -->
+<circle cx="50" cy="50" fill="none" r="38" stroke="#3B2FD6" stroke-dasharray="75.4 163.3" stroke-dashoffset="0" stroke-width="12"></circle>
+<!-- Water 25% (stroke-dasharray="25 75" offset -35) -->
+<circle cx="50" cy="50" fill="none" r="38" stroke="#00547A" stroke-dasharray="53.8 184.9" stroke-dashoffset="-75.4" stroke-width="12"></circle>
+<!-- Electricity 20% (stroke-dasharray="20 80" offset -60) -->
+<circle cx="50" cy="50" fill="none" r="38" stroke="#FFAD2E" stroke-dasharray="43.1 195.6" stroke-dashoffset="-129.2" stroke-width="12"></circle>
+<!-- Drainage 12% (stroke-dasharray="12 88" offset -80) -->
+<circle cx="50" cy="50" fill="none" r="38" stroke="#835400" stroke-dasharray="25.8 212.9" stroke-dashoffset="-172.3" stroke-width="12"></circle>
+<!-- Sanitation 8% (stroke-dasharray="8 92" offset -92) -->
+<circle cx="50" cy="50" fill="none" r="38" stroke="#777587" stroke-dasharray="17.2 221.5" stroke-dashoffset="-198.1" stroke-width="12"></circle>
+</svg>
+<div class="absolute inset-0 flex flex-col items-center justify-center text-center p-2">
+<span class="font-headline-md text-headline-md font-bold text-on-surface leading-none">17</span>
+<span class="font-label-sm text-[9px] text-outline uppercase font-semibold leading-tight mt-0.5">Total Issues</span>
+</div>
+</div>
+<!-- Clean Categorical Legend -->
+<div class="flex flex-col gap-1.5 flex-1 min-w-0 font-label-md text-label-md">
+<div class="flex items-center justify-between">
+<span class="flex items-center gap-1.5 truncate">
+<span class="w-2.5 h-2.5 rounded-full bg-primary-container shrink-0"></span>
+<span class="text-on-surface truncate">Road repair</span>
+</span>
+<span class="font-metric-tabular font-semibold text-on-surface shrink-0">6 (35%)</span>
+</div>
+<div class="flex items-center justify-between">
+<span class="flex items-center gap-1.5 truncate">
+<span class="w-2.5 h-2.5 rounded-full bg-tertiary-container shrink-0"></span>
+<span class="text-on-surface truncate">Water supply</span>
+</span>
+<span class="font-metric-tabular font-semibold text-on-surface shrink-0">4 (25%)</span>
+</div>
+<div class="flex items-center justify-between">
+<span class="flex items-center gap-1.5 truncate">
+<span class="w-2.5 h-2.5 rounded-full bg-secondary-container shrink-0"></span>
+<span class="text-on-surface truncate">Electricity</span>
+</span>
+<span class="font-metric-tabular font-semibold text-on-surface shrink-0">3 (20%)</span>
+</div>
+<div class="flex items-center justify-between">
+<span class="flex items-center gap-1.5 truncate">
+<span class="w-2.5 h-2.5 rounded-full bg-secondary shrink-0"></span>
+<span class="text-on-surface truncate">Drainage</span>
+</span>
+<span class="font-metric-tabular font-semibold text-on-surface shrink-0">2 (12%)</span>
+</div>
+<div class="flex items-center justify-between">
+<span class="flex items-center gap-1.5 truncate">
+<span class="w-2.5 h-2.5 rounded-full bg-outline shrink-0"></span>
+<span class="text-on-surface truncate">Sanitation</span>
+</span>
+<span class="font-metric-tabular font-semibold text-on-surface shrink-0">2 (8%)</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Needs Attention Section -->
+<section class="flex flex-col p-5 rounded-[20px] bg-surface-container-lowest shadow-sm">
+<div class="flex items-center justify-between mb-3.5">
+<div class="flex items-center gap-2">
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Needs attention</h3>
+<span class="font-label-sm text-[10px] px-2 py-0.5 rounded-full bg-error-container text-on-error-container font-bold">3 Action Items</span>
+</div>
+<a class="font-label-md text-label-md font-semibold text-primary hover:underline" href="#">View all</a>
+</div>
+<div class="flex flex-col gap-2">
+<!-- Item 1: Amber dot -->
+<div class="flex items-start gap-3 p-3 rounded-xl bg-surface-container-low hover:bg-surface-container transition-colors">
+<span class="w-2.5 h-2.5 rounded-full bg-secondary-container mt-1.5 shrink-0"></span>
+<div class="flex-1 min-w-0">
+<div class="font-headline-sm text-[13px] font-semibold text-on-surface truncate">Booth 63 · No coordinator assigned</div>
+<div class="flex items-center gap-2 font-label-sm text-label-sm text-outline mt-0.5">
+<span class="text-on-surface-variant font-medium">Ward 12</span>
+<span>·</span>
+<span class="font-metric-tabular">2h ago</span>
+</div>
+</div>
+<button class="px-2.5 py-1 rounded-lg bg-surface-container text-xs font-semibold text-on-surface hover:bg-surface-container-high transition-colors" type="button">Assign</button>
+</div>
+<!-- Item 2: Red dot -->
+<div class="flex items-start gap-3 p-3 rounded-xl bg-surface-container-low hover:bg-surface-container transition-colors">
+<span class="w-2.5 h-2.5 rounded-full bg-error mt-1.5 shrink-0"></span>
+<div class="flex-1 min-w-0">
+<div class="font-headline-sm text-[13px] font-semibold text-on-surface truncate">Task overdue · Poster distribution</div>
+<div class="flex items-center gap-2 font-label-sm text-label-sm text-outline mt-0.5">
+<span class="text-on-surface-variant font-medium">Ward 8</span>
+<span>·</span>
+<span class="font-metric-tabular">4h ago</span>
+</div>
+</div>
+<button class="px-2.5 py-1 rounded-lg bg-surface-container text-xs font-semibold text-on-surface hover:bg-surface-container-high transition-colors" type="button">Nudge</button>
+</div>
+<!-- Item 3: Red dot -->
+<div class="flex items-start gap-3 p-3 rounded-xl bg-surface-container-low hover:bg-surface-container transition-colors">
+<span class="w-2.5 h-2.5 rounded-full bg-error mt-1.5 shrink-0"></span>
+<div class="flex-1 min-w-0">
+<div class="font-headline-sm text-[13px] font-semibold text-on-surface truncate">Water supply disruption reported</div>
+<div class="flex items-center gap-2 font-label-sm text-label-sm text-outline mt-0.5">
+<span class="text-on-surface-variant font-medium">Booth 104</span>
+<span>·</span>
+<span class="font-metric-tabular">5h ago</span>
+</div>
+</div>
+<button class="px-2.5 py-1 rounded-lg bg-surface-container text-xs font-semibold text-on-surface hover:bg-surface-container-high transition-colors" type="button">Escalate</button>
+</div>
+</div>
+</section>
+<!-- Upcoming Schedule Card -->
+<section class="flex flex-col p-5 rounded-[20px] bg-surface-container-lowest shadow-sm">
+<div class="flex items-center justify-between mb-3.5">
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Upcoming schedule</h3>
+<span class="font-label-sm text-label-sm text-outline">Calendar Sync Active</span>
+</div>
+<div class="flex flex-col gap-3">
+<!-- Event 1 -->
+<div class="flex items-center gap-3.5 p-2 rounded-xl hover:bg-surface-container-low transition-colors">
+<div class="flex flex-col items-center justify-center w-12 h-12 rounded-xl bg-primary-fixed text-primary font-metric-tabular shrink-0">
+<span class="text-[10px] uppercase font-bold tracking-tight">OCT</span>
+<span class="text-base font-bold leading-none">05</span>
+</div>
+<div class="flex-1 min-w-0">
+<h4 class="font-body-md text-body-md font-semibold text-on-surface truncate">Booth meeting – Ward 12</h4>
+<div class="flex items-center gap-1.5 font-label-sm text-label-sm text-outline mt-0.5">
+<span class="material-symbols-outlined text-[14px]">group</span>
+<span>10:00 AM · Community Hall</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline text-[18px]">chevron_right</span>
+</div>
+<!-- Event 2 -->
+<div class="flex items-center gap-3.5 p-2 rounded-xl hover:bg-surface-container-low transition-colors">
+<div class="flex flex-col items-center justify-center w-12 h-12 rounded-xl bg-surface-container text-on-surface font-metric-tabular shrink-0">
+<span class="text-[10px] uppercase font-bold tracking-tight text-outline">OCT</span>
+<span class="text-base font-bold leading-none">07</span>
+</div>
+<div class="flex-1 min-w-0">
+<h4 class="font-body-md text-body-md font-semibold text-on-surface truncate">Worker training &amp; EVM protocol</h4>
+<div class="flex items-center gap-1.5 font-label-sm text-label-sm text-outline mt-0.5">
+<span class="material-symbols-outlined text-[14px]">verified_user</span>
+<span>03:00 PM · Central Office</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline text-[18px]">chevron_right</span>
+</div>
+<!-- Event 3 -->
+<div class="flex items-center gap-3.5 p-2 rounded-xl hover:bg-surface-container-low transition-colors">
+<div class="flex flex-col items-center justify-center w-12 h-12 rounded-xl bg-surface-container text-on-surface font-metric-tabular shrink-0">
+<span class="text-[10px] uppercase font-bold tracking-tight text-outline">OCT</span>
+<span class="text-base font-bold leading-none">09</span>
+</div>
+<div class="flex-1 min-w-0">
+<h4 class="font-body-md text-body-md font-semibold text-on-surface truncate">Ratanada Area Walkthrough</h4>
+<div class="flex items-center gap-1.5 font-label-sm text-label-sm text-outline mt-0.5">
+<span class="material-symbols-outlined text-[14px]">footprint</span>
+<span>09:30 AM · Sector 4 Gate</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline text-[18px]">chevron_right</span>
+</div>
+</div>
+</section>
+<!-- Recent Activity Feed -->
+<section class="flex flex-col p-5 rounded-[20px] bg-surface-container-lowest shadow-sm mb-2">
+<div class="flex items-center justify-between mb-3.5">
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Recent activity</h3>
+<span class="font-label-sm text-label-sm text-outline">Live stream</span>
+</div>
+<div class="flex flex-col gap-3.5">
+<!-- Activity 1 -->
+<div class="flex items-start gap-3">
+<div class="w-9 h-9 rounded-full bg-primary-fixed-dim text-on-primary-fixed font-semibold text-xs flex items-center justify-center shrink-0">
+          MR
+        </div>
+<div class="flex-1 min-w-0">
+<p class="font-body-sm text-body-sm text-on-surface leading-tight">
+<span class="font-semibold text-on-surface">Meera Rathore</span> verified Booth 118 voter roll
+          </p>
+<span class="font-label-sm text-[11px] text-outline font-metric-tabular">12m ago · Ward 6</span>
+</div>
+<span class="w-2 h-2 rounded-full bg-primary-container mt-1 shrink-0"></span>
+</div>
+<!-- Activity 2 -->
+<div class="flex items-start gap-3">
+<div class="w-9 h-9 rounded-full bg-secondary-fixed text-on-secondary-fixed font-semibold text-xs flex items-center justify-center shrink-0">
+          SJ
+        </div>
+<div class="flex-1 min-w-0">
+<p class="font-body-sm text-body-sm text-on-surface leading-tight">
+<span class="font-semibold text-on-surface">Sunil Joshi</span> logged ₹4,200 travel expense
+          </p>
+<span class="font-label-sm text-[11px] text-outline font-metric-tabular">45m ago · Field Logistics</span>
+</div>
+</div>
+<!-- Activity 3 -->
+<div class="flex items-start gap-3">
+<div class="w-9 h-9 rounded-full bg-tertiary-fixed text-on-tertiary-fixed font-semibold text-xs flex items-center justify-center shrink-0">
+          AK
+        </div>
+<div class="flex-1 min-w-0">
+<p class="font-body-sm text-body-sm text-on-surface leading-tight">
+<span class="font-semibold text-on-surface">Amit Kumar</span> completed 14 door-to-door surveys
+          </p>
+<span class="font-label-sm text-[11px] text-outline font-metric-tabular">1h ago · Ward 12</span>
+</div>
+</div>
+</div>
+</section>
+</div>
+<script>
+  // Micro-interactions and simple state handling
+  document.querySelectorAll('button').forEach(btn => {
+    btn.addEventListener('click', function(e) {
+      if (this.textContent.includes('7D') || this.textContent.includes('30D')) {
+        const parent = this.parentElement;
+        parent.querySelectorAll('button').forEach(b => {
+          b.className = 'px-2.5 py-1 rounded-full text-on-surface-variant hover:text-on-surface';
+        });
+        this.className = 'px-2.5 py-1 rounded-full bg-primary-container text-on-primary shadow-xs font-semibold';
+      }
+    });
+  });
+</script></main><div class="fixed bottom-0 w-full z-50 pb-safe pointer-events-none"><div class="px-margin-mobile pb-3 w-full max-w-[420px] mx-auto"><nav class="pointer-events-auto bg-surface-container-lowest/85 backdrop-blur-xl rounded-full shadow-[0_8px_30px_rgba(15,18,34,0.08)] p-1.5 flex items-center justify-between" data-active-classes="bg-primary-container text-on-primary font-semibold shadow-sm"><a aria-current="page" class="flex items-center justify-center gap-space-xs min-h-[44px] px-3.5 rounded-full transition-all shrink-0 bg-primary-container text-on-primary font-semibold shadow-sm" data-path="dashboard" href="#"><span class="material-symbols-outlined">grid_view</span><span class="font-label-md text-label-md">Home</span></a><a class="flex items-center justify-center min-w-[44px] min-h-[44px] px-2.5 rounded-full text-on-surface-variant hover:text-on-surface transition-all shrink-0" data-path="precinct-booths" href="#"><span class="material-symbols-outlined">how_to_vote</span></a><a class="flex items-center justify-center min-w-[44px] min-h-[44px] px-2.5 rounded-full text-on-surface-variant hover:text-on-surface transition-all shrink-0" data-path="field-tasks" href="#"><span class="material-symbols-outlined">checklist</span></a><a class="flex items-center justify-center min-w-[44px] min-h-[44px] px-2.5 rounded-full text-on-surface-variant hover:text-on-surface transition-all shrink-0" data-path="operations-calendar" href="#"><span class="material-symbols-outlined">calendar_today</span></a><a class="flex items-center justify-center min-w-[44px] min-h-[44px] px-2.5 rounded-full text-on-surface-variant hover:text-on-surface transition-all shrink-0" data-path="operations-more" href="#"><span class="material-symbols-outlined">tune</span></a></nav></div></div></body></html>

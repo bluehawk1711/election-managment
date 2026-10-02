@@ -1,0 +1,578 @@
+<!DOCTYPE html><html class="h-full" lang="en"><head></head><body class="bg-surface text-on-surface antialiased flex flex-col min-h-screen"><svg class="inline-defs-container" aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden"></svg><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"><meta content="mobile_tab" name="shell-type"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><style>@layer base{html,body{width:100%;min-height:100%;margin:0;padding:0;}body{overscroll-behavior:none;-webkit-tap-highlight-color:transparent;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}.material-symbols-outlined{font-variation-settings:'FILL' 0,'wght' 300,'GRAD' 0,'opsz' 24;font-size:22px;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{"colors":{"on-tertiary-fixed":"#001e2f","inverse-surface":"#2d2f41","surface-container-highest":"#e0e1f8","error-container":"#ffdad6","secondary":"#835400","on-primary":"#ffffff","on-surface-variant":"#464555","primary-fixed-dim":"#c2c1ff","on-tertiary-fixed-variant":"#004c6e","primary-fixed":"#e2dfff","surface-container-high":"#e5e6fe","inverse-primary":"#c2c1ff","on-secondary-fixed":"#2a1800","secondary-container":"#ffad2e","tertiary-fixed-dim":"#89ceff","tertiary-fixed":"#c9e6ff","tertiary-container":"#00547a","on-error":"#ffffff","on-tertiary":"#ffffff","secondary-fixed-dim":"#ffb957","background":"#fbf8ff","primary-container":"#3b2fd6","tertiary":"#003c58","surface-tint":"#4c43e5","outline":"#777587","surface-variant":"#e0e1f8","surface-container-lowest":"#ffffff","surface-dim":"#d7d8ef","secondary-fixed":"#ffddb5","primary":"#2100bd","on-background":"#181b2b","on-primary-fixed-variant":"#3121ce","on-secondary":"#ffffff","on-tertiary-container":"#79c9ff","surface":"#fbf8ff","on-error-container":"#93000a","inverse-on-surface":"#f0efff","on-secondary-fixed-variant":"#643f00","error":"#ba1a1a","surface-bright":"#fbf8ff","surface-container-low":"#f3f2ff","on-primary-container":"#bcbbff","on-primary-fixed":"#0e006a","on-secondary-container":"#6c4400","outline-variant":"#c7c4d8","surface-container":"#ececff","on-surface":"#181b2b"},"borderRadius":{"DEFAULT":"0.25rem","lg":"0.5rem","xl":"0.75rem","full":"9999px"},"spacing":{"gutter":"1rem","space-xs":"0.25rem","gutter-mobile":"0.75rem","margin":"1.25rem","space-lg":"1.25rem","margin-mobile":"1rem","space-xl":"1.75rem","space-sm":"0.5rem","space-md":"0.75rem"},"fontFamily":{"metric-tabular":["Inter"],"headline-sm":["Inter"],"body-lg":["Inter"],"label-lg":["Inter"],"label-md":["Inter"],"headline-xl-mobile":["Inter"],"body-md":["Inter"],"headline-xl":["Inter"],"body-sm":["Inter"],"headline-lg":["Inter"],"headline-md":["Inter"],"label-sm":["Inter"]},"fontSize":{"metric-tabular":["20px",{"lineHeight":"24px","letterSpacing":"-0.02em","fontWeight":"600"}],"headline-sm":["16px",{"lineHeight":"24px","letterSpacing":"-0.01em","fontWeight":"600"}],"body-lg":["16px",{"lineHeight":"24px","letterSpacing":"-0.005em","fontWeight":"400"}],"label-lg":["14px",{"lineHeight":"20px","letterSpacing":"0.005em","fontWeight":"500"}],"label-md":["12px",{"lineHeight":"16px","letterSpacing":"0.01em","fontWeight":"500"}],"headline-xl-mobile":["26px",{"lineHeight":"32px","letterSpacing":"-0.02em","fontWeight":"600"}],"body-md":["14px",{"lineHeight":"20px","letterSpacing":"0em","fontWeight":"400"}],"headline-xl":["32px",{"lineHeight":"40px","letterSpacing":"-0.025em","fontWeight":"600"}],"body-sm":["12px",{"lineHeight":"16px","letterSpacing":"0.005em","fontWeight":"400"}],"headline-lg":["24px",{"lineHeight":"32px","letterSpacing":"-0.02em","fontWeight":"600"}],"headline-md":["20px",{"lineHeight":"28px","letterSpacing":"-0.015em","fontWeight":"600"}],"label-sm":["10px",{"lineHeight":"14px","letterSpacing":"0.04em","fontWeight":"600"}]}}}};</script><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<header class="fixed top-0 w-full z-50 pt-safe bg-surface/80 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="h-14 px-margin-mobile flex items-center justify-between"><div class="flex items-center gap-space-sm min-w-0"><img alt="Vanguard Operations Brandmark" class="h-8 w-auto object-contain shrink-0" src="https://lh3.googleusercontent.com/aida/AEtjO1VSgT0qOyjug6Z-LzxIQNPnbNUeinL7ztuA-PSXWGZ1I1ueeYIwX1Fe7VdWby9AefTkk19zvJXjLKdqX4JEnjp6vhIE_O9jsav7dO6RQHi-59fXM7lmLCkn7FD_ajK7Hl42AeNXR0rfd8M4IrmUxltgMHGho3iraH3mvHuP0eyssAsI-WXjmJ-jDdS_11AzvuZQyRbRoYKir9q1MVUbSNcSQj4YsZgDrrW4WvuD0OWBYEa30x-i0WCrZVk"><div class="flex flex-col min-w-0"><span class="font-label-sm text-label-sm text-outline tracking-wider uppercase truncate">Campaign Ops</span><h1 class="font-headline-sm text-headline-sm text-on-surface truncate">Dashboard</h1></div></div><div class="flex items-center gap-space-xs"><button aria-label="Command search" class="w-11 h-11 flex items-center justify-center text-on-surface-variant hover:text-on-surface rounded-full transition-colors" type="button"><span class="material-symbols-outlined">search</span></button><div class="w-11 h-11 flex items-center justify-center"><img alt="Profile" class="w-8 h-8 rounded-full object-cover ring-2 ring-surface-container-high" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBm3uBMdQsvGOiR5Zr2QlhG_0MubgubN4Meq_gujqMGfmSBH_DZYObPWkau_tYirzPh8QkF-XRBzOV6OfYjj4dA36DyJgQeP1dQLnGEnhkAv5L2x0WL7Xxuipurh40_btiuBPsF1EShCVpJ03KwhwrLtuHBJN8IeA4SiWNGD0y3qdbaTn02iwR6T9ui3NJuQcJ5LC3HzJTGRS8GWNPz00Duam8JQZbhEnBR3NKhoiTbT17rTlw7ey7L"></div></div></div></header><main class="flex-1 flex flex-col relative w-full pt-14 pb-28 px-margin-mobile bg-surface"><div class="flex flex-col w-full pb-20">
+<!-- Sub-header Breadcrumb / Navigation Bar -->
+<div class="flex items-center justify-between py-space-sm mb-space-sm">
+<div class="flex items-center gap-space-sm min-w-0">
+<button aria-label="Go back" class="w-10 h-10 rounded-full bg-surface-container-low text-on-surface flex items-center justify-center shadow-sm active:scale-95 transition-transform shrink-0">
+<span class="material-symbols-outlined text-[20px]">chevron_left</span>
+</button>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-1.5">
+<h2 class="font-headline-sm text-headline-sm text-on-surface truncate">Booth 118</h2>
+<span class="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
+</div>
+<span class="font-label-sm text-label-sm text-outline truncate">Ward 12 · Ratanada, Jodhpur</span>
+</div>
+</div>
+<div class="flex items-center gap-1">
+<button aria-label="Share booth telemetry" class="w-9 h-9 rounded-full bg-surface-container-low text-on-surface-variant flex items-center justify-center hover:text-on-surface transition-colors">
+<span class="material-symbols-outlined text-[18px]">share</span>
+</button>
+<button aria-label="Booth options" class="w-9 h-9 rounded-full bg-surface-container-low text-on-surface-variant flex items-center justify-center hover:text-on-surface transition-colors">
+<span class="material-symbols-outlined text-[18px]">more_vert</span>
+</button>
+</div>
+</div>
+<!-- Hero Telemetry Card (Indigo Gradient Precision Panel) -->
+<div class="relative overflow-hidden rounded-[20px] bg-gradient-to-br from-[#271ebd] via-[#3B2FD6] to-[#1c128f] text-on-primary p-5 shadow-lg shadow-primary/15 mb-space-md">
+<!-- Subtle architectural topography background -->
+<div class="absolute inset-0 opacity-10 pointer-events-none">
+<svg class="w-full h-full" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<pattern height="24" id="grid-pattern" patternUnits="userSpaceOnUse" width="24">
+<path d="M 24 0 L 0 0 0 24" fill="none" stroke="currentColor" stroke-width="0.8"></path>
+</pattern>
+</defs>
+<rect fill="url(#grid-pattern)" height="100%" width="100%"></rect>
+</svg>
+</div>
+<!-- Top Badge Line -->
+<div class="relative z-10 flex items-center justify-between mb-3">
+<div class="flex items-center gap-2">
+<span class="px-2.5 py-0.5 rounded-full bg-white/20 backdrop-blur-md text-[11px] font-label-md tracking-wider uppercase text-white font-semibold">
+          Booth 118
+        </span>
+<span class="px-2 py-0.5 rounded-full bg-emerald-500/25 text-emerald-200 text-[11px] font-label-md flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+          Active &amp; On Track
+        </span>
+</div>
+<span class="font-label-sm text-label-sm text-primary-fixed opacity-80 tracking-wide font-mono">ID: W12-B118</span>
+</div>
+<div class="relative z-10 mb-4">
+<h3 class="font-headline-md text-headline-md text-white tracking-tight leading-snug">
+        Govt. Sr. Sec. School, Wing A
+      </h3>
+<p class="font-body-sm text-body-sm text-primary-fixed/90 mt-0.5 line-clamp-1 flex items-center gap-1">
+<span class="material-symbols-outlined text-[15px] opacity-75">location_on</span>
+        Sector 4, Near Circuit House, Ward 12, Ratanada
+      </p>
+</div>
+<!-- Gauge & Micro Stats Bento -->
+<div class="relative z-10 bg-white/10 backdrop-blur-md rounded-[16px] p-3.5 flex items-center justify-between gap-3">
+<!-- Circular Readiness Gauge -->
+<div class="flex items-center gap-3 shrink-0">
+<div class="relative w-14 h-14 flex items-center justify-center">
+<svg class="w-14 h-14 transform -rotate-90" viewBox="0 0 36 36">
+<path class="text-white/20" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-width="3.2"></path>
+<path class="text-emerald-400" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-dasharray="78, 100" stroke-linecap="round" stroke-width="3.2"></path>
+</svg>
+<div class="absolute flex flex-col items-center justify-center text-center">
+<span class="font-metric-tabular text-sm font-bold text-white tracking-tight leading-none">78%</span>
+</div>
+</div>
+<div class="flex flex-col">
+<span class="font-label-sm text-[10px] uppercase tracking-wider text-primary-fixed/80">Readiness</span>
+<span class="font-label-md text-label-md text-white font-medium">Fully Mobilized</span>
+</div>
+</div>
+<!-- Quick Metrics Strip -->
+<div class="flex items-center gap-3 border-l border-white/15 pl-3">
+<div class="flex flex-col items-center">
+<div class="flex items-center gap-0.5 text-white">
+<span class="material-symbols-outlined text-[15px] opacity-80">groups</span>
+<span class="font-metric-tabular text-headline-sm text-white font-bold">6</span>
+</div>
+<span class="font-label-sm text-[10px] text-primary-fixed/80">Workers</span>
+</div>
+<div class="flex flex-col items-center">
+<div class="flex items-center gap-0.5 text-white">
+<span class="material-symbols-outlined text-[15px] opacity-80">pending_actions</span>
+<span class="font-metric-tabular text-headline-sm text-white font-bold">4</span>
+</div>
+<span class="font-label-sm text-[10px] text-primary-fixed/80">Tasks</span>
+</div>
+<div class="flex flex-col items-center">
+<div class="flex items-center gap-0.5 text-[#ffc875]">
+<span class="material-symbols-outlined text-[15px]">warning</span>
+<span class="font-metric-tabular text-headline-sm font-bold">1</span>
+</div>
+<span class="font-label-sm text-[10px] text-[#ffc875]">Issue</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Segmented Pill Tab Bar -->
+<div class="bg-surface-container-low p-1 rounded-full flex items-center justify-between mb-space-md shadow-inner">
+<button class="flex-1 py-2 rounded-full font-label-md text-label-md text-center transition-all bg-primary-container text-on-primary font-semibold shadow-sm" id="tab-btn-overview" onclick="switchBoothTab('overview')">
+      Overview
+    </button>
+<button class="flex-1 py-2 rounded-full font-label-md text-label-md text-center transition-all text-on-surface-variant hover:text-on-surface" id="tab-btn-team" onclick="switchBoothTab('team')">
+      Team (6)
+    </button>
+<button class="flex-1 py-2 rounded-full font-label-md text-label-md text-center transition-all text-on-surface-variant hover:text-on-surface" id="tab-btn-tasks" onclick="switchBoothTab('tasks')">
+      Tasks (4)
+    </button>
+<button class="flex-1 py-2 rounded-full font-label-md text-label-md text-center transition-all text-on-surface-variant hover:text-on-surface" id="tab-btn-voters" onclick="switchBoothTab('voters')">
+      Voters
+    </button>
+</div>
+<!-- TAB 1: OVERVIEW -->
+<div class="flex flex-col gap-space-md" id="tab-content-overview">
+<!-- Mini Map & Precision Navigation Card -->
+<div class="bg-surface-container-lowest rounded-[20px] p-4 shadow-sm flex flex-col gap-3">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="w-6 h-6 rounded-full bg-primary-fixed flex items-center justify-center text-primary text-[14px]">
+<span class="material-symbols-outlined text-[15px]">pin_drop</span>
+</span>
+<span class="font-headline-sm text-headline-sm text-on-surface">Precinct Map Location</span>
+</div>
+<span class="font-label-sm text-label-sm text-outline uppercase font-mono">Zone 3</span>
+</div>
+<!-- Static Map Container -->
+<div class="w-full h-36 bg-cover bg-center rounded-[16px] relative overflow-hidden flex flex-col justify-end p-2.5 shadow-inner" data-location="Govt Senior Secondary School Ratanada Jodhpur Rajasthan" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCpFF_Rh_knMncP8eBdLlZgHr-arhOBgu_262Gy3O0O3H7fKBKFOwz3Z6ZduHtsnj2iNEFyWIayCzQfhdAK2tendLlzbIUClJVHPSOf5rAaL2T8EYegYPMsXI-2Kz-o1JN7ngjo-7eqdh66zKSdYZtrVuudTW3EvH2e8JByPJanPLk1p2_iYiQ3FfPetFOc3GVGVLDl2a37uom19aVRWyxc9e6GczdOQK5-nVU1W95cSZZTfZouyF6s')">
+<div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none"></div>
+<div class="relative z-10 flex items-center justify-between w-full">
+<div class="flex items-center gap-1.5 text-white text-xs font-label-md bg-black/40 backdrop-blur-md px-2.5 py-1 rounded-full">
+<span class="material-symbols-outlined text-[15px] text-amber-400">assistant_direction</span>
+<span>Gate #2 (Main Polling Entrance)</span>
+</div>
+<button class="bg-primary-container text-on-primary px-3 py-1.5 rounded-full font-label-md text-label-md flex items-center gap-1.5 shadow-md active:scale-95 transition-transform">
+<span class="material-symbols-outlined text-[16px]">directions</span>
+<span>Directions</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Coordinator Card -->
+<div class="bg-surface-container-lowest rounded-[20px] p-4 shadow-sm">
+<div class="flex items-center justify-between mb-3">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-outline">Precinct In-Charge</span>
+<span class="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[11px] font-label-sm font-semibold">On Premise</span>
+</div>
+<div class="flex items-center justify-between gap-3">
+<div class="flex items-center gap-3 min-w-0">
+<div class="relative w-12 h-12 rounded-full overflow-hidden shrink-0 shadow-sm">
+<img alt="Booth In-Charge" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida/AEtjO1VIk8rzSgqmwjC8xf_kgezmqibqtIgVjAPBEQyIsMuzpx7VmPmAOvbaIuqwZs_9InkNj5kmttlyL7BypmBoVpi_X__v3qfa0xIa85Yj2wyEAmp3O11vdL1jFU99-9iHVhbVaevmfDxRRoAYRXOMX4kbO-5J5mx5iB_9SCR-6Usz2HtO0sVbN9_flWhGCbtZ2z3cPu_UOFe-Idy1pw-W61JskvFbSzY5LGYdxsRMnsUNESjrNVrks9u5GG0">
+<span class="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 rounded-full"></span>
+</div>
+<div class="flex flex-col min-w-0">
+<h4 class="font-headline-sm text-headline-sm text-on-surface truncate">Meera Rathore</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant truncate">Ward Coordinator &amp; Booth Head</p>
+<p class="font-label-sm text-label-sm text-outline font-mono mt-0.5">+91 98290 41280</p>
+</div>
+</div>
+<div class="flex items-center gap-2 shrink-0">
+<a aria-label="Call Booth Head" class="w-10 h-10 rounded-full bg-emerald-50 text-emerald-700 flex items-center justify-center hover:bg-emerald-100 transition-colors shadow-sm" href="tel:+919829041280">
+<span class="material-symbols-outlined text-[20px]">call</span>
+</a>
+<button aria-label="Message Coordinator" class="w-10 h-10 rounded-full bg-surface-container-high text-primary flex items-center justify-center hover:bg-surface-variant transition-colors shadow-sm">
+<span class="material-symbols-outlined text-[20px]">chat</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Setup & Operational Checklist -->
+<div class="bg-surface-container-lowest rounded-[20px] p-4 shadow-sm flex flex-col gap-3">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="w-6 h-6 rounded-full bg-surface-container-high text-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-[15px]">task_alt</span>
+</span>
+<span class="font-headline-sm text-headline-sm text-on-surface">Setup Checklist</span>
+</div>
+<span class="font-label-sm text-label-sm font-semibold px-2 py-0.5 rounded-full bg-surface-container text-primary">3 of 4 Done</span>
+</div>
+<div class="flex flex-col gap-2 pt-1">
+<!-- Checklist item 1 -->
+<label class="flex items-start gap-3 p-2.5 rounded-xl bg-surface-container-low/60 hover:bg-surface-container-low transition-colors cursor-pointer">
+<input checked="" class="mt-0.5 w-4 h-4 rounded text-primary accent-[#3B2FD6] focus:ring-0" type="checkbox">
+<div class="flex flex-col min-w-0 flex-1">
+<span class="font-body-md text-body-md text-on-surface line-through opacity-75">Banner placed at entrance gate</span>
+<span class="font-label-sm text-[11px] text-emerald-700 flex items-center gap-1 mt-0.5">
+<span class="material-symbols-outlined text-[13px]">check_circle</span> Completed, 08:30 AM
+            </span>
+</div>
+</label>
+<!-- Checklist item 2 -->
+<label class="flex items-start gap-3 p-2.5 rounded-xl bg-surface-container-low/60 hover:bg-surface-container-low transition-colors cursor-pointer">
+<input checked="" class="mt-0.5 w-4 h-4 rounded text-primary accent-[#3B2FD6] focus:ring-0" type="checkbox">
+<div class="flex flex-col min-w-0 flex-1">
+<span class="font-body-md text-body-md text-on-surface line-through opacity-75">Worker morning briefing completed</span>
+<span class="font-label-sm text-[11px] text-emerald-700 flex items-center gap-1 mt-0.5">
+<span class="material-symbols-outlined text-[13px]">check_circle</span> Completed, 09:15 AM
+            </span>
+</div>
+</label>
+<!-- Checklist item 3 -->
+<label class="flex items-start gap-3 p-2.5 rounded-xl bg-surface-container-low/60 hover:bg-surface-container-low transition-colors cursor-pointer">
+<input checked="" class="mt-0.5 w-4 h-4 rounded text-primary accent-[#3B2FD6] focus:ring-0" type="checkbox">
+<div class="flex flex-col min-w-0 flex-1">
+<span class="font-body-md text-body-md text-on-surface line-through opacity-75">Helpdesk table &amp; signage setup</span>
+<span class="font-label-sm text-[11px] text-emerald-700 flex items-center gap-1 mt-0.5">
+<span class="material-symbols-outlined text-[13px]">check_circle</span> Completed, 10:00 AM
+            </span>
+</div>
+</label>
+<!-- Checklist item 4 (Pending) -->
+<label class="flex items-start gap-3 p-2.5 rounded-xl bg-secondary-fixed/30 hover:bg-secondary-fixed/40 transition-colors cursor-pointer">
+<input class="mt-0.5 w-4 h-4 rounded text-secondary-container accent-[#ffad2e] focus:ring-0" type="checkbox">
+<div class="flex flex-col min-w-0 flex-1">
+<span class="font-body-md text-body-md text-on-surface font-medium">Physical voter contact slips bundle shared</span>
+<span class="font-label-sm text-[11px] text-secondary font-medium flex items-center gap-1 mt-0.5">
+<span class="material-symbols-outlined text-[13px]">schedule</span> Pending dispatch from Ward HQ
+            </span>
+</div>
+</label>
+</div>
+</div>
+<!-- Activity Telemetry Mini Chart Card -->
+<div class="bg-surface-container-lowest rounded-[20px] p-4 shadow-sm flex flex-col gap-3">
+<div class="flex items-center justify-between">
+<div>
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-outline">Weekly Mobilization</span>
+<h4 class="font-headline-sm text-headline-sm text-on-surface">Canvass Visits by Day</h4>
+</div>
+<div class="text-right">
+<span class="font-metric-tabular text-headline-md font-bold text-primary">542</span>
+<span class="font-label-sm text-[11px] text-emerald-600 block font-medium">+18% vs wk avg</span>
+</div>
+</div>
+<!-- Mini Weekly Bar Chart -->
+<div class="flex items-end justify-between gap-2 h-28 pt-4 pb-1">
+<div class="flex flex-col items-center gap-1.5 flex-1 h-full justify-end">
+<div class="w-full max-w-[28px] bg-surface-container rounded-t-lg transition-all" style="height: 45%;"></div>
+<span class="font-label-sm text-[10px] text-outline">M</span>
+</div>
+<div class="flex flex-col items-center gap-1.5 flex-1 h-full justify-end">
+<div class="w-full max-w-[28px] bg-surface-container rounded-t-lg transition-all" style="height: 60%;"></div>
+<span class="font-label-sm text-[10px] text-outline">T</span>
+</div>
+<div class="flex flex-col items-center gap-1.5 flex-1 h-full justify-end">
+<div class="w-full max-w-[28px] bg-surface-container rounded-t-lg transition-all" style="height: 52%;"></div>
+<span class="font-label-sm text-[10px] text-outline">W</span>
+</div>
+<div class="flex flex-col items-center gap-1.5 flex-1 h-full justify-end">
+<div class="w-full max-w-[28px] bg-surface-container rounded-t-lg transition-all" style="height: 75%;"></div>
+<span class="font-label-sm text-[10px] text-outline">T</span>
+</div>
+<div class="flex flex-col items-center gap-1.5 flex-1 h-full justify-end">
+<div class="w-full max-w-[28px] bg-surface-container rounded-t-lg transition-all" style="height: 85%;"></div>
+<span class="font-label-sm text-[10px] text-outline">F</span>
+</div>
+<div class="flex flex-col items-center gap-1.5 flex-1 h-full justify-end">
+<div class="w-full max-w-[28px] bg-primary-container rounded-t-lg shadow-sm transition-all" style="height: 98%;"></div>
+<span class="font-label-sm text-[10px] text-primary font-bold">S</span>
+</div>
+<div class="flex flex-col items-center gap-1.5 flex-1 h-full justify-end">
+<div class="w-full max-w-[28px] bg-surface-container-high rounded-t-lg transition-all" style="height: 68%;"></div>
+<span class="font-label-sm text-[10px] text-outline">S</span>
+</div>
+</div>
+</div>
+</div>
+<!-- TAB 2: TEAM -->
+<div class="hidden flex-col gap-space-md" id="tab-content-team">
+<div class="flex items-center justify-between px-1">
+<span class="font-label-md text-label-md text-outline">6 Field Personnel Assigned</span>
+<span class="font-label-sm text-label-sm font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">All Checked-in</span>
+</div>
+<div class="flex flex-col gap-2.5">
+<!-- Member 1 -->
+<div class="bg-surface-container-lowest rounded-[20px] p-3.5 shadow-sm flex items-center justify-between">
+<div class="flex items-center gap-3 min-w-0">
+<div class="w-10 h-10 rounded-full bg-primary-fixed text-primary font-bold flex items-center justify-center shrink-0 font-label-md">
+            SJ
+          </div>
+<div class="flex flex-col min-w-0">
+<h4 class="font-headline-sm text-headline-sm text-on-surface truncate">Sunil Joshi</h4>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">Logistics Runner · Pocket A</span>
+<div class="flex items-center gap-1 text-[11px] text-emerald-600 font-label-sm mt-0.5">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Active on field
+            </div>
+</div>
+</div>
+<a class="w-9 h-9 rounded-full bg-surface-container-low text-on-surface-variant flex items-center justify-center shrink-0 hover:text-primary" href="tel:+919829100001">
+<span class="material-symbols-outlined text-[18px]">call</span>
+</a>
+</div>
+<!-- Member 2 -->
+<div class="bg-surface-container-lowest rounded-[20px] p-3.5 shadow-sm flex items-center justify-between">
+<div class="flex items-center gap-3 min-w-0">
+<div class="w-10 h-10 rounded-full bg-surface-container-high text-on-surface-variant font-bold flex items-center justify-center shrink-0 font-label-md">
+            PS
+          </div>
+<div class="flex flex-col min-w-0">
+<h4 class="font-headline-sm text-headline-sm text-on-surface truncate">Pooja Sharma</h4>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">Voter Slip Lead · Ward 12</span>
+<div class="flex items-center gap-1 text-[11px] text-primary font-label-sm mt-0.5">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span> Verifying Ward 12 Slips
+            </div>
+</div>
+</div>
+<a class="w-9 h-9 rounded-full bg-surface-container-low text-on-surface-variant flex items-center justify-center shrink-0 hover:text-primary" href="tel:+919829100002">
+<span class="material-symbols-outlined text-[18px]">call</span>
+</a>
+</div>
+<!-- Member 3 -->
+<div class="bg-surface-container-lowest rounded-[20px] p-3.5 shadow-sm flex items-center justify-between">
+<div class="flex items-center gap-3 min-w-0">
+<div class="w-10 h-10 rounded-full bg-primary-fixed text-primary font-bold flex items-center justify-center shrink-0 font-label-md">
+            AK
+          </div>
+<div class="flex flex-col min-w-0">
+<h4 class="font-headline-sm text-headline-sm text-on-surface truncate">Amit Kumar</h4>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">Door-to-Door Surveyor</span>
+<div class="flex items-center gap-1 text-[11px] text-emerald-600 font-label-sm mt-0.5">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> 14 visits logged today
+            </div>
+</div>
+</div>
+<a class="w-9 h-9 rounded-full bg-surface-container-low text-on-surface-variant flex items-center justify-center shrink-0 hover:text-primary" href="tel:+919829100003">
+<span class="material-symbols-outlined text-[18px]">call</span>
+</a>
+</div>
+<!-- Member 4 -->
+<div class="bg-surface-container-lowest rounded-[20px] p-3.5 shadow-sm flex items-center justify-between">
+<div class="flex items-center gap-3 min-w-0">
+<div class="w-10 h-10 rounded-full bg-secondary-fixed text-secondary-container font-bold flex items-center justify-center shrink-0 font-label-md">
+            KV
+          </div>
+<div class="flex flex-col min-w-0">
+<h4 class="font-headline-sm text-headline-sm text-on-surface truncate">Kavita Verma</h4>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">Helpdesk Volunteer</span>
+<div class="flex items-center gap-1 text-[11px] text-on-surface font-label-sm mt-0.5">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> At Booth (Entrance)
+            </div>
+</div>
+</div>
+<a class="w-9 h-9 rounded-full bg-surface-container-low text-on-surface-variant flex items-center justify-center shrink-0 hover:text-primary" href="tel:+919829100004">
+<span class="material-symbols-outlined text-[18px]">call</span>
+</a>
+</div>
+<!-- Member 5 -->
+<div class="bg-surface-container-lowest rounded-[20px] p-3.5 shadow-sm flex items-center justify-between">
+<div class="flex items-center gap-3 min-w-0">
+<div class="w-10 h-10 rounded-full bg-surface-container text-on-surface font-bold flex items-center justify-center shrink-0 font-label-md">
+            RM
+          </div>
+<div class="flex flex-col min-w-0">
+<h4 class="font-headline-sm text-headline-sm text-on-surface truncate">Rajesh Meena</h4>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">Canvasser · Pocket C</span>
+<div class="flex items-center gap-1 text-[11px] text-emerald-600 font-label-sm mt-0.5">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Active
+            </div>
+</div>
+</div>
+<a class="w-9 h-9 rounded-full bg-surface-container-low text-on-surface-variant flex items-center justify-center shrink-0 hover:text-primary" href="tel:+919829100005">
+<span class="material-symbols-outlined text-[18px]">call</span>
+</a>
+</div>
+<!-- Member 6 -->
+<div class="bg-surface-container-lowest rounded-[20px] p-3.5 shadow-sm flex items-center justify-between">
+<div class="flex items-center gap-3 min-w-0">
+<div class="w-10 h-10 rounded-full bg-surface-container text-on-surface-variant font-bold flex items-center justify-center shrink-0 font-label-md">
+            PS
+          </div>
+<div class="flex flex-col min-w-0">
+<h4 class="font-headline-sm text-headline-sm text-on-surface truncate">Priya Sen</h4>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">Relief Volunteer</span>
+<div class="flex items-center gap-1 text-[11px] text-outline font-label-sm mt-0.5">
+<span class="w-1.5 h-1.5 rounded-full bg-outline"></span> On Standby
+            </div>
+</div>
+</div>
+<a class="w-9 h-9 rounded-full bg-surface-container-low text-on-surface-variant flex items-center justify-center shrink-0 hover:text-primary" href="tel:+919829100006">
+<span class="material-symbols-outlined text-[18px]">call</span>
+</a>
+</div>
+</div>
+</div>
+<!-- TAB 3: TASKS -->
+<div class="hidden flex-col gap-space-md" id="tab-content-tasks">
+<div class="flex items-center justify-between px-1">
+<span class="font-label-md text-label-md text-outline">Open Telemetry Actions (4)</span>
+<span class="font-label-sm text-label-sm font-medium text-primary">Sort by: Due time</span>
+</div>
+<div class="flex flex-col gap-2.5">
+<!-- Task 1 -->
+<div class="bg-surface-container-lowest rounded-[20px] p-4 shadow-sm flex flex-col gap-2.5">
+<div class="flex items-center justify-between">
+<span class="px-2 py-0.5 rounded-full bg-red-50 text-red-700 text-[11px] font-label-sm font-semibold uppercase">High Priority</span>
+<span class="font-label-sm text-label-sm text-outline flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">schedule</span> Due 2:00 PM
+          </span>
+</div>
+<h4 class="font-headline-sm text-headline-sm text-on-surface">Distribute voter slip batch #3 to Pocket B</h4>
+<div class="flex items-center justify-between pt-1 border-t border-surface-container-low">
+<span class="font-body-sm text-body-sm text-on-surface-variant">Assignee: <span class="font-medium text-on-surface">Pooja Sharma</span></span>
+<span class="font-label-sm text-[11px] px-2 py-0.5 rounded bg-surface-container text-primary font-medium">Pending Dispatch</span>
+</div>
+</div>
+<!-- Task 2 -->
+<div class="bg-surface-container-lowest rounded-[20px] p-4 shadow-sm flex flex-col gap-2.5">
+<div class="flex items-center justify-between">
+<span class="px-2 py-0.5 rounded-full bg-red-50 text-red-700 text-[11px] font-label-sm font-semibold uppercase">High Priority</span>
+<span class="font-label-sm text-label-sm text-emerald-700 flex items-center gap-1 font-medium">
+<span class="material-symbols-outlined text-[14px]">refresh</span> In Progress
+          </span>
+</div>
+<h4 class="font-headline-sm text-headline-sm text-on-surface">Erect shade canopy at queue line</h4>
+<div class="flex items-center justify-between pt-1 border-t border-surface-container-low">
+<span class="font-body-sm text-body-sm text-on-surface-variant">Assignee: <span class="font-medium text-on-surface">Sunil Joshi</span></span>
+<span class="font-label-sm text-[11px] px-2 py-0.5 rounded bg-amber-50 text-amber-800 font-medium">Logistics</span>
+</div>
+</div>
+<!-- Task 3 -->
+<div class="bg-surface-container-lowest rounded-[20px] p-4 shadow-sm flex flex-col gap-2.5">
+<div class="flex items-center justify-between">
+<span class="px-2 py-0.5 rounded-full bg-secondary-fixed/50 text-secondary text-[11px] font-label-sm font-semibold uppercase">Medium Priority</span>
+<span class="font-label-sm text-label-sm text-outline flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">schedule</span> Due 4:30 PM
+          </span>
+</div>
+<h4 class="font-headline-sm text-headline-sm text-on-surface">Verify EVM ramp accessibility with facility in-charge</h4>
+<div class="flex items-center justify-between pt-1 border-t border-surface-container-low">
+<span class="font-body-sm text-body-sm text-on-surface-variant">Assignee: <span class="font-medium text-on-surface">Meera Rathore</span></span>
+<span class="font-label-sm text-[11px] px-2 py-0.5 rounded bg-surface-container text-outline font-medium">Infrastructure</span>
+</div>
+</div>
+<!-- Task 4 -->
+<div class="bg-surface-container-lowest rounded-[20px] p-4 shadow-sm flex flex-col gap-2.5">
+<div class="flex items-center justify-between">
+<span class="px-2 py-0.5 rounded-full bg-secondary-fixed/50 text-secondary text-[11px] font-label-sm font-semibold uppercase">Medium Priority</span>
+<span class="font-label-sm text-label-sm text-outline flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">schedule</span> Due 7:00 PM
+          </span>
+</div>
+<h4 class="font-headline-sm text-headline-sm text-on-surface">Sync evening canvass register with Ward coordinator</h4>
+<div class="flex items-center justify-between pt-1 border-t border-surface-container-low">
+<span class="font-body-sm text-body-sm text-on-surface-variant">Assignee: <span class="font-medium text-on-surface">Amit Kumar</span></span>
+<span class="font-label-sm text-[11px] px-2 py-0.5 rounded bg-surface-container text-primary font-medium">Reporting</span>
+</div>
+</div>
+</div>
+</div>
+<!-- TAB 4: VOTERS -->
+<div class="hidden flex-col gap-space-md" id="tab-content-voters">
+<!-- Non-Partisan Privacy / Compliance Banner -->
+<div class="bg-surface-container-high rounded-[16px] p-3 flex items-start gap-2.5 text-on-surface">
+<span class="material-symbols-outlined text-[20px] text-primary shrink-0 mt-0.5">verified_user</span>
+<div class="flex flex-col">
+<span class="font-label-md text-label-md font-semibold text-primary">Official Electoral Roll Excerpt</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant leading-tight mt-0.5">
+          Visible strictly to authorized booth personnel. Non-political voter serial and registration lookup only.
+        </p>
+</div>
+</div>
+<!-- Voter Search Input -->
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-outline text-[20px]">search</span>
+<input class="w-full h-12 pl-11 pr-4 bg-surface-container-lowest rounded-[14px] text-on-surface placeholder:text-outline font-body-md text-body-md shadow-sm outline-none focus:ring-2 focus:ring-primary/20 transition-all" placeholder="Search elector name, EPIC or serial #" type="text">
+</div>
+<!-- Voters List -->
+<div class="flex flex-col gap-2">
+<!-- Voter 1 -->
+<div class="bg-surface-container-lowest rounded-[16px] p-3.5 shadow-sm flex items-center justify-between">
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-2 mb-0.5">
+<span class="font-metric-tabular font-bold text-xs bg-surface-container px-2 py-0.5 rounded text-primary">#001</span>
+<span class="font-headline-sm text-headline-sm text-on-surface truncate">Rameshwar Lal Bishnoi</span>
+</div>
+<div class="flex items-center gap-2 font-label-sm text-label-sm text-on-surface-variant">
+<span>EPIC: <span class="font-mono text-on-surface">RJ/12/045/00182</span></span>
+<span>· Part: 118-A</span>
+<span>· 52 / M</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline text-[18px]">chevron_right</span>
+</div>
+<!-- Voter 2 -->
+<div class="bg-surface-container-lowest rounded-[16px] p-3.5 shadow-sm flex items-center justify-between">
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-2 mb-0.5">
+<span class="font-metric-tabular font-bold text-xs bg-surface-container px-2 py-0.5 rounded text-primary">#002</span>
+<span class="font-headline-sm text-headline-sm text-on-surface truncate">Shanti Devi Bishnoi</span>
+</div>
+<div class="flex items-center gap-2 font-label-sm text-label-sm text-on-surface-variant">
+<span>EPIC: <span class="font-mono text-on-surface">RJ/12/045/00183</span></span>
+<span>· Part: 118-A</span>
+<span>· 49 / F</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline text-[18px]">chevron_right</span>
+</div>
+<!-- Voter 3 -->
+<div class="bg-surface-container-lowest rounded-[16px] p-3.5 shadow-sm flex items-center justify-between">
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-2 mb-0.5">
+<span class="font-metric-tabular font-bold text-xs bg-surface-container px-2 py-0.5 rounded text-primary">#003</span>
+<span class="font-headline-sm text-headline-sm text-on-surface truncate">Vikram Rathore</span>
+</div>
+<div class="flex items-center gap-2 font-label-sm text-label-sm text-on-surface-variant">
+<span>EPIC: <span class="font-mono text-on-surface">RJ/12/045/00204</span></span>
+<span>· Part: 118-A</span>
+<span>· 28 / M</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline text-[18px]">chevron_right</span>
+</div>
+<!-- Voter 4 -->
+<div class="bg-surface-container-lowest rounded-[16px] p-3.5 shadow-sm flex items-center justify-between">
+<div class="flex items-center gap-2 mb-0.5">
+<span class="font-metric-tabular font-bold text-xs bg-surface-container px-2 py-0.5 rounded text-primary">#004</span>
+<span class="font-headline-sm text-headline-sm text-on-surface truncate">Sunita Gehlot</span>
+</div>
+<div class="flex items-center gap-2 font-label-sm text-label-sm text-on-surface-variant">
+<span>EPIC: <span class="font-mono text-on-surface">RJ/12/045/00255</span></span>
+<span>· Part: 118-B</span>
+<span>· 34 / F</span>
+</div>
+<span class="material-symbols-outlined text-outline text-[18px]">chevron_right</span>
+</div>
+</div>
+</div>
+<!-- Sticky Tactical Actions Bar -->
+<div class="fixed bottom-20 left-0 right-0 px-margin-mobile max-w-[420px] mx-auto z-40">
+<div class="flex items-center gap-2.5 bg-surface-container-lowest/90 backdrop-blur-xl p-2 rounded-[18px] shadow-[0_4px_24px_rgba(0,0,0,0.12)]">
+<button class="flex-1 h-12 bg-primary-container text-on-primary rounded-[14px] font-label-lg text-label-lg flex items-center justify-center gap-2 shadow-sm hover:brightness-105 active:scale-[0.98] transition-all">
+<span class="material-symbols-outlined text-[20px]">add_task</span>
+<span>Assign Task</span>
+</button>
+<button class="h-12 px-4 bg-surface-container-low text-on-surface rounded-[14px] font-label-lg text-label-lg flex items-center justify-center gap-1.5 hover:bg-surface-container active:scale-[0.98] transition-all shrink-0">
+<span class="material-symbols-outlined text-[20px] text-primary">person_add</span>
+<span>Add Worker</span>
+</button>
+</div>
+</div>
+<!-- Vanilla JS Interactive Tab Switcher -->
+<script>
+    function switchBoothTab(tabKey) {
+      const tabs = ['overview', 'team', 'tasks', 'voters'];
+      tabs.forEach(key => {
+        const content = document.getElementById(`tab-content-${key}`);
+        const button = document.getElementById(`tab-btn-${key}`);
+        if (!content || !button) return;
+
+        if (key === tabKey) {
+          content.classList.remove('hidden');
+          content.classList.add('flex');
+          button.classList.add('bg-primary-container', 'text-on-primary', 'font-semibold', 'shadow-sm');
+          button.classList.remove('text-on-surface-variant', 'hover:text-on-surface');
+        } else {
+          content.classList.add('hidden');
+          content.classList.remove('flex');
+          button.classList.remove('bg-primary-container', 'text-on-primary', 'font-semibold', 'shadow-sm');
+          button.classList.add('text-on-surface-variant', 'hover:text-on-surface');
+        }
+      });
+    }
+  </script>
+</div></main><div class="fixed bottom-0 w-full z-50 pb-safe pointer-events-none"><div class="px-margin-mobile pb-3 w-full max-w-[420px] mx-auto"><nav class="pointer-events-auto bg-surface-container-lowest/85 backdrop-blur-xl rounded-full shadow-[0_8px_30px_rgba(15,18,34,0.08)] p-1.5 flex items-center justify-between" data-active-classes="bg-primary-container text-on-primary font-semibold shadow-sm"><a class="flex items-center justify-center min-w-[44px] min-h-[44px] px-2.5 rounded-full text-on-surface-variant hover:text-on-surface transition-all shrink-0" data-path="dashboard" href="#"><span class="material-symbols-outlined">grid_view</span><span class="font-label-md text-label-md">Home</span></a><a class="flex items-center justify-center min-w-[44px] min-h-[44px] px-2.5 rounded-full text-on-surface-variant hover:text-on-surface transition-all shrink-0" data-path="precinct-booths" href="#"><span class="material-symbols-outlined">how_to_vote</span></a><a class="flex items-center justify-center min-w-[44px] min-h-[44px] px-2.5 rounded-full text-on-surface-variant hover:text-on-surface transition-all shrink-0" data-path="field-tasks" href="#"><span class="material-symbols-outlined">checklist</span></a><a class="flex items-center justify-center min-w-[44px] min-h-[44px] px-2.5 rounded-full text-on-surface-variant hover:text-on-surface transition-all shrink-0" data-path="operations-calendar" href="#"><span class="material-symbols-outlined">calendar_today</span></a><a class="flex items-center justify-center min-w-[44px] min-h-[44px] px-2.5 rounded-full text-on-surface-variant hover:text-on-surface transition-all shrink-0" data-path="operations-more" href="#"><span class="material-symbols-outlined">tune</span></a></nav></div></div></body></html>

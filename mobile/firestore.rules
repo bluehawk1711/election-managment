@@ -1,0 +1,365 @@
+rules_version = '2';
+
+// The real access control for this app.
+//
+// Your Firebase config ships inside the app bundle, so these rules — not the
+// client code — are what stands between a user and the data. The route guards
+// in app/_layout.tsx are a convenience; this file is the boundary.
+//
+// Model: ONE shared campaign. Every signed-in user (single role for this
+// prototype) reads and writes the same campaign documents — booths, voters,
+// tasks, issues, events, expenses, compliance. `users/{uid}` stays strictly
+// owner-scoped, and anything not named below is denied outright.
+//
+// Two design rules worth stating out loud:
+//
+// 1. **No political profiling, ever.** The voter document schema is closed
+//    (exact key set) and `noPoliticalFields` rejects `party`, `preference`,
+//    `votedFor` and friends even if someone edits this file's clients. The
+//    blueprint's product boundary is enforced here, not in the UI.
+// 2. **Exact key sets.** `hasOnly + hasAll` means an unknown field is a
+//    rejected write rather than silently stored data nobody validates — and
+//    it keeps `orderBy` fields present on every document (Firestore drops
+//    documents missing an ordered field, so a typo would make rows vanish).
+//
+// Timestamps: `createdAt`/`reportedAt` are written with `serverTimestamp()`,
+// which the rules language evaluates as `request.time` — a client clock can't
+// backdate them. Date fields (dueDate, event startsAt, expense date) are
+// client-side epoch millis on purpose: they are business dates, not audit
+// stamps.
+//
+// Run these: `npm run rules:test`.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+
+    // ----- schema helpers -------------------------------------------------
+
+    function exactKeys(data, keys) {
+      return data.keys().hasOnly(keys) && data.keys().hasAll(keys);
+    }
+
+    function text(value, min, max) {
+      return value is string && value.size() >= min && value.size() <= max;
+    }
+
+    function nullableMillis(value) {
+      return value == null || value is int || value is float;
+    }
+
+    function requiredMillis(value) {
+      return value is int || value is float;
+    }
+
+    function noPoliticalFields(data) {
+      return !data.keys().hasAny(
+        ['party', 'partyAffiliation', 'preference', 'votedFor', 'support', 'voteChoice']
+      );
+    }
+
+    // ----- profile (unchanged from the starter) ---------------------------
+
+    match /users/{userId} {
+      // The document id IS the uid, which is what lets this be checked without
+      // reading the document first.
+      allow get: if isOwner(userId);
+
+      // No `list`. Nothing in the app queries this collection, and allowing it
+      // would let any signed-in user enumerate every account.
+
+      // `onboarded == false` on create means a client cannot sign up already
+      // onboarded and skip the flow.
+      allow create: if isOwner(userId)
+                    && request.resource.data.onboarded == false
+                    && request.resource.data.keys().hasOnly(
+                         ['email', 'displayName', 'photoURL', 'onboarded', 'createdAt', 'updatedAt']);
+
+      // `diff().affectedKeys().hasOnly()` is the Firestore way to say "these
+      // fields and no others". `email` is absent on purpose: it mirrors the
+      // Firebase Auth record.
+      allow update: if isOwner(userId)
+                    && request.resource.data.diff(resource.data).affectedKeys()
+                         .hasOnly(['displayName', 'photoURL', 'onboarded', 'updatedAt']);
+
+      allow delete: if isOwner(userId);
+    }
+
+    // ----- campaign -------------------------------------------------------
+
+    match /campaigns/{campaignId} {
+      allow read: if signedIn();
+
+      allow create, update: if signedIn()
+        && exactKeys(request.resource.data,
+            ['name', 'candidateName', 'constituencyName', 'electionDate',
+             'tagline', 'startDate', 'updatedAt'])
+        && text(request.resource.data.name, 1, 120)
+        && text(request.resource.data.candidateName, 0, 120)
+        && text(request.resource.data.constituencyName, 0, 120)
+        && nullableMillis(request.resource.data.electionDate)
+        && nullableMillis(request.resource.data.startDate)
+        && text(request.resource.data.tagline, 0, 200)
+        && (request.resource.data.updatedAt == null
+            || request.resource.data.updatedAt is timestamp);
+
+      // The campaign document is the campaign.
+      allow delete: if false;
+    }
+
+    // ----- geography ------------------------------------------------------
+
+    match /constituencies/{docId} {
+      allow read: if signedIn();
+      allow create, update: if signedIn()
+        && exactKeys(request.resource.data, ['name', 'code'])
+        && text(request.resource.data.name, 1, 120)
+        && text(request.resource.data.code, 0, 40);
+      allow delete: if signedIn();
+    }
+
+    match /wards/{docId} {
+      allow read: if signedIn();
+      allow create, update: if signedIn()
+        && exactKeys(request.resource.data, ['name', 'constituencyId'])
+        && text(request.resource.data.name, 1, 120)
+        && text(request.resource.data.constituencyId, 1, 128);
+      allow delete: if signedIn();
+    }
+
+    match /areas/{docId} {
+      allow read: if signedIn();
+      allow create, update: if signedIn()
+        && exactKeys(request.resource.data, ['name', 'wardId', 'constituencyId'])
+        && text(request.resource.data.name, 1, 120)
+        && text(request.resource.data.wardId, 1, 128)
+        && text(request.resource.data.constituencyId, 1, 128);
+      allow delete: if signedIn();
+    }
+
+    match /booths/{docId} {
+      allow read: if signedIn();
+      allow create, update: if signedIn()
+        && exactKeys(request.resource.data,
+            ['number', 'name', 'address', 'areaId', 'wardId', 'constituencyId',
+             'estimatedVoters', 'coordinatorId'])
+        && request.resource.data.number is int
+        && request.resource.data.number > 0
+        && text(request.resource.data.name, 1, 120)
+        && text(request.resource.data.address, 0, 240)
+        && text(request.resource.data.areaId, 1, 128)
+        && text(request.resource.data.wardId, 1, 128)
+        && text(request.resource.data.constituencyId, 1, 128)
+        && request.resource.data.estimatedVoters is int
+        && request.resource.data.estimatedVoters >= 0
+        && text(request.resource.data.coordinatorId, 0, 128);
+      allow delete: if signedIn();
+    }
+
+    // ----- voter roll -----------------------------------------------------
+
+    match /voters/{docId} {
+      allow read: if signedIn();
+
+      allow create, update: if signedIn()
+        // The blueprint's product boundary, enforced server-side.
+        && noPoliticalFields(request.resource.data)
+        && exactKeys(request.resource.data,
+            ['rollId', 'name', 'gender', 'age', 'houseNo', 'mobile',
+             'boothId', 'areaId', 'wardId', 'constituencyId'])
+        && text(request.resource.data.rollId, 1, 32)
+        && text(request.resource.data.name, 1, 120)
+        && request.resource.data.gender in ['male', 'female', 'other']
+        && request.resource.data.age is int
+        && request.resource.data.age >= 18
+        && request.resource.data.age <= 120
+        && text(request.resource.data.houseNo, 0, 24)
+        && text(request.resource.data.mobile, 0, 15)
+        && text(request.resource.data.boothId, 1, 128)
+        && text(request.resource.data.areaId, 1, 128)
+        && text(request.resource.data.wardId, 1, 128)
+        && text(request.resource.data.constituencyId, 1, 128);
+
+      allow delete: if signedIn();
+    }
+
+    // ----- team -----------------------------------------------------------
+
+    match /teamMembers/{docId} {
+      allow read: if signedIn();
+      allow create, update: if signedIn()
+        && exactKeys(request.resource.data,
+            ['name', 'phone', 'role', 'status', 'areaId', 'boothId'])
+        && text(request.resource.data.name, 1, 120)
+        && text(request.resource.data.phone, 0, 15)
+        && request.resource.data.role in ['coordinator', 'worker']
+        && request.resource.data.status in ['active', 'inactive']
+        && text(request.resource.data.areaId, 0, 128)
+        && text(request.resource.data.boothId, 0, 128);
+      allow delete: if signedIn();
+    }
+
+    // ----- field tasks ----------------------------------------------------
+
+    match /tasks/{docId} {
+      allow read: if signedIn();
+
+      allow create: if signedIn()
+        && exactKeys(request.resource.data,
+            ['title', 'description', 'assigneeId', 'areaId', 'boothId',
+             'dueDate', 'status', 'report', 'createdBy', 'createdAt', 'updatedAt'])
+        && text(request.resource.data.title, 1, 200)
+        && text(request.resource.data.description, 0, 2000)
+        && text(request.resource.data.assigneeId, 0, 128)
+        && text(request.resource.data.areaId, 0, 128)
+        && text(request.resource.data.boothId, 0, 128)
+        && nullableMillis(request.resource.data.dueDate)
+        && request.resource.data.status in ['pending', 'in_progress', 'completed', 'issue']
+        && text(request.resource.data.report, 0, 2000)
+        && text(request.resource.data.createdBy, 0, 128)
+        // serverTimestamp() evaluates to request.time — no client backdating.
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time;
+
+      allow update: if signedIn()
+        && exactKeys(request.resource.data,
+            ['title', 'description', 'assigneeId', 'areaId', 'boothId',
+             'dueDate', 'status', 'report', 'createdBy', 'createdAt', 'updatedAt'])
+        && text(request.resource.data.title, 1, 200)
+        && text(request.resource.data.description, 0, 2000)
+        && text(request.resource.data.assigneeId, 0, 128)
+        && text(request.resource.data.areaId, 0, 128)
+        && text(request.resource.data.boothId, 0, 128)
+        && nullableMillis(request.resource.data.dueDate)
+        && request.resource.data.status in ['pending', 'in_progress', 'completed', 'issue']
+        && text(request.resource.data.report, 0, 2000)
+        && text(request.resource.data.createdBy, 0, 128)
+        && request.resource.data.createdAt == resource.data.createdAt;
+
+      allow delete: if signedIn();
+    }
+
+    // ----- civic issues ---------------------------------------------------
+
+    match /issues/{docId} {
+      allow read: if signedIn();
+
+      allow create: if signedIn()
+        && exactKeys(request.resource.data,
+            ['category', 'title', 'description', 'areaId', 'photoUrl', 'status',
+             'reportedBy', 'reportedAt', 'updatedAt'])
+        && request.resource.data.category in
+             ['road', 'water', 'electricity', 'drainage', 'streetlight', 'sanitation']
+        && text(request.resource.data.title, 1, 200)
+        && text(request.resource.data.description, 0, 2000)
+        && text(request.resource.data.areaId, 1, 128)
+        && text(request.resource.data.photoUrl, 0, 1024)
+        && request.resource.data.status in ['open', 'in_progress', 'resolved']
+        && text(request.resource.data.reportedBy, 0, 120)
+        && request.resource.data.reportedAt == request.time
+        && request.resource.data.updatedAt == request.time;
+
+      allow update: if signedIn()
+        && exactKeys(request.resource.data,
+            ['category', 'title', 'description', 'areaId', 'photoUrl', 'status',
+             'reportedBy', 'reportedAt', 'updatedAt'])
+        && request.resource.data.category in
+             ['road', 'water', 'electricity', 'drainage', 'streetlight', 'sanitation']
+        && text(request.resource.data.title, 1, 200)
+        && text(request.resource.data.description, 0, 2000)
+        && text(request.resource.data.areaId, 1, 128)
+        && text(request.resource.data.photoUrl, 0, 1024)
+        && request.resource.data.status in ['open', 'in_progress', 'resolved']
+        && text(request.resource.data.reportedBy, 0, 120)
+        && request.resource.data.reportedAt == resource.data.reportedAt;
+
+      allow delete: if signedIn();
+    }
+
+    // ----- calendar -------------------------------------------------------
+
+    match /events/{docId} {
+      allow read: if signedIn();
+      allow create, update: if signedIn()
+        && exactKeys(request.resource.data,
+            ['title', 'type', 'startsAt', 'endsAt', 'location', 'description', 'createdAt'])
+        && text(request.resource.data.title, 1, 200)
+        && request.resource.data.type in ['meeting', 'training', 'public', 'deadline']
+        && requiredMillis(request.resource.data.startsAt)
+        && nullableMillis(request.resource.data.endsAt)
+        && text(request.resource.data.location, 0, 200)
+        && text(request.resource.data.description, 0, 2000)
+        && (request.resource.data.createdAt == null
+            || request.resource.data.createdAt is timestamp);
+      allow delete: if signedIn();
+    }
+
+    // ----- expenses -------------------------------------------------------
+
+    match /expenses/{docId} {
+      allow read: if signedIn();
+
+      allow create: if signedIn()
+        && exactKeys(request.resource.data,
+            ['date', 'category', 'amount', 'description', 'receiptUrl', 'status',
+             'createdBy', 'createdAt'])
+        && requiredMillis(request.resource.data.date)
+        && request.resource.data.category in
+             ['travel', 'fuel', 'materials', 'printing', 'food', 'venue', 'other']
+        && (request.resource.data.amount is int || request.resource.data.amount is float)
+        && request.resource.data.amount >= 0
+        && request.resource.data.amount <= 100000000
+        && text(request.resource.data.description, 0, 500)
+        && text(request.resource.data.receiptUrl, 0, 1024)
+        && request.resource.data.status in ['pending', 'approved', 'rejected']
+        && text(request.resource.data.createdBy, 0, 128)
+        && request.resource.data.createdAt == request.time;
+
+      allow update: if signedIn()
+        && exactKeys(request.resource.data,
+            ['date', 'category', 'amount', 'description', 'receiptUrl', 'status',
+             'createdBy', 'createdAt'])
+        && requiredMillis(request.resource.data.date)
+        && request.resource.data.category in
+             ['travel', 'fuel', 'materials', 'printing', 'food', 'venue', 'other']
+        && (request.resource.data.amount is int || request.resource.data.amount is float)
+        && request.resource.data.amount >= 0
+        && request.resource.data.amount <= 100000000
+        && text(request.resource.data.description, 0, 500)
+        && text(request.resource.data.receiptUrl, 0, 1024)
+        && request.resource.data.status in ['pending', 'approved', 'rejected']
+        && text(request.resource.data.createdBy, 0, 128)
+        && request.resource.data.createdAt == resource.data.createdAt;
+
+      allow delete: if signedIn();
+    }
+
+    // ----- compliance checklist ------------------------------------------
+
+    match /compliance/{docId} {
+      allow read: if signedIn();
+      allow create, update: if signedIn()
+        && exactKeys(request.resource.data,
+            ['title', 'category', 'status', 'dueDate', 'notes', 'updatedAt'])
+        && text(request.resource.data.title, 1, 200)
+        && text(request.resource.data.category, 1, 80)
+        && request.resource.data.status in ['done', 'pending', 'attention']
+        && nullableMillis(request.resource.data.dueDate)
+        && text(request.resource.data.notes, 0, 1000)
+        && (request.resource.data.updatedAt == null
+            || request.resource.data.updatedAt is timestamp);
+      allow delete: if signedIn();
+    }
+
+    // Deliberately no `match /{document=**}`. Anything not named above is
+    // denied — the Firestore equivalent of leaving RLS on with no policy, and
+    // the single most common way a Firebase project leaks.
+  }
+}

@@ -1,0 +1,244 @@
+name: Build iOS IPA
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_type:
+        description: "Build type"
+        required: true
+        type: choice
+        options:
+          - dev
+          - release
+        default: dev
+
+concurrency:
+  group: ios-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: "20"
+  PNPM_VERSION: "11"
+
+jobs:
+  build:
+    name: "Build ${{ inputs.build_type }} IPA"
+    runs-on: macos-14
+    timeout-minutes: 45
+    environment: ${{ inputs.build_type == 'release' && 'production' || 'dev' }}
+    defaults:
+      run:
+        shell: bash
+        working-directory: mobile
+
+    steps:
+      # ── Setup ──────────────────────────────────────────────────────────
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
+
+      - name: Cache pnpm dependencies
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('mobile/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # ── CocoaPods cache ────────────────────────────────────────────────
+      - name: Cache CocoaPods
+        uses: actions/cache@v4
+        with:
+          path: mobile/ios/Pods
+          key: pods-${{ runner.os }}-${{ hashFiles('mobile/ios/Podfile.lock') }}
+          restore-keys: |
+            pods-${{ runner.os }}-
+
+      # ── Environment ────────────────────────────────────────────────────
+      - name: Write .env file
+        run: |
+          # Quoted terminator: ${{ secrets.* }} is substituted by Actions
+          # before bash runs, and the quotes stop the shell from also
+          # expanding any `$` that happens to appear inside a secret.
+          cat > .env << 'ENVEOF'
+          EXPO_PUBLIC_FIREBASE_API_KEY=${{ secrets.EXPO_PUBLIC_FIREBASE_API_KEY }}
+          EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN=${{ secrets.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN }}
+          EXPO_PUBLIC_FIREBASE_PROJECT_ID=${{ secrets.EXPO_PUBLIC_FIREBASE_PROJECT_ID }}
+          EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET=${{ secrets.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET }}
+          EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=${{ secrets.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }}
+          EXPO_PUBLIC_FIREBASE_APP_ID=${{ secrets.EXPO_PUBLIC_FIREBASE_APP_ID }}
+          EXPO_PUBLIC_FIREBASE_LINK_URL=${{ secrets.EXPO_PUBLIC_FIREBASE_LINK_URL }}
+          EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID=${{ secrets.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID }}
+          EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID=${{ secrets.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID }}
+          EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID=${{ secrets.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID }}
+          ENVEOF
+
+      - name: Generate native iOS project
+        run: npx expo prebuild --platform ios --clean
+
+      # ── Install CocoaPods (prebuild usually did it; make it explicit) ──
+      - name: Install CocoaPods
+        working-directory: mobile/ios
+        run: pod install --repo-update
+
+      # ── Configure signing (release only) ───────────────────────────────
+      # Without the certificate secrets the build still runs, but it targets
+      # the simulator — an unsigned generic/platform=iOS archive fails at code
+      # signing, which is a confusing way to learn the secret is missing.
+      - name: Setup iOS signing
+        if: inputs.build_type == 'release' && secrets.IOS_CERTIFICATE_BASE64 != ''
+        env:
+          IOS_CERTIFICATE_BASE64: ${{ secrets.IOS_CERTIFICATE_BASE64 }}
+          IOS_CERTIFICATE_PASSWORD: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
+          IOS_PROVISIONING_PROFILE_BASE64: ${{ secrets.IOS_PROVISIONING_PROFILE_BASE64 }}
+        run: |
+          # Create temporary keychain
+          KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
+          KEYCHAIN_PASSWORD=$(openssl rand -hex 16)
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+
+          # Import certificate
+          CERTIFICATE_PATH=$RUNNER_TEMP/certificate.p12
+          echo "$IOS_CERTIFICATE_BASE64" | base64 --decode > "$CERTIFICATE_PATH"
+          security import "$CERTIFICATE_PATH" \
+            -P "$IOS_CERTIFICATE_PASSWORD" \
+            -A -t cert -f pkcs12 \
+            -k "$KEYCHAIN_PATH"
+          security set-key-partition-list -S apple-tool:,apple: \
+            -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+
+          # Import provisioning profile
+          PROFILE_PATH=$RUNNER_TEMP/profile.mobileprovision
+          echo "$IOS_PROVISIONING_PROFILE_BASE64" | base64 --decode > "$PROFILE_PATH"
+          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+          UUID=$(/usr/libexec/PlistBuddy -c "Print UUID" /dev/stdin <<< $(security cms -D -i "$PROFILE_PATH"))
+          cp "$PROFILE_PATH" ~/Library/MobileDevice/Provisioning\ Profiles/"$UUID".mobileprovision
+
+          echo "iOS signing configured"
+
+      # ── Build variables ────────────────────────────────────────────────
+      # The Xcode project/scheme is the sanitized app name from app.json —
+      # discovered from the generated workspace rather than hardcoded, so a
+      # rename in constants/brand.ts cannot silently break this workflow.
+      - name: Set build variables
+        id: build-vars
+        run: |
+          WORKSPACE_PATH=$(ls -d ios/*.xcworkspace | head -1)
+          SCHEME=$(basename "$WORKSPACE_PATH" .xcworkspace)
+          echo "workspace=$WORKSPACE_PATH" >> $GITHUB_OUTPUT
+          echo "scheme=$SCHEME" >> $GITHUB_OUTPUT
+
+          if [ "${{ inputs.build_type }}" = "release" ] && [ -n "${{ secrets.IOS_CERTIFICATE_BASE64 }}" ]; then
+            echo "configuration=Release" >> $GITHUB_OUTPUT
+            echo "destination=generic/platform=iOS" >> $GITHUB_OUTPUT
+            echo "signed=true" >> $GITHUB_OUTPUT
+            echo "artifact_name=app-release" >> $GITHUB_OUTPUT
+          else
+            echo "configuration=Debug" >> $GITHUB_OUTPUT
+            echo "destination=generic/platform=iOS Simulator" >> $GITHUB_OUTPUT
+            echo "signed=false" >> $GITHUB_OUTPUT
+            echo "artifact_name=app-dev" >> $GITHUB_OUTPUT
+          fi
+
+      # ── Build & Archive ────────────────────────────────────────────────
+      - name: Build iOS archive
+        working-directory: mobile/ios
+        run: |
+          xcodebuild \
+            -workspace "${{ steps.build-vars.outputs.workspace }}" \
+            -scheme "${{ steps.build-vars.outputs.scheme }}" \
+            -configuration "${{ steps.build-vars.outputs.configuration }}" \
+            -destination "${{ steps.build-vars.outputs.destination }}" \
+            -archivePath $RUNNER_TEMP/app.xcarchive \
+            -allowProvisioningUpdates \
+            clean archive
+
+      # ── Export IPA (signed release only) ───────────────────────────────
+      - name: Export IPA
+        if: steps.build-vars.outputs.signed == 'true'
+        working-directory: mobile/ios
+        run: |
+          cat > $RUNNER_TEMP/ExportOptions.plist << EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key>
+            <string>ad-hoc</string>
+            <key>teamID</key>
+            <string>${{ secrets.IOS_TEAM_ID }}</string>
+            <key>uploadBitcode</key>
+            <false/>
+            <key>uploadSymbols</key>
+            <true/>
+          </dict>
+          </plist>
+          EOF
+
+          xcodebuild \
+            -exportArchive \
+            -archivePath $RUNNER_TEMP/app.xcarchive \
+            -exportOptionsPlist $RUNNER_TEMP/ExportOptions.plist \
+            -exportPath $RUNNER_TEMP/export
+
+      - name: Package simulator build
+        if: steps.build-vars.outputs.signed != 'true'
+        run: |
+          APP_PATH=$(find $RUNNER_TEMP/app.xcarchive/Products -maxdepth 1 -name "*.app" | head -1)
+          if [ -z "$APP_PATH" ]; then
+            echo "::error::No .app produced by the simulator archive"
+            exit 1
+          fi
+          cd $RUNNER_TEMP/app.xcarchive/Products
+          zip -r $RUNNER_TEMP/app-dev.zip *.app
+
+      # ── Upload artifact ────────────────────────────────────────────────
+      # `${{ runner.temp }}` rather than the `$RUNNER_TEMP` shell variable —
+      # upload-artifact globs the filesystem and never expands shell vars.
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.build-vars.outputs.artifact_name }}-${{ github.sha }}
+          path: |
+            ${{ steps.build-vars.outputs.signed == 'true' && format('{0}/export/*.ipa', runner.temp) || format('{0}/app-dev.zip', runner.temp) }}
+          retention-days: 14
+          if-no-files-found: warn
+
+      # ── Cleanup keychain ───────────────────────────────────────────────
+      - name: Cleanup signing keychain
+        if: always()
+        run: |
+          security delete-keychain $RUNNER_TEMP/app-signing.keychain-db 2>/dev/null || true
+
+      # ── Summary ────────────────────────────────────────────────────────
+      - name: Build summary
+        run: |
+          echo "## iOS Build Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Property | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| **Build Type** | \`${{ inputs.build_type }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Scheme** | \`${{ steps.build-vars.outputs.scheme }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Configuration** | \`${{ steps.build-vars.outputs.configuration }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Signed** | \`${{ steps.build-vars.outputs.signed }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Commit** | \`${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Download the build from **Actions** → **Artifacts**." >> $GITHUB_STEP_SUMMARY
