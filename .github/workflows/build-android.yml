@@ -34,9 +34,8 @@ jobs:
         working-directory: mobile
 
     steps:
-      # ── Free disk space (release builds need it) ───────────────────────
+      # ── Free disk space (RN C++ builds exhaust the runner otherwise) ────
       - name: Free disk space
-        if: inputs.build_type == 'release'
         run: |
           df -h /
           sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/.ghcup \

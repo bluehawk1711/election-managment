@@ -1,5 +1,14 @@
-import { StatCard } from '@/components/dashboard/stat-card';
-import { Badge } from '@/components/ui/badge';
+import { ActivityCard, ActivityRow } from '@/components/dashboard/activity-card';
+import { AttentionCard, AttentionRow } from '@/components/dashboard/attention-card';
+import { CoverageCard } from '@/components/dashboard/coverage-card';
+import { DashboardHeader } from '@/components/dashboard/dashboard-header';
+import { GreetingRow } from '@/components/dashboard/greeting-row';
+import { HeroCard } from '@/components/dashboard/hero-card';
+import { IssuesCard } from '@/components/dashboard/issues-card';
+import { MetricTile } from '@/components/dashboard/metric-tile';
+import { QuickActionsRow } from '@/components/dashboard/quick-actions-row';
+import { ScheduleCard } from '@/components/dashboard/schedule-card';
+import { TaskCompletionCard } from '@/components/dashboard/task-completion';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { ScrollView } from '@/components/ui/scroll-view';
@@ -7,149 +16,474 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Text } from '@/components/ui/text';
 import { useToast } from '@/components/ui/toast';
 import { View } from '@/components/ui/view';
+import { useAuth } from '@/providers/auth-provider';
 import { useColor } from '@/hooks/useColor';
+import { useEvents } from '@/hooks/useEvents';
+import { useExpenses } from '@/hooks/useExpenses';
 import { useIssues } from '@/hooks/useIssues';
 import { useTasks } from '@/hooks/useTasks';
-import { daysBetween } from '@/lib/dates';
+import { addDays, daysBetween, startOfDay } from '@/lib/dates';
+import {
+  activityFeed,
+  attentionItems,
+  boothCoverageRatio,
+  completedToday,
+  completionRate,
+  dailyCounts,
+  eventsThisWeek,
+  issueBreakdown,
+  openIssueCount,
+  pendingTaskCount,
+  readinessIndex,
+  resolutionRate,
+  sumExpenses,
+  upcomingEvents,
+  weeklyCompletionDelta,
+} from '@/lib/dashboard-data';
+import { formatCompactCurrency, formatDurationLong } from '@/lib/format';
 import { useReference } from '@/providers/reference-provider';
-import { useEffect, useState } from 'react';
+import { useRouter } from 'expo-router';
+import { CalendarPlus, Flag, TriangleAlert, Users } from 'lucide-react-native';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { TranslationKey } from '@/i18n/locales/en';
+import type { ExpenseCategory, IssueCategory } from '@/lib/models';
+
+const ISSUE_CAT_KEY: Record<IssueCategory, TranslationKey> = {
+  road: 'issues.cat.road',
+  water: 'issues.cat.water',
+  electricity: 'issues.cat.electricity',
+  drainage: 'issues.cat.drainage',
+  streetlight: 'issues.cat.streetlight',
+  sanitation: 'issues.cat.sanitation',
+};
+
+const EXPENSE_CAT_KEY: Record<ExpenseCategory, TranslationKey> = {
+  travel: 'expenses.cat.travel',
+  fuel: 'expenses.cat.fuel',
+  materials: 'expenses.cat.materials',
+  printing: 'expenses.cat.printing',
+  food: 'expenses.cat.food',
+  venue: 'expenses.cat.venue',
+  other: 'expenses.cat.other',
+};
 
 /**
- * Home tab. Placeholder shell: the real dashboard (turnout rails, booth
- * coverage, today's timeline) is the next build phase, but the data layer
- * underneath is live — the counts below come straight from Firestore.
+ * Dashboard — the campaign's command surface. Every number is derived from
+ * live Firestore collections through `lib/dashboard-data` (pure, tested);
+ * the layout mirrors the light mock section for section.
  */
 export default function HomeScreen() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const toast = useToast();
-
+  const router = useRouter();
   const reference = useReference();
+  const { user, profile } = useAuth();
+
   const { tasks, loading: tasksLoading, error: tasksError, retry: retryTasks } = useTasks();
   const { issues, loading: issuesLoading } = useIssues();
+  const { events, loading: eventsLoading } = useEvents();
+  const { expenses, loading: expensesLoading } = useExpenses();
 
-  const loading = reference.loading || tasksLoading || issuesLoading;
+  const loading =
+    reference.loading || tasksLoading || issuesLoading || eventsLoading || expensesLoading;
   const error = reference.error ?? tasksError;
 
-  const green = useColor('green');
+  const green = useColor('success');
   const textMuted = useColor('textMuted');
 
   useEffect(() => {
     if (error) toast.error(t('common.errorTitle'), error);
   }, [error, toast, t]);
 
-  // The countdown only needs today's stamp, not a live clock. Read it once
-  // after mount (deferred, so the effect stays free of synchronous setState)
-  // and treat a missing value as "—" for that single first frame.
+  // Today's stamp, read once after mount (purity rules keep Date.now out of
+  // the render body); "—" placeholders cover that single first frame.
   const [now, setNow] = useState<number | null>(null);
   useEffect(() => {
     const timer = setTimeout(() => setNow(Date.now()), 0);
     return () => clearTimeout(timer);
   }, []);
 
-  const openTasks = tasks.filter((task) => task.status !== 'completed').length;
-  const openIssues = issues.filter((issue) => issue.status !== 'resolved').length;
-  const electionDate = reference.campaign?.electionDate;
-  const daysToPolling =
-    now != null && electionDate != null
-      ? Math.max(0, daysBetween(now, electionDate))
-      : null;
+  const buckets = useMemo(() => {
+    if (now == null) return [];
+    const today = startOfDay(now);
+    return Array.from({ length: 30 }, (_, index) => addDays(today, index - 29));
+  }, [now]);
+
+  const metrics = useMemo(() => {
+    if (now == null) return null;
+    const staffed = reference.booths.filter((booth) => booth.coordinatorId !== '').length;
+    const coverage = boothCoverageRatio(reference.booths);
+    const weekDone = dailyCounts(
+      tasks.filter((task) => task.status === 'completed').map((task) => task.updatedAt),
+      7,
+      now
+    );
+    const weekIssues = dailyCounts(
+      issues.map((issue) => issue.reportedAt),
+      7,
+      now
+    );
+    const weekEvents = dailyCounts(
+      events.map((event) => event.startsAt),
+      7,
+      now
+    );
+    const weekSpend = Array.from({ length: 7 }, () => 0);
+    for (const expense of expenses) {
+      const age = daysBetween(startOfDay(expense.date), startOfDay(now));
+      if (age >= 0 && age < 7) weekSpend[6 - age] += expense.amount;
+    }
+    return {
+      readiness: readinessIndex({
+        coverage: coverage * 100,
+        taskRate: completionRate(tasks) * 100,
+        issueRate: resolutionRate(issues) * 100,
+      }),
+      trend: weeklyCompletionDelta(tasks, now),
+      staffed,
+      totalBooths: reference.booths.length,
+      activeWorkers: reference.team.filter((member) => member.status === 'active').length,
+      doneToday: completedToday(tasks, now),
+      pendingTasks: pendingTaskCount(tasks),
+      openIssues: openIssueCount(issues),
+      weekEventCount: eventsThisWeek(events, now),
+      expenseTotal: sumExpenses(expenses),
+      series: {
+        tasks: weekDone,
+        issues: weekIssues,
+        events: weekEvents,
+        spend: weekSpend,
+      },
+      completion30: dailyCounts(
+        tasks.filter((task) => task.status === 'completed').map((task) => task.updatedAt),
+        30,
+        now
+      ),
+      breakdown: issueBreakdown(issues),
+      attention: attentionItems({ tasks, booths: reference.booths, issues, now }),
+      upcoming: upcomingEvents(events, now),
+      feed: activityFeed({ tasks, expenses, issues }),
+      hour: new Date(now).getHours(),
+      campaignDay:
+        reference.campaign?.startDate != null
+          ? daysBetween(reference.campaign.startDate, now) + 1
+          : null,
+      daysToPolling:
+        reference.campaign?.electionDate != null
+          ? Math.max(0, daysBetween(now, reference.campaign.electionDate))
+          : null,
+    };
+  }, [now, reference, tasks, issues, events, expenses]);
+
+  const name = profile?.displayName || user?.email?.split('@')[0] || t('dash.unknownActor');
+  const initials = initialsOf(name);
+
+  const attentionRows = useMemo<AttentionRow[]>(() => {
+    if (metrics == null || now == null) return [];
+    return metrics.attention.map((item) => {
+      if (item.kind === 'booth') {
+        const booth = reference.booths.find((candidate) => candidate.id === item.refId);
+        return {
+          id: item.id,
+          icon: Flag,
+          title: t('dash.boothTitle', { number: booth?.number ?? '' }),
+          subtitle: t('dash.noCoordinator'),
+          meta: reference.areaContext(booth?.areaId ?? ''),
+          actionLabel: t('dash.assign'),
+          onPress: () => router.push('/(tabs)/booths'),
+          onAction: () => router.push('/(tabs)/booths'),
+        };
+      }
+      if (item.kind === 'task') {
+        const task = tasks.find((candidate) => candidate.id === item.refId);
+        const overdueBy = task?.dueDate != null ? formatDurationLong(now - task.dueDate, i18n.language) : '';
+        return {
+          id: item.id,
+          icon: TriangleAlert,
+          title: item.title,
+          subtitle: t('dash.taskOverdue'),
+          meta: `${overdueBy} · ${reference.areaContext(task?.areaId ?? '')}`,
+          actionLabel: t('dash.nudge'),
+          onPress: () => router.push('/(tabs)/tasks'),
+          onAction: () => router.push('/(tabs)/tasks'),
+        };
+      }
+      const issue = issues.find((candidate) => candidate.id === item.refId);
+      const ago = issue?.reportedAt != null ? formatDurationLong(now - issue.reportedAt, i18n.language) : '';
+      return {
+        id: item.id,
+        icon: TriangleAlert,
+        title: item.title,
+        subtitle: t(ISSUE_CAT_KEY[issue?.category ?? 'road']),
+        meta: `${ago} · ${reference.areaContext(issue?.areaId ?? '')}`,
+        actionLabel: t('dash.escalate'),
+        onPress: () => router.push('/(tabs)/more'),
+        onAction: () => router.push('/(tabs)/more'),
+      };
+    });
+  }, [metrics, now, reference, tasks, issues, router, t, i18n.language]);
+
+  const activityRows = useMemo<ActivityRow[]>(() => {
+    if (metrics == null || now == null) return [];
+    return metrics.feed.map((entry) => {
+      const actor = nameOf(entry.actorId);
+      const action =
+        entry.kind === 'task'
+          ? t('dash.actTask', { title: entry.title })
+          : entry.kind === 'expense'
+            ? t('dash.actExpense', {
+                amount: formatCompactCurrency(entry.amount ?? 0, i18n.language),
+              })
+            : t('dash.actIssue', { title: entry.title });
+      const context =
+        entry.kind === 'expense'
+          ? t(EXPENSE_CAT_KEY[entry.title as ExpenseCategory] ?? 'expenses.cat.other')
+          : reference.areaContext(entry.areaId);
+      return {
+        id: entry.id,
+        name: actor,
+        initials: initialsOf(actor),
+        action,
+        meta: `${formatDurationLong(now - entry.at, i18n.language)} · ${context}`,
+      };
+    });
+
+    function nameOf(actorId: string): string {
+      if (!actorId) return t('dash.unknownActor');
+      if (actorId === user?.uid) return name;
+      return reference.memberName(actorId) || t('dash.unknownActor');
+    }
+  }, [metrics, now, reference, t, user?.uid, name, i18n.language]);
+
+  const greetingKey =
+    metrics != null && metrics.hour < 12
+      ? 'dash.greetingMorning'
+      : metrics != null && metrics.hour < 17
+        ? 'dash.greetingAfternoon'
+        : 'dash.greetingEvening';
+
+  const metaLine =
+    metrics == null
+      ? ''
+      : [
+          metrics.campaignDay != null ? t('dash.campaignDay', { day: metrics.campaignDay }) : null,
+          metrics.daysToPolling != null ? t('dash.pollingIn', { days: metrics.daysToPolling }) : null,
+        ]
+          .filter(Boolean)
+          .join(' · ');
 
   return (
     <ScrollView
       style={{ flex: 1 }}
       contentContainerStyle={{
-        padding: 24,
-        paddingTop: 120,
-        // Clear the floating tab bar (dock 12 + pill ~56 + breathing room).
+        paddingTop: 0,
         paddingBottom: 112,
         gap: 16,
       }}
       keyboardShouldPersistTaps='handled'
     >
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-        <View
-          style={{
-            width: 8,
-            height: 8,
-            borderRadius: 4,
-            backgroundColor: reference.connected ? green : textMuted,
-          }}
+      <DashboardHeader
+        title={t('dash.brandTitle')}
+        subtitle={t('home.title')}
+        initials={initials}
+        onSearch={() => router.push('/(tabs)/more')}
+        onAvatar={() => router.push('/(tabs)/more/settings')}
+      />
+
+      <View style={{ paddingHorizontal: 20, gap: 16 }}>
+        <GreetingRow
+          greeting={t(greetingKey as 'dash.greetingMorning', { name })}
+          meta={metaLine}
+          initials={initials}
+          bellLabel={t('dash.notifications')}
+          tuneLabel={t('dash.settings')}
+          onBell={() => toast.info(t('dash.notifications'), t('dash.noNotifications'))}
+          onTune={() => router.push('/(tabs)/more/settings')}
         />
-        <Text variant='caption'>
-          {reference.connected ? 'Live from Firestore' : 'Serving from cache…'}
-        </Text>
-        <View style={{ flex: 1 }} />
-        <Badge>{`${tasks.length}`}</Badge>
-      </View>
 
-      <View>
-        <Text variant='heading'>{t('home.title')}</Text>
-        <Text variant='caption'>
-          {t('home.subtitle', {
-            campaign: reference.campaign?.name ?? '—',
-            candidate: reference.campaign?.candidateName ?? '',
-          })}
-        </Text>
-      </View>
-
-      {loading ? (
-        <View style={{ gap: 8 }}>
-          <View style={{ flexDirection: 'row', gap: 8 }}>
-            <Skeleton height={76} variant='rounded' style={{ flex: 1 }} />
-            <Skeleton height={76} variant='rounded' style={{ flex: 1 }} />
+        {loading || metrics == null || now == null ? (
+          <View style={{ gap: 8 }}>
+            <Skeleton height={230} variant='rounded' />
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              <Skeleton height={44} variant='rounded' style={{ flex: 1 }} />
+              <Skeleton height={44} variant='rounded' style={{ flex: 1 }} />
+              <Skeleton height={44} variant='rounded' style={{ flex: 1 }} />
+              <Skeleton height={44} variant='rounded' style={{ flex: 1 }} />
+            </View>
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              <Skeleton height={148} variant='rounded' style={{ flex: 1 }} />
+              <Skeleton height={148} variant='rounded' style={{ flex: 1 }} />
+            </View>
+            <Skeleton height={260} variant='rounded' />
           </View>
-          <View style={{ flexDirection: 'row', gap: 8 }}>
-            <Skeleton height={76} variant='rounded' style={{ flex: 1 }} />
-            <Skeleton height={76} variant='rounded' style={{ flex: 1 }} />
-          </View>
-          <Skeleton height={160} variant='rounded' />
-        </View>
-      ) : (
-        <>
-          <View style={{ flexDirection: 'row', gap: 8 }}>
-            <StatCard
-              label={t('home.openTasks')}
-              value={String(openTasks)}
-              tone='accent'
+        ) : (
+          <>
+            <HeroCard
+              title={t('dash.readiness')}
+              trendLabel={
+                metrics.trend != null
+                  ? t('dash.trendWeek', {
+                      trend: `${metrics.trend >= 0 ? '+' : ''}${metrics.trend}%`,
+                    })
+                  : null
+              }
+              index={metrics.readiness}
+              indexLabel={t('dash.index')}
+              stats={[
+                {
+                  label: t('dash.boothsCovered'),
+                  value: `${metrics.staffed} / ${metrics.totalBooths}`,
+                },
+                { label: t('dash.activeWorkers'), value: String(metrics.activeWorkers) },
+                { label: t('dash.tasksDoneToday'), value: String(metrics.doneToday) },
+              ]}
             />
-            <StatCard
-              label={t('home.openIssues')}
-              value={String(openIssues)}
-              tone='warning'
-            />
-          </View>
-          <View style={{ flexDirection: 'row', gap: 8 }}>
-            <StatCard label={t('home.booths')} value={String(reference.booths.length)} />
-            <StatCard
-              label={t('home.daysToPolling')}
-              value={daysToPolling != null ? String(daysToPolling) : '—'}
-              tone='success'
-            />
-          </View>
 
-          <Card style={{ gap: 8 }}>
-            <Text variant='subtitle'>{t('home.title')}</Text>
-            <Text variant='caption'>{t('home.placeholder')}</Text>
-          </Card>
+            <QuickActionsRow
+              onNewTask={() => router.push('/(tabs)/tasks')}
+              onReportIssue={() => router.push('/(tabs)/more')}
+              onAddEvent={() => router.push('/(tabs)/calendar')}
+              onBoothIn={() => router.push('/(tabs)/booths')}
+            />
 
-          {error && (
-            <Card style={{ gap: 12 }}>
-              <Text variant='caption'>{error}</Text>
-              <Button
-                size='sm'
-                variant='outline'
-                onPress={() => {
-                  reference.retry();
-                  retryTasks();
-                }}
-              >
-                {t('common.retry')}
-              </Button>
+            <View style={{ gap: 8 }}>
+              <View style={{ flexDirection: 'row', gap: 8 }}>
+                <MetricTile
+                  icon={CalendarPlus}
+                  chipLabel={t('dash.chipActive')}
+                  chipTone='success'
+                  value={String(metrics.pendingTasks)}
+                  label={t('dash.metricPendingTasks')}
+                  series={metrics.series.tasks}
+                  colorName='secondary'
+                />
+                <MetricTile
+                  icon={TriangleAlert}
+                  chipLabel={t('dash.chipCritical')}
+                  chipTone={metrics.openIssues > 0 ? 'danger' : 'default'}
+                  value={String(metrics.openIssues)}
+                  label={t('dash.metricOpenIssues')}
+                  series={metrics.series.issues}
+                  colorName='error'
+                />
+              </View>
+              <View style={{ flexDirection: 'row', gap: 8 }}>
+                <MetricTile
+                  icon={Users}
+                  chipLabel={t('dash.chipSynced')}
+                  chipTone='default'
+                  value={String(metrics.weekEventCount)}
+                  label={t('dash.metricMeetings')}
+                  series={metrics.series.events}
+                  colorName='primary'
+                />
+                <MetricTile
+                  icon={Flag}
+                  chipLabel={t('dash.chipAudit')}
+                  chipTone='default'
+                  value={formatCompactCurrency(metrics.expenseTotal, i18n.language)}
+                  label={t('dash.metricExpenses')}
+                  series={metrics.series.spend}
+                  colorName='tertiary'
+                />
+              </View>
+            </View>
+
+            <Card>
+              <TaskCompletionCard counts={metrics.completion30} buckets={buckets} />
             </Card>
-          )}
-        </>
-      )}
+
+            <Card>
+              <CoverageCard
+                rails={reference.wardCoverage}
+                title={t('dash.coverage')}
+                subtitle={t('dash.coverageSub', { percent: 60 })}
+                hint={t('dash.wardsCount', { count: reference.wardCoverage.length })}
+              />
+            </Card>
+
+            <Card>
+              <IssuesCard
+                breakdown={metrics.breakdown}
+                subtitle={t('dash.issuesSub')}
+                totalLabel={t('dash.totalIssues')}
+                actionLabel={t('common.viewAll')}
+                onAction={() => router.push('/(tabs)/more')}
+              />
+            </Card>
+
+            <Card>
+              <AttentionCard
+                rows={attentionRows}
+                title={t('dash.attention')}
+                countLabel={t('dash.attentionCount', { count: attentionRows.length })}
+                actionLabel={t('common.viewAll')}
+                onAction={() => router.push('/(tabs)/tasks')}
+              />
+            </Card>
+
+            <Card>
+              <ScheduleCard
+                events={metrics.upcoming}
+                title={t('dash.schedule')}
+                subtitle={
+                  reference.connected ? t('dash.calendarSync') : t('dash.calendarLocal')
+                }
+                locationLabel={t('common.location')}
+                onSelect={() => router.push('/(tabs)/calendar')}
+                onAll={() => router.push('/(tabs)/calendar')}
+                allLabel={t('common.viewAll')}
+              />
+            </Card>
+
+            <Card>
+              <ActivityCard
+                rows={activityRows}
+                title={t('dash.recentActivity')}
+                subtitle={t('dash.liveStream')}
+              />
+            </Card>
+
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              <View
+                style={{
+                  width: 8,
+                  height: 8,
+                  borderRadius: 4,
+                  backgroundColor: reference.connected ? green : textMuted,
+                }}
+              />
+              <Text variant='caption'>
+                {reference.connected ? t('dash.live') : t('dash.cached')}
+              </Text>
+            </View>
+
+            {error ? (
+              <Card style={{ gap: 12 }}>
+                <Text variant='caption'>{error}</Text>
+                <Button
+                  size='sm'
+                  variant='outline'
+                  onPress={() => {
+                    reference.retry();
+                    retryTasks();
+                  }}
+                >
+                  {t('common.retry')}
+                </Button>
+              </Card>
+            ) : null}
+          </>
+        )}
+      </View>
     </ScrollView>
   );
+}
+
+function initialsOf(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return '—';
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }

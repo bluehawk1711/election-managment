@@ -8,6 +8,8 @@ import { Platform } from 'react-native';
 type TabStackScreen = {
   name: string;
   title: string;
+  /** Screens that render their own header (dashboard) opt out of the stack header. */
+  headerShown?: boolean;
 };
 
 /**
@@ -48,6 +50,7 @@ export function ThemedTabStack({ screens }: { screens: TabStackScreen[] }) {
           name={screen.name}
           options={{
             title: screen.title,
+            headerShown: screen.headerShown ?? true,
             headerTitle: () =>
               Platform.OS === 'android' ? (
                 <Text variant='heading'>{screen.title}</Text>
