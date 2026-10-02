@@ -20,3 +20,4 @@
 # Dependencies & build output
 **/node_modules/
 **/.expo/
+ocr_pages/
