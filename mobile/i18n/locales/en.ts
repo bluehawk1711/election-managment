@@ -204,6 +204,22 @@ export const en = {
   'expenses.cat.food': 'Food',
   'expenses.cat.venue': 'Venue',
   'expenses.cat.other': 'Other',
+
+  // Tasks module
+  'tasks.title': 'Task',
+  'tasks.create': 'New task',
+  'tasks.createdToast': 'Task created',
+  'tasks.emptyBody': 'Create the first task for your team and assign it to a worker.',
+  'tasks.noMatches': 'No matching tasks',
+  'tasks.noMatchesBody': 'Try a different search or clear the filters.',
+  'tasks.dueOverdue': 'Overdue',
+  'tasks.report': 'Field report',
+  'tasks.reportHint': 'Add notes from the field…',
+  'tasks.titleRequired': 'Title is required',
+  'tasks.titlePlaceholder': 'e.g. Poster distribution at Ward 12',
+  'tasks.descriptionPlaceholder': 'What needs to be done?',
+  'tasks.assigneePlaceholder': 'Unassigned',
+  'tasks.createHint': 'Status starts as Pending — move it from the task screen.',
 } as const;
 
 export type TranslationKey = keyof typeof en;

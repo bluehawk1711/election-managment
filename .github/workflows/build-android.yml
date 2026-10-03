@@ -266,8 +266,10 @@ jobs:
             echo "::error::No APK found"
             exit 1
           fi
-          echo "apk_path=$APK_PATH" >> $GITHUB_OUTPUT
-          echo "Found APK: $APK_PATH"
+          # `upload-artifact` is a `uses:` step — it does NOT inherit the job's
+          # `working-directory: mobile`, so the output must be repo-root relative.
+          echo "apk_path=mobile/$APK_PATH" >> $GITHUB_OUTPUT
+          echo "Found APK: mobile/$APK_PATH"
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4

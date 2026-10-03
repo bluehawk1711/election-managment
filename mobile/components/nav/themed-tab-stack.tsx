@@ -10,6 +10,16 @@ type TabStackScreen = {
   title: string;
   /** Screens that render their own header (dashboard) opt out of the stack header. */
   headerShown?: boolean;
+  /** Modal presentations (task create). */
+  presentation?:
+    | 'card'
+    | 'pageSheet'
+    | 'formSheet'
+    | 'modal'
+    | 'containedModal'
+    | 'transparentModal'
+    | 'containedTransparentModal'
+    | 'fullScreenModal';
 };
 
 /**
@@ -51,6 +61,7 @@ export function ThemedTabStack({ screens }: { screens: TabStackScreen[] }) {
           options={{
             title: screen.title,
             headerShown: screen.headerShown ?? true,
+            presentation: screen.presentation,
             headerTitle: () =>
               Platform.OS === 'android' ? (
                 <Text variant='heading'>{screen.title}</Text>

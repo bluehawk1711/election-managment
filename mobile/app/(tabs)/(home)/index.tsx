@@ -205,8 +205,10 @@ export default function HomeScreen() {
           subtitle: t('dash.taskOverdue'),
           meta: `${overdueBy} · ${reference.areaContext(task?.areaId ?? '')}`,
           actionLabel: t('dash.nudge'),
-          onPress: () => router.push('/(tabs)/tasks'),
-          onAction: () => router.push('/(tabs)/tasks'),
+          onPress: () =>
+            router.push({ pathname: '/(tabs)/tasks/[id]', params: { id: item.refId } }),
+          onAction: () =>
+            router.push({ pathname: '/(tabs)/tasks/[id]', params: { id: item.refId } }),
         };
       }
       const issue = issues.find((candidate) => candidate.id === item.refId);
@@ -341,7 +343,7 @@ export default function HomeScreen() {
             />
 
             <QuickActionsRow
-              onNewTask={() => router.push('/(tabs)/tasks')}
+              onNewTask={() => router.push('/(tabs)/tasks/new')}
               onReportIssue={() => router.push('/(tabs)/more')}
               onAddEvent={() => router.push('/(tabs)/calendar')}
               onBoothIn={() => router.push('/(tabs)/booths')}

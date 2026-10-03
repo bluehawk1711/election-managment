@@ -234,8 +234,10 @@ jobs:
             echo "::error::No release .aab found"
             exit 1
           fi
-          echo "aab_path=$AAB_PATH" >> $GITHUB_OUTPUT
-          echo "Found App Bundle: $AAB_PATH"
+          # `upload-artifact` does NOT inherit the job's `working-directory:
+          # mobile`, so the output must be repo-root relative.
+          echo "aab_path=mobile/$AAB_PATH" >> $GITHUB_OUTPUT
+          echo "Found App Bundle: mobile/$AAB_PATH"
 
       - name: Upload App Bundle artifact
         uses: actions/upload-artifact@v4

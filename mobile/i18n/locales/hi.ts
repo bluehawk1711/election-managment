@@ -200,4 +200,20 @@ export const hi: Record<TranslationKey, string> = {
   'expenses.cat.food': 'भोजन',
   'expenses.cat.venue': 'स्थल',
   'expenses.cat.other': 'अन्य',
+
+  // Tasks module
+  'tasks.title': 'कार्य',
+  'tasks.create': 'नया कार्य',
+  'tasks.createdToast': 'कार्य बनाया गया',
+  'tasks.emptyBody': 'अपनी टीम के लिए पहला कार्य बनाएँ और कार्यकर्ता को सौंपें।',
+  'tasks.noMatches': 'कोई कार्य नहीं मिला',
+  'tasks.noMatchesBody': 'खोज बदलें या फ़िल्टर हटाएँ।',
+  'tasks.dueOverdue': 'समय सीमा निकली',
+  'tasks.report': 'फ़ील्ड रिपोर्ट',
+  'tasks.reportHint': 'फ़ील्ड से नोट्स जोड़ें…',
+  'tasks.titleRequired': 'शीर्षक आवश्यक है',
+  'tasks.titlePlaceholder': 'जैसे: वार्ड 12 में पोस्टर वितरण',
+  'tasks.descriptionPlaceholder': 'क्या करना है?',
+  'tasks.assigneePlaceholder': 'बिना जिम्मेदारी',
+  'tasks.createHint': 'स्थिति शुरू में “लंबित” रहेगी — कार्य स्क्रीन से बदलें।',
 };
