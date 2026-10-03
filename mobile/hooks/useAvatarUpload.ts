@@ -58,7 +58,16 @@ export function useAvatarUpload() {
         const contentType = MIME[extension] ?? 'image/jpeg';
         const path = `avatars/${user.uid}/avatar.${extension}`;
 
-        const blob = await fetch(asset.uri).then((res) => res.blob());
+        // `res.blob()` on a failed response resolves happily with whatever body came
+        // back — a 404 page saved as a "PNG", which then fails the storage
+        // content-type check with a far less obvious message. Checking `ok`
+        // turns it into a local error at the point where it can still say
+        // which URI failed.
+        const response = await fetch(asset.uri);
+        if (!response.ok) {
+          throw new Error(`Could not read ${asset.uri}: HTTP ${response.status}`);
+        }
+        const blob = await response.blob();
         const task = uploadBytesResumable(ref(storage, path), blob, {
           contentType,
         });

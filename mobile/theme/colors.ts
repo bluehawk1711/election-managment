@@ -60,7 +60,13 @@ const lightColors = {
   indigo: '#3B2FD6',
 
   // Semantic states
-  success: '#16A34A',
+  //
+  // `success` is darkened from #16A34A for the light theme only: paired with a
+  // white foreground it measured 3.3:1, under the 4.5:1 WCAG AA floor for the
+  // 14–15px text in Chip and Badge. #15803D measures 5.0:1 on white and is
+  // still recognisably the same green. The dark theme below keeps the brighter
+  // #16A34A, which is the right choice against a dark surface.
+  success: '#15803D',
   successForeground: '#FFFFFF',
   warning: '#F59E0B',
   warningForeground: '#1A1200',

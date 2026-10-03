@@ -1,4 +1,9 @@
 import { useCollection } from '@/hooks/useCollection';
+import {
+  peek as peekCache,
+  save as saveCache,
+  snapshotFrom,
+} from '@/lib/cache/query-cache';
 import { CAMPAIGN_ID, COLLECTIONS } from '@/lib/collections';
 import { messageFor } from '@/lib/errors';
 import { db } from '@/lib/firebase';
@@ -55,15 +60,32 @@ interface ReferenceContextType {
 
 const ReferenceContext = createContext<ReferenceContextType | null>(null);
 
+/** Cache key for the single campaign document; also in `PREWARM_KEYS`. */
+const CAMPAIGN_CACHE_KEY = `${COLLECTIONS.campaigns}:${CAMPAIGN_ID}`;
+
 /**
  * The campaign's shared reference data, loaded once for the session:
  * campaign profile, the constituency → ward → area geography, the booth list
  * and the team roster. Every screen reads from here instead of opening five
  * listeners of its own.
+ *
+ * Everything here is served cache-first via `lib/cache/query-cache` — the
+ * collections through `useCollection`, and the campaign document through the
+ * same store seeded in the state initialiser. Reference data changes a few
+ * times a season, so re-reading it from the network on every cold start costs
+ * six `Listen` streams and a screen of skeletons to display data the device
+ * already had.
  */
 export function ReferenceProvider({ children }: { children: ReactNode }) {
-  const [campaign, setCampaign] = useState<Campaign | null>(null);
-  const [campaignLoaded, setCampaignLoaded] = useState(false);
+  // Seeded synchronously from the cache: the app renders the previous
+  // campaign's details on the first frame rather than an empty header, and the
+  // subscription below quietly replaces them.
+  const [campaign, setCampaign] = useState<Campaign | null>(() => {
+    const cached = peekCache(CAMPAIGN_CACHE_KEY);
+    if (!cached || cached.docs.length === 0) return null;
+    return campaignFromDoc(snapshotFrom(cached.docs[0]));
+  });
+  const [campaignLoaded, setCampaignLoaded] = useState(() => campaign !== null);
   const [campaignError, setCampaignError] = useState<string | null>(null);
 
   useEffect(
@@ -74,8 +96,16 @@ export function ReferenceProvider({ children }: { children: ReactNode }) {
           setCampaign(campaignFromDoc(snapshot));
           setCampaignError(null);
           setCampaignLoaded(true);
+          if (snapshot.exists() && !snapshot.metadata.fromCache) {
+            saveCache(CAMPAIGN_CACHE_KEY, [
+              { id: snapshot.id, data: snapshot.data() as Record<string, unknown> },
+            ]);
+          }
         },
         (caught) => {
+          // As in `useCollection`: an error here must not blank the campaign
+          // details the cache already supplied. `campaignLoaded` still flips so
+          // the provider stops reporting `loading`.
           setCampaignError(messageFor(caught));
           setCampaignLoaded(true);
         }

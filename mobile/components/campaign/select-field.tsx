@@ -7,12 +7,25 @@ import { CONTROL_RADIUS } from '@/theme/globals';
 import { typeStyle } from '@/theme/typography';
 import { Check, ChevronDown } from 'lucide-react-native';
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet } from 'react-native';
+import { Pressable, StyleSheet } from 'react-native';
 
 export type SelectOption = {
   value: string;
   label: string;
+  /** Optional second line — e.g. the area a ward covers. */
+  hint?: string;
 };
+
+/**
+ * Reference height the sheet-sizing maths is calibrated against.
+ *
+ * A constant rather than the live screen height on purpose: if the sheet height
+ * tracked the device, the *fraction* passed to `snapPoints` would change meaning
+ * with it, and the same thirteen wards would open half-open on a tablet and
+ * nearly full on a small phone. Calibrated once against a tall phone, the sheet
+ * asks for a sensible fraction everywhere.
+ */
+const SCREEN_HEIGHT = 640;
 
 type Props = {
   label?: string;
@@ -46,6 +59,19 @@ export function SelectField({
 
   const selected = options.find((option) => option.value === value);
 
+  /**
+   * Size the sheet to the content, up to a cap.
+   *
+   * Pinned at `0.5` this is right for a three-option picker and badly wrong for
+   * fourteen: the ward list has 13 wards plus "All", so barely five rows were
+   * visible. `min(needed, cap)` opens a short list short and a long one as tall
+   * as it usefully can, with the remainder scrolling in the sheet's own view.
+   */
+  const snapPoint = Math.min(
+    0.92,
+    Math.max(0.35, ((options.length * 52 + 140) / SCREEN_HEIGHT) * 100) / 100
+  );
+
   return (
     <>
       <Pressable
@@ -78,9 +104,16 @@ export function SelectField({
         isVisible={open}
         onClose={() => setOpen(false)}
         title={label ?? placeholder}
-        snapPoints={[0.5]}
+        snapPoints={[snapPoint]}
       >
-        <ScrollView style={styles.list} contentContainerStyle={styles.listContent}>
+        {/* No ScrollView here. `BottomSheetContent` already wraps its children
+            in one, and a vertically scrollable view nested inside another
+            vertically scrollable view on Android does not scroll — the inner
+            one never receives the gesture because the outer claims it. That is
+            exactly why the ward list looked frozen: fourteen options, no way to
+            reach ward 5. A plain `View` lets the sheet's own scroller do the
+            work, and the sheet is already sized to the content. */}
+        <View style={styles.list}>
           {options.map((option) => {
             const isActive = option.value === value;
             return (
@@ -97,12 +130,19 @@ export function SelectField({
                 accessibilityRole='button'
                 accessibilityState={{ selected: isActive }}
               >
-                <Text style={[typeStyle('bodyMd'), { flex: 1 }]}>{option.label}</Text>
+                <View style={styles.optionText}>
+                <Text style={typeStyle('bodyMd')}>{option.label}</Text>
+                {option.hint ? (
+                  <Text variant='caption' numberOfLines={2}>
+                    {option.hint}
+                  </Text>
+                ) : null}
+              </View>
                 {isActive ? <Icon name={Check} size={18} color={primary} /> : null}
               </Pressable>
             );
           })}
-        </ScrollView>
+        </View>
       </BottomSheet>
     </>
   );
@@ -128,11 +168,7 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   list: {
-    maxHeight: 340,
-  },
-  listContent: {
     gap: 6,
-    paddingBottom: 20,
   },
   option: {
     flexDirection: 'row',
@@ -140,5 +176,9 @@ const styles = StyleSheet.create({
     gap: 10,
     padding: 14,
     borderRadius: CONTROL_RADIUS,
+  },
+  optionText: {
+    flex: 1,
+    gap: 2,
   },
 });

@@ -427,11 +427,50 @@ export function ToastProvider({ children, maxToasts = 3 }: ToastProviderProps) {
 
   const generateId = () => Math.random().toString(36).substr(2, 9);
 
+  // Declared *before* `addToast`, which depends on it.
+  //
+  // It used to sit below, and `addToast`'s auto-dismiss timer called it
+  // anyway — a temporal-dead-zone reference that only works because the call
+  // happens later. Beyond being fragile, it made the memoisation
+  // unpreservable: the React Compiler saw a closure over a binding declared
+  // after its own definition and skipped the component ("Existing memoization
+  // could not be preserved"), so the provider ran unoptimised.
+  const dismissToast = useCallback((id: string) => {
+    setToasts((prev) => prev.filter((toast) => toast.id !== id));
+  }, []);
+
+  const dismissAll = useCallback(() => {
+    setToasts([]);
+  }, []);
+
   const addToast = useCallback(
     (toastData: Omit<ToastData, 'id'>) => {
       const id = generateId();
+
+      // Never enqueue a toast with nothing to say.
+      //
+      // `Toast` decides between its expanded layout and a bare icon pill on
+      // `Boolean(title || description || action)`, so a call whose title
+      // resolved to an empty string produced a coloured dot in the corner that
+      // explained nothing and then vanished — the "empty toast". `t()` returns
+      // `''` for a key that is missing from the *active* bundle even when it
+      // exists in the type, which is exactly the shape of bug this guards.
+      const title = toastData.title?.trim();
+      const description = toastData.description?.trim();
+      if (!title && !description && !toastData.action) {
+        if (__DEV__) {
+          console.warn(
+            '[toast] dropped a toast with no title, description or action',
+            toastData
+          );
+        }
+        return;
+      }
+
       const newToast: ToastData = {
         ...toastData,
+        title: title || undefined,
+        description: description || undefined,
         id,
         duration: toastData.duration ?? 4000,
       };
@@ -448,16 +487,8 @@ export function ToastProvider({ children, maxToasts = 3 }: ToastProviderProps) {
         }, newToast.duration);
       }
     },
-    [maxToasts]
+    [maxToasts, dismissToast]
   );
-
-  const dismissToast = useCallback((id: string) => {
-    setToasts((prev) => prev.filter((toast) => toast.id !== id));
-  }, []);
-
-  const dismissAll = useCallback(() => {
-    setToasts([]);
-  }, []);
 
   const createVariantToast = useCallback(
     (variant: ToastVariant, title: string, description?: string) => {

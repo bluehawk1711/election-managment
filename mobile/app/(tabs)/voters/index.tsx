@@ -4,9 +4,14 @@ import { FilterBar, type FilterItem } from '@/components/campaign/filter-bar';
 import { ListRow } from '@/components/campaign/list-row';
 import { SearchInput } from '@/components/campaign/search-input';
 import { SectionHeader } from '@/components/campaign/section-header';
+import {
+  SelectField,
+  type SelectOption,
+} from '@/components/campaign/select-field';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Spinner } from '@/components/ui/spinner';
 import { Text } from '@/components/ui/text';
 import { useColor } from '@/hooks/useColor';
 import { useRoll } from '@/hooks/useRoll';
@@ -14,48 +19,43 @@ import { useAuth } from '@/providers/auth-provider';
 import { can, canReadWard } from '@/lib/roles';
 import { searchVoters } from '@/lib/roll/search';
 import type { VoterView } from '@/lib/roll/types';
+import { FlashList } from '@shopify/flash-list';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ShieldAlert, Users } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FlatList, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 type StatusFilter = 'all' | 'voted' | 'unvoted' | 'edited';
 
 /**
- * How many rows `FlatList` renders per screenful of overscan.
+ * Sentinel for the ward select's "every ward" option.
  *
- * React Native mounts views lazily, so a long list only ever builds a window of
- * rows — but the default window is 21, and at ~76pt a row that is ~1,600pt of
- * mounted views for a list that may show 800. Lowering it to 5 keeps about one
- * screen ahead of the user and is the difference between smooth scrolling and
- * visible jank on a mid-range Android, which is what most karykarta run.
- *
- * `removeClippedSubviews` unmounts off-screen views on Android (a no-op on iOS,
- * which clips for free, so it is not worth branching for). `initialNumToRender`
- * sizes the first paint — set to two screens so the list is full immediately
- * rather than visibly growing. `maxToRenderPerBatch` keeps one scroll frame from
- * building a burst of work on the JS thread.
- *
- * **`getItemLayout` is deliberately absent.** It is the single biggest win
- * available here and it is unsafe on this list: `ListRow` is not a fixed height.
- * A row with a "Voted" chip or a "Pending sync" chip is taller than one with
- * neither, and a voter with no locality has no subtitle line at all. Handing
- * FlatList a constant would make scroll-to-offset and tap targeting wrong by a
- * row that grows as chips appear — worse than the measurement it skips.
- *
- * The real fix is to make `ListRow` a fixed height and give the trailing chips a
- * fixed slot; that is a component change, not a screen change, so it belongs in
- * its own commit rather than buried here.
+ * A string rather than `''` because `SelectField` matches options on `value`
+ * and an empty string would read as "nothing selected" rather than a real
+ * choice. `0` is not usable either — ward numbers start at 1.
  */
-const WINDOW_SIZE = 5;
+const ALL_WARDS = 'all';
+
+/**
+ * Search results are capped for rendering only.
+ *
+ * Not pagination: the ward data is already resident (paged in by `useRoll`), so
+ * filtering it is pure CPU. What *is* expensive is mounting tens of thousands
+ * of rows — and because a phonetic key matches loosely by design, a broad query
+ * can legitimately return a very large set. Rather than truncate silently,
+ * the screen renders the first `RESULT_LIMIT` and says how many were withheld,
+ * which is honest: a karykarta needs to know the list is showing 500 of 3,000.
+ */
+const RESULT_LIMIT = 300;
 
 /**
  * Voter list (plan-voters.md §6.1).
  *
  * Ward selector + search across *every* field (the haystack in
  * `lib/roll/search.ts` covers name, EPIC, house, locality, age, gender,
- * serial, ward, relation, phone, leaning) + status filters.
+ * serial, ward, relation, phone, leaning) + status filters. Search works from
+ * a Devanagari keyboard and a Latin one alike — see `lib/roll/translit.ts`.
  *
  * A karykarta only ever sees their assigned ward: the selector offers no
  * other option and `visibleWards` would drop the rows anyway.
@@ -70,6 +70,26 @@ const WINDOW_SIZE = 5;
  * - cache miss + fetch in flight → `loading`, skeletons.
  * - cache hit + fetch failed → `connected` is false. The banner says "offline"
  *   and the list stays usable. This is the case the whole cache exists for.
+ *
+ * ## Why FlashList, and why there are no tuning props
+ *
+ * This used to be a `FlatList` carrying a pile of hand-tuned numbers
+ * (`windowSize`, `maxToRenderPerBatch`, `updateCellsBatchingPeriod`,
+ * `removeClippedSubviews`, plus a comment explaining why `getItemLayout` was
+ * deliberately unsafe). That was a reasonable attempt to make a virtualised list
+ * behave on a mid-range Android, and most of it is now the library's job:
+ * FlashList recycles cell *views* natively instead of re-running `renderItem`
+ * for every row on scroll, which is where the jank actually came from.
+ *
+ * The props are gone because they are either handled internally or actively
+ * harmful. `getItemLayout` in particular must stay absent unless every row is a
+ * fixed height, and `ListRow` is not one: a row with a "Voted" chip is taller
+ * than one without, and a voter with no locality has no subtitle line at all. A
+ * constant would make scroll targeting wrong by a row that grows as chips
+ * appear.
+ *
+ * Real scrolling cost is instead bounded by how much the list is asked to
+ * render, which is `RESULT_LIMIT` above.
  */
 export default function VotersScreen() {
   const { t } = useTranslation();
@@ -101,13 +121,16 @@ export default function VotersScreen() {
   const restricted = allowedWards.length > 0 && allowedWards.length < allWardNumbers.length;
 
   // Scope the loaded rows for a karykarta even if the selector was bypassed.
-  const scoped = useMemo(
-    () =>
-      restricted
-        ? roll.voters.filter((voter) => allowedWards.includes(voter.wardNo))
-        : roll.voters,
-    [roll.voters, restricted, allowedWards]
-  );
+  //
+  // A `Set`, not `Array.includes`: this runs over every loaded row (thousands)
+  // and re-runs on each new batch, and a linear scan per row turned that into
+  // tens of thousands of comparisons on the JS thread — the sort of thing that
+  // shows up as a stutter when the user reaches the end of the list.
+  const scoped = useMemo(() => {
+    if (!restricted) return roll.voters;
+    const allowed = new Set(allowedWards);
+    return roll.voters.filter((voter) => allowed.has(voter.wardNo));
+  }, [roll.voters, restricted, allowedWards]);
 
   const searched = useMemo(
     () => searchVoters(scoped, roll.index, query),
@@ -115,12 +138,29 @@ export default function VotersScreen() {
   );
 
   const filtered = useMemo(() => {
-    if (status === 'all') return searched;
-    if (status === 'voted') return searched.filter((voter) => voter.voted === 'voted');
-    if (status === 'unvoted')
-      return searched.filter((voter) => voter.voted !== 'voted');
-    return searched.filter((voter) => voter.pending);
+    const base =
+      status === 'all'
+        ? searched
+        : status === 'voted'
+          ? searched.filter((voter) => voter.voted === 'voted')
+          : status === 'unvoted'
+            ? searched.filter((voter) => voter.voted !== 'voted')
+            : searched.filter((voter) => voter.pending);
+    return base.slice(0, RESULT_LIMIT);
   }, [searched, status]);
+
+  /** How many matched before the render cap, for the footer line. */
+  const withheld = useMemo(() => {
+    const base =
+      status === 'all'
+        ? searched.length
+        : status === 'voted'
+          ? searched.filter((voter) => voter.voted === 'voted').length
+          : status === 'unvoted'
+            ? searched.filter((voter) => voter.voted !== 'voted').length
+            : searched.filter((voter) => voter.pending).length;
+    return Math.max(0, base - filtered.length);
+  }, [searched, status, filtered.length]);
 
   const counts = useMemo(
     () => ({
@@ -132,25 +172,35 @@ export default function VotersScreen() {
     [searched]
   );
 
-  const wardItems = useMemo<FilterItem[]>(() => {
+  // The ward filter is a select rather than a row of chips. Thirteen wards plus
+  // "All" is fourteen targets in a horizontal scroller, which on a small phone
+  // pushes the currently-selected ward off-screen — the user could not see what
+  // they had filtered to without scrolling back. A select shows the current
+  // value in the closed state, so the answer is always visible.
+  const wardOptions = useMemo<SelectOption[]>(() => {
     const meta = roll.wards?.wards ?? [];
-    const items: FilterItem[] = [
-      {
-        key: 'all',
-        label: `${t('common.all')} (${scoped.length})`,
-        active: roll.wardNo === null,
-      },
+    const options: SelectOption[] = [
+      { value: ALL_WARDS, label: `${t('common.all')} (${scoped.length})` },
     ];
     for (const ward of meta) {
       if (restricted && !allowedWards.includes(ward.wardNo)) continue;
-      items.push({
-        key: String(ward.wardNo),
+      // Ward *name*, not just the number. `delimitation` is the area the ward
+      // covers, taken from the roll itself ("पार्श्चनाथ सिटी, जेपीनगर … का
+      // क्षेत्र"). A karykarta identifies a ward by where it is, not by an
+      // ordinal, and it is the same string on the voter's ID card.
+      //
+      // Second line, not inline: the delimitation strings are long enough that
+      // appending them to the label pushed the ward number off the row.
+      options.push({
+        value: String(ward.wardNo),
         label: `${t('voters.ward', { no: ward.wardNo })} (${ward.voterCount})`,
-        active: roll.wardNo === ward.wardNo,
+        hint: ward.delimitation,
       });
     }
-    return items;
-  }, [roll.wards, roll.wardNo, scoped.length, restricted, allowedWards, t]);
+    return options;
+  }, [roll.wards, scoped.length, restricted, allowedWards, t]);
+
+  const selectedWard = roll.wardNo == null ? ALL_WARDS : String(roll.wardNo);
 
   const statusItems = useMemo<FilterItem[]>(
     () =>
@@ -203,32 +253,39 @@ export default function VotersScreen() {
         })
       }
       trailing={
-        <View style={styles.trailing}>
-          {item.voted === 'voted' ? (
-            <Chip label={t('voters.votedYes')} tone='success' />
-          ) : null}
-          {item.pending ? (
-            <Chip label={t('voters.pendingSync')} tone='primary' />
-          ) : null}
-        </View>
+        item.voted === 'voted' ? (
+          <Chip label={t('voters.votedYes')} tone='success' />
+        ) : null
       }
     />
   );
 
   return (
     <View style={styles.root}>
-      <FlatList
+      <FlashList
         data={filtered}
         keyExtractor={(item) => item.id}
         renderItem={renderRow}
         keyboardShouldPersistTaps='handled'
         contentContainerStyle={styles.listContent}
-        // See the constants above for why each of these is set.
-        windowSize={WINDOW_SIZE}
-        initialNumToRender={WINDOW_SIZE * 2}
-        maxToRenderPerBatch={WINDOW_SIZE}
-        updateCellsBatchingPeriod={40}
-        removeClippedSubviews
+        // Progressive loading. `useRoll` pages the "all wards" selection in
+        // batches of three wards; reaching the end asks for the next one
+        // instead of having paid for all 6,855 rows on open.
+        onEndReached={roll.hasMore ? roll.loadMore : undefined}
+        onEndReachedThreshold={0.4}
+        ListFooterComponent={
+          <View style={styles.footer}>
+            {roll.loadingMore ? <Spinner size='sm' variant='circle' /> : null}
+            {withheld > 0 ? (
+              <Text variant='caption' style={{ color: outline }}>
+                {t('voters.moreResults', {
+                  shown: filtered.length,
+                  total: filtered.length + withheld,
+                })}
+              </Text>
+            ) : null}
+          </View>
+        }
         ListHeaderComponent={
           <View style={styles.header}>
             <SearchInput
@@ -236,7 +293,14 @@ export default function VotersScreen() {
               onChangeText={setQuery}
               placeholder={t('voters.searchPlaceholder')}
             />
-            <FilterBar items={wardItems} onToggle={(key) => openWard(key === 'all' ? null : Number(key))} />
+            <SelectField
+              label={t('common.ward')}
+              value={selectedWard}
+              placeholder={t('form.selectWard')}
+              options={wardOptions}
+              onChange={(value) => openWard(value === ALL_WARDS ? null : Number(value))}
+              disabled={noRole || wardOptions.length <= 1}
+            />
             <FilterBar
               items={statusItems}
               onToggle={(key) => setStatus(key as StatusFilter)}
@@ -314,6 +378,7 @@ export default function VotersScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
+  footer: { alignItems: 'center', gap: 8, paddingVertical: 20 },
   listContent: {
     padding: 20,
     paddingTop: 8,

@@ -61,6 +61,62 @@ export const cacheStorage: CacheStorage = {
   multiRemove: (keys) => AsyncStorage.multiRemove(keys),
 };
 
+// ---------------------------------------------------------------------------
+// The memory mirror
+// ---------------------------------------------------------------------------
+//
+// AsyncStorage is the durable half, but it is **async**, and an async read is
+// precisely what produces the loading flash this layer exists to remove.
+// `useRoll` initialises `loading` to `true`, so on a fresh mount the screen
+// paints a skeleton, waits a tick for AsyncStorage, and then throws the
+// skeleton away and draw the very same rows it already had on disk. Navigating
+// away and back re-ran that whole dance every time.
+//
+// Two layers, then: a `Map` that `useRoll` can read **synchronously** during
+// its first render, and AsyncStorage underneath. Same shape as
+// `lib/cache/query-cache.ts`, for the same reason.
+//
+// Deliberately *not* prewarmed for all thirteen wards: that is ~6,855 rows of
+// JSON parsed on every cold start, which would cost more than it saves. The
+// wards bundle (13 small documents) and the wards actually in use are what get
+// pulled forward; the rest load on demand and then stay resident.
+const wardMemory = new Map<number, WardCache>();
+let wardsMemory: WardsBundle | null = null;
+
+/** The ward bundle held in memory, or `null`. Synchronous. */
+export function peekWards(): WardsBundle | null {
+  return wardsMemory;
+}
+
+/** One ward's rows held in memory, or `null`. Synchronous. */
+export function peekWard(wardNo: number): WardCache | null {
+  return wardMemory.get(wardNo) ?? null;
+}
+
+/** True when this ward can be rendered without touching storage. */
+export function isResident(wardNo: number): boolean {
+  return wardMemory.has(wardNo);
+}
+
+/**
+ * Pulls persisted copies into memory ahead of first use.
+ *
+ * `wardNumbers` is an explicit list rather than "all 13", for the startup cost
+ * reason above. Called once from the app root.
+ */
+export async function prewarm(
+  storage: CacheStorage,
+  wardNumbers: readonly number[] = []
+): Promise<void> {
+  await Promise.all([
+    readWards(storage),
+    ...wardNumbers.map(async (wardNo) => {
+      if (wardMemory.has(wardNo)) return;
+      await readWard(storage, wardNo);
+    }),
+  ]);
+}
+
 export interface WardCache {
   voters: RollVoter[];
   /** When this copy was written, for the "as of" line in Settings. */
@@ -111,13 +167,17 @@ async function readJson<T>(storage: CacheStorage, key: string): Promise<T | null
 
 /** The last-known ward metadata, or `null` if never written or now corrupt. */
 export async function readWards(storage: CacheStorage): Promise<WardsBundle | null> {
+  if (wardsMemory) return wardsMemory;
   const parsed = await readJson<unknown>(storage, WARDS_KEY);
-  return looksLikeWards(parsed) ? parsed : null;
+  if (!looksLikeWards(parsed)) return null;
+  wardsMemory = parsed;
+  return parsed;
 }
 
 /** Writes ward metadata. Failures are swallowed — this is a cache. */
 export async function writeWards(storage: CacheStorage, bundle: WardsBundle): Promise<void> {
   if (!looksLikeWards(bundle)) return;
+  wardsMemory = bundle;
   try {
     await storage.setItem(WARDS_KEY, JSON.stringify(bundle));
   } catch {
@@ -138,12 +198,17 @@ export async function readWard(
   storage: CacheStorage,
   wardNo: number
 ): Promise<WardCache | null> {
+  const resident = wardMemory.get(wardNo);
+  if (resident) return resident;
+
   const parsed = await readJson<unknown>(storage, wardKey(wardNo));
   if (typeof parsed !== 'object' || parsed === null) return null;
   const entry = parsed as Partial<WardCache>;
   if (!looksLikeVoterList(entry.voters)) return null;
   if (typeof entry.savedAt !== 'number') return null;
-  return { voters: entry.voters, savedAt: entry.savedAt };
+  const cache = { voters: entry.voters, savedAt: entry.savedAt };
+  wardMemory.set(wardNo, cache);
+  return cache;
 }
 
 export async function writeWard(
@@ -152,11 +217,10 @@ export async function writeWard(
   voters: RollVoter[]
 ): Promise<void> {
   if (!looksLikeVoterList(voters)) return;
+  const entry: WardCache = { savedAt: Date.now(), voters };
+  wardMemory.set(wardNo, entry);
   try {
-    await storage.setItem(
-      wardKey(wardNo),
-      JSON.stringify({ savedAt: Date.now(), voters } satisfies WardCache)
-    );
+    await storage.setItem(wardKey(wardNo), JSON.stringify(entry));
   } catch {
     // See `writeWards`. Quota pressure on a ward with 800 Hindi names is the
     // realistic failure, and it is not worth an error path.
@@ -193,6 +257,10 @@ export async function readAll(
  * untouched, because clearing the downloaded roll must never discard fieldwork.
  */
 export async function clearCache(storage: CacheStorage): Promise<void> {
+  // Memory first, or the mirror would repopulate from disk on the very next
+  // read and the "clear" would appear to do nothing until a restart.
+  wardsMemory = null;
+  wardMemory.clear();
   try {
     const keys = await storage.getAllKeys();
     const ours = keys.filter((key) => key.startsWith(`roll:cache:`));

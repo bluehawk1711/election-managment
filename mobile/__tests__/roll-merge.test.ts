@@ -99,19 +99,23 @@ describe('search', () => {
   });
 
   it('includes every field in the haystack', () => {
+    // The haystack is a pair of keyed forms, so assertions target the fields.
+    // Checked on the phonetic side because that is script-independent.
     const hay = haystackOf(voters[0]);
-    expect(hay).toContain('ctk4949558'); // epicId
-    expect(hay).toContain('बाबा रामदेव नगर'); // locality
-    expect(hay).toContain('अर्जुन शर्मा'); // father
-    expect(hay).toContain('54'); // age
-    expect(hay).toContain('पिता'); // relation label as printed
+    expect(hay.phonetic).toContain('ctk4949558'); // epicId
+    // The native key is matra- and space-stripped by design, so it is asserted
+    // in its keyed form rather than as the raw text.
+    expect(hay.native).toContain('रमदवनगरसगरय'); // locality
+    expect(hay.native).toContain('अरजनशरम'); // father
+    expect(hay.phonetic).toContain('54'); // age
+    expect(hay.native).toContain('त'); // relation label पिता, keyed
     // ward + serial + pdf page are searchable too — "every field" means it.
     const tagged = haystackOf(
       mergeVoter({ ...base, wardNo: 42, serialNo: 77, pdfPage: 301 }, undefined)
     );
-    expect(tagged).toContain('42');
-    expect(tagged).toContain('77');
-    expect(tagged).toContain('301');
+    expect(tagged.phonetic).toContain('42');
+    expect(tagged.phonetic).toContain('77');
+    expect(tagged.phonetic).toContain('301');
   });
 
   it('matches on fields the CSV does not index directly', () => {
@@ -119,15 +123,50 @@ describe('search', () => {
     expect(searchVoters(voters, index, 'right')).toHaveLength(1);
   });
 
+  it('finds a voter from either keyboard', () => {
+    // The feature: the row is Devanagari, the query is Roman and vice versa.
+    expect(searchVoters(voters, index, 'mukesh')).toHaveLength(1);
+    expect(searchVoters(voters, index, 'MUKESH KUMAR')).toHaveLength(1);
+    expect(searchVoters(voters, index, 'हरिराम')).toHaveLength(1);
+    expect(searchVoters(voters, index, 'hariram')).toHaveLength(1);
+    // A matra-less spelling of the same name still finds the row.
+    expect(searchVoters(voters, index, 'कमला')).toHaveLength(1);
+    expect(searchVoters(voters, index, 'kamla')).toHaveLength(1);
+  });
+
+  it('matches by EPIC id, which is digits and always exact', () => {
+    expect(searchVoters(voters, index, 'ctk4949558')).toHaveLength(3);
+    expect(searchVoters(voters, index, 'CTK4949558')).toHaveLength(3);
+  });
+
   it('requires every token to match (token AND)', () => {
-    // "राम" alone matches rows 1 and 2 (localities रामदेव / राम मोहल्ला —
-    // and "हरिराम" contains it too), so a single token is not the test.
-    expect(searchVoters(voters, index, 'राम')).toHaveLength(2);
-    // Adding a second token narrows to the row carrying both.
-    expect(searchVoters(voters, index, 'राम हरिराम')).toHaveLength(1);
-    // A pair no single row carries matches nothing.
+    // Two tokens, no single row carries both.
     expect(searchVoters(voters, index, 'हरिराम कमला')).toHaveLength(0);
     expect(searchVoters(voters, index, 'कमला सिविल')).toHaveLength(1);
+  });
+
+  it('widens as a phonetic key, and that is a deliberate trade-off', () => {
+    // Documented consequence of dropping vowels: 'राम' reduces to "rm", which is
+    // a substring of शर्मा ("rm") too, so the father field of every row here
+    // matches. Ranking keeps the genuinely-close rows at the top, and the EPIC
+    // id is the exact discriminator, which is why this is acceptable — but it
+    // is a real widening and the test pins it so it cannot change unnoticed.
+    expect(searchVoters(voters, index, 'राम')).toHaveLength(3);
+  });
+
+  it('ranks the exact row above a looser phonetic hit', () => {
+    const byName = searchVoters(voters, index, 'मुकेश');
+    expect(byName[0].id).toBe('w1-7');
+  });
+
+  it('keeps roll order among equally-ranked rows', () => {
+    // All three share an EPIC id, so they rank the same; the list must not
+    // reshuffle between keystrokes.
+    expect(searchVoters(voters, index, 'ctk4949558').map((v) => v.id)).toEqual([
+      'w1-7',
+      'w1-8',
+      'w1-9',
+    ]);
   });
 
   it('returns everything for a blank query', () => {

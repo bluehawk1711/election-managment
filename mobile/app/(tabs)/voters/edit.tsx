@@ -55,22 +55,39 @@ export default function EditVoterScreen() {
   const ageValid =
     age.trim() !== '' && Number.isInteger(parsedAge) && parsedAge >= 18 && parsedAge <= 100;
 
+  /**
+   * Whether anything has actually changed.
+   *
+   * Every field is compared against `voter?.effective.X ?? ''` rather than
+   * behind a `voter ? … : false` guard. The guard made `dirty` permanently
+   * `false` while the row was still loading, which left the Save button
+   * disabled no matter what was typed — the form looked editable and silently
+   * refused to save. That is the "I can't add a number" report: the phone
+   * field was fine, the button was not.
+   */
+  const base = voter?.effective;
   const dirty =
-    (voter ? name !== voter.effective.name : false) ||
-    (voter ? father !== voter.effective.fatherOrHusbandName : false) ||
-    (voter ? houseNo !== voter.effective.houseNo : false) ||
-    (voter ? String(voter.effective.age) !== age.trim() : false) ||
-    (voter ? gender !== voter.effective.gender : false) ||
-    (voter ? locality !== voter.effective.locality : false) ||
-    (voter ? phone !== voter.effective.phone : false) ||
-    (voter ? (voter.overlay.note ?? '') !== note : false);
+    name !== (base?.name ?? '') ||
+    father !== (base?.fatherOrHusbandName ?? '') ||
+    houseNo !== (base?.houseNo ?? '') ||
+    String(base?.age ?? '') !== age.trim() ||
+    gender !== (base?.gender ?? 'male') ||
+    locality !== (base?.locality ?? '') ||
+    phone !== (base?.phone ?? '') ||
+    (voter?.overlay.note ?? '') !== note;
 
   const submit = async () => {
     if (!ageValid) {
       setShowErrors(true);
       return;
     }
-    if (!voter || wardNo == null) return;
+    if (!voter || wardNo == null) {
+      // Used to return in silence, so tapping Save with the row still loading
+      // did nothing at all — no write, no message, no way to tell it apart
+      // from a broken button.
+      toast.error(t('voters.errorBody'));
+      return;
+    }
 
     setSaving(true);
     try {

@@ -41,7 +41,11 @@ export default function ReportsScreen() {
   const { profile } = useAuth();
   const outline = useColor('outline');
 
-  const roll = useRoll(null);
+  // `eager: true` on purpose. This screen tallies voted / photos / edits across
+  // *every* ward, so it cannot page: a partial set of wards would report
+  // confident, wrong numbers. Being honest about that beats being fast on the
+  // one screen whose whole job is a total.
+  const roll = useRoll(null, { eager: true });
   const bundle: WardsBundle | null = roll.wards;
 
   const role = profile?.role ?? null;

@@ -23,6 +23,7 @@ import {
   telUrl,
   whatsappUrl,
 } from '@/lib/contact';
+import { formatDateTime } from '@/lib/format';
 import {
   loadQueue,
   overlayStorage,
@@ -318,17 +319,31 @@ export default function VoterDetailScreen() {
               ) : null}
             </View>
             {voter.location ? (
-              <Text variant='caption' style={{ color: outline }}>
-                {voter.location.lat.toFixed(5)}, {voter.location.lng.toFixed(5)}
-                {voter.location.accuracy != null
-                  ? ` · ${t('voters.locationAccuracy', {
-                      m: Math.round(voter.location.accuracy),
-                    })}`
-                  : ''}
-              </Text>
+              // Coordinates alone do not tell a karykarta whether the fix is
+              // any good, so the card leads with accuracy and *when* it was
+              // taken — a reading from this morning and one from last week are
+              // not the same evidence, and only the timestamp distinguishes
+              // them.
+              <View style={{ gap: 2 }}>
+                <Text variant='caption' style={{ color: outline }}>
+                  {voter.location.accuracy != null
+                    ? t('voters.locationAccuracy', {
+                        m: Math.round(voter.location.accuracy),
+                      })
+                    : t('voters.locationNoAccuracy')}
+                </Text>
+                <Text variant='caption' style={{ color: outline }}>
+                  {`${voter.location.lat.toFixed(5)}, ${voter.location.lng.toFixed(5)}`}
+                </Text>
+                <Text variant='caption' style={{ color: outline }}>
+                  {t('voters.locationTaken', {
+                    when: formatDateTime(voter.location.updatedAt),
+                  })}
+                </Text>
+              </View>
             ) : (
               <Text variant='caption' style={{ color: outline }}>
-                {t('voters.location')}
+                {t('voters.locationNone')}
               </Text>
             )}
             <Button

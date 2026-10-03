@@ -30,8 +30,20 @@ export function Chip({ label, active = false, tone = 'default', icon, onPress, s
   const card = useColor('card');
   const border = useColor('border');
   const text = useColor('text');
-  const onTone = useColor('primaryForeground');
   const outline = useColor('outline');
+
+  // Two different foregrounds, and the choice between them is the whole point.
+  //
+  // `primary` / `success` / `error` are saturated, so white text on them is
+  // legible. But the `default` tone fills with `secondary` — a pale lavender
+  // (#ECECFF in light mode) — and white on that is very close to invisible.
+  // Since `isActive` is true for a *selected* default-tone chip, that made
+  // exactly the thing the user is looking for — the currently-selected filter —
+  // the hardest one to read. Both are resolved unconditionally because hooks
+  // cannot be called conditionally; only the pick is conditional.
+  const onSolid = useColor('primaryForeground');
+  const onPale = useColor('secondaryForeground');
+  const onTone = tone === 'default' ? onPale : onSolid;
 
   const isActive = active || tone !== 'default';
 

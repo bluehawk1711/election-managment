@@ -101,6 +101,16 @@ export function useCreateAccount() {
       // `ensureProfile` never runs for them. `onboarded: true` because this is
       // the one path that skips onboarding — the admin is setting the account
       // up, not the account owner.
+      //
+      // Writing `role` from the client is deliberate and is what
+      // react-doctor's `firebase-client-owned-authz-field` rule flags. There is
+      // no trusted server to delegate to here — Cloud Functions need the paid
+      // Blaze plan — so authorisation lives in `firestore.rules` instead: the
+      // create path allows a `role` write only when the caller is
+      // superAdmin/developer, and `rules-tests/firestore.test.ts` asserts both
+      // that a super admin can and that a karykarta cannot. The client asking is
+      // not the client deciding.
+      // eslint-disable-next-line react-doctor/firebase-client-owned-authz-field
       await setDoc(doc(db, 'users', created.uid), {
         email: input.email,
         displayName: input.displayName,

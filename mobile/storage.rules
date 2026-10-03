@@ -21,15 +21,24 @@ service firebase.storage {
     }
 
     match /avatars/{userId}/{fileName} {
-      // Public, like the `avatars` bucket in a Supabase project — an avatar
-      // shows up next to a name, and signing every one of those URLs is a lot
-      // of round trips for a picture of a face.
+      // Owner-only, like `/files` below.
       //
-      // Note that `getDownloadURL()` hands out a capability URL carrying an
-      // access token. Tightening this rule later does NOT invalidate a URL
-      // already in the wild; rotate the object's download token in the console
-      // for that.
-      allow read: if true;
+      // This used to be `if true`, on the reasoning that an avatar is
+      // innocuous and shows up next to a name. In this app it is not: these are
+      // the faces of named people attached to a named constituency, and a
+      // world-readable path means the whole roster can be pulled by anyone who
+      // can guess the bucket name — no token, no app, no rate limit.
+      //
+      // It used to be argued that other team members need to see each other's
+      // faces. Nothing does: `grep` for an `AvatarImage` sourced from anyone
+      // but `profile.photoURL` finds only Settings and onboarding, both of
+      // which show the signed-in user's own picture. If a roster avatar is ever
+      // added, widen this deliberately then — with the rule change and its
+      // test in the same commit.
+      //
+      // Note that tightening this does NOT invalidate a download URL already in
+      // the wild; rotate the object's download token in the console for that.
+      allow read: if isOwner(userId);
 
       allow create, update: if isOwner(userId)
         && request.resource.size < 2 * 1024 * 1024

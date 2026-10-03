@@ -23,6 +23,12 @@ type Props = {
  *
  * Width starts at 0, so the bar's first frame shows nothing and the pill
  * springs in as soon as layout reports the active item.
+ *
+ * Vertically inset from the row rather than filling it. `top: 0, bottom: 0`
+ * made the fill as tall as a 44pt touch target plus the row's padding, which
+ * read as a slab rather than a highlight — especially once it was given a solid
+ * container colour. Inset by 8 on a row padded by 4 leaves a 36pt pill that
+ * still lines up with the item's own width, so it tracks the label as it grows.
  */
 export function TabIndicator({ x, width, color }: Props) {
   const style = useAnimatedStyle(() => ({
@@ -42,8 +48,8 @@ const styles = StyleSheet.create({
   base: {
     position: 'absolute',
     left: 0,
-    top: 0,
-    bottom: 0,
+    top: 8,
+    bottom: 8,
     borderRadius: 999,
   },
 });

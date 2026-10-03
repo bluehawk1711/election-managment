@@ -3,6 +3,7 @@ import { DetailRow } from '@/components/roll/detail-row';
 import { SectionHeader } from '@/components/campaign/section-header';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { ScrollView } from '@/components/ui/scroll-view';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Text } from '@/components/ui/text';
 import { useColor } from '@/hooks/useColor';
@@ -65,8 +66,7 @@ export default function BoothDetailScreen() {
   const staffed = !!booth.coordinatorId;
 
   return (
-    <View style={styles.root}>
-      <View style={styles.pad}>
+    <ScrollView style={styles.root} contentContainerStyle={styles.pad}>
         <Card style={styles.card}>
           <View style={styles.headRow}>
             <Text variant='heading'>{reference.boothLabel(booth.id)}</Text>
@@ -103,8 +103,7 @@ export default function BoothDetailScreen() {
         <Button variant='outline' icon={Vote} onPress={() => router.push('/(tabs)/reports')}>
           {t('reports.title')}
         </Button>
-      </View>
-    </View>
+    </ScrollView>
   );
 }
 

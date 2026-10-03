@@ -1,6 +1,7 @@
 import { Text } from '@/components/ui/text';
 import { useColor } from '@/hooks/useColor';
 import { useColorScheme } from '@/hooks/useColorScheme';
+import { withOpacity } from '@/theme/colors';
 import { isLiquidGlassAvailable } from 'expo-glass-effect';
 import { Stack } from 'expo-router';
 import { Platform } from 'react-native';
@@ -31,6 +32,22 @@ type TabStackScreen = {
  * Each tab declares its screens as `{ name, title }`; titles come from
  * `nav.*` i18n keys at the call site, so this component stays translation
  * agnostic.
+ *
+ * `headerTransparent` is **false**, and that is load-bearing. When a header is
+ * transparent, react-navigation reserves no space for it and the scene is laid
+ * out from y=0 — so every screen has to add its own `useHeaderHeight()` offset
+ * or scroll its own safe-area inset. Not one screen in this app does, because
+ * a transparent header is only safe when the screen owns the padding. With it
+ * on, the first card of every list rendered underneath the title.
+ *
+ * It also broke the back button. A transparent header is drawn in the same
+ * layer as the scene, and the scene's own background wins the hit test in
+ * places, so the back button was present but not reliably tappable — on some
+ * screens only, which is what made it look intermittent. Letting the navigator
+ * inset the scene fixes the overlap and the hit test together.
+ *
+ * The frosted look survives because the header paints its own scrim over the
+ * blur rather than relying on the scene showing through.
  */
 export function ThemedTabStack({ screens }: { screens: TabStackScreen[] }) {
   const scheme = useColorScheme();
@@ -42,7 +59,10 @@ export function ThemedTabStack({ screens }: { screens: TabStackScreen[] }) {
       screenOptions={{
         headerLargeTitle: true,
         headerLargeTitleShadowVisible: false,
-        headerTransparent: true,
+        // See the note above: a transparent header reserves no space, and the
+        // scene then covers the back button.
+        headerTransparent: false,
+        headerShadowVisible: false,
         headerTintColor: text,
         headerBlurEffect: isLiquidGlassAvailable()
           ? undefined
@@ -50,7 +70,13 @@ export function ThemedTabStack({ screens }: { screens: TabStackScreen[] }) {
             ? 'systemMaterialDark'
             : 'systemMaterialLight',
         headerStyle: {
-          backgroundColor: isLiquidGlassAvailable() ? 'transparent' : background,
+          // Translucent, not opaque: an opaque `headerStyle` paints over the
+          // blur effect set just above it, which is the whole point of asking
+          // for a material in the first place. Liquid glass gets a fully
+          // transparent bar because the system supplies its own.
+          backgroundColor: isLiquidGlassAvailable()
+            ? 'transparent'
+            : withOpacity(background, 0.72),
         },
       }}
     >

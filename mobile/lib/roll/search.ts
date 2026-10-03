@@ -4,76 +4,152 @@
  * The requirement is "search by every field", so rather than a column list
  * that silently rots when the model grows, each voter gets one haystack built
  * from *all* its searchable text — roll fields plus the overlay's phone,
- * leaning and note. Tokens are normalised once at index time, so a query is a
- * cheap scan over pre-built strings: 6855 rows is nothing.
+ * leaning and note. Keys are built once at index time, so a query is a cheap
+ * scan over pre-built strings: 6855 rows is nothing.
  *
  * Matching is token-AND: "राम देवी" matches voters whose haystack contains
  * both tokens in any order, which is what people actually type.
+ *
+ * ## Scripts
+ *
+ * Keys are built through `lib/roll/translit.ts`, so a row is findable from a
+ * Devanagari keyboard *and* from a Latin one. See that module for why there is
+ * no stored English copy of the data — the short version is that
+ * transliteration is not translation, and derived data in the database rots.
+ *
+ * ## Why each field is keyed separately
+ *
+ * The obvious implementation joins every field into one string and keys the
+ * result. It is wrong twice over: concatenating `राम देवी` and `नगर` produces a
+ * blob in which the *boundary* between fields is gone, so a query can match by
+ * straddling two unrelated fields. Keying field-by-field and joining the keys
+ * keeps each field's key intact while still allowing one `includes` over the
+ * lot. It also means the keys stay short, which is what makes the scan cheap.
+ *
+ * ## Ranking
+ *
+ * Because a phonetic key deliberately discards vowels, a match can be loose:
+ * `kmr` matches `कुमार` but also anything else running k-m-r. Left unordered,
+ * the wrong Mukesh can sit above the right one, which for a karykarta standing
+ * in front of a voter is worse than no result at all. So results carry a rank
+ * from `rankKey` — exact, then substring, then phonetic-only — and
+ * `searchVoters` sorts by it, stable, so equal ranks keep roll order (ward,
+ * then serial) and the list does not reshuffle between keystrokes.
  */
+import { keyContains, keyOf, rankKey, type SearchKey } from '@/lib/roll/translit';
 import type { VoterView } from '@/lib/roll/types';
 
-/** Lowercase, strip punctuation/marks, collapse whitespace. */
+/**
+ * Lowercase, strip ASCII punctuation, collapse whitespace.
+ *
+ * Deliberately ASCII-only. An earlier version of this function also stripped
+ * Devanagari matras, which silently deleted the vowel signs *before*
+ * `translit.ts` could see them — so a query typed with full matras was
+ * compared against a haystack built with them, and every native match lost its
+ * exact-match rank. Script-specific normalisation is `translit.ts`'s job.
+ */
 export function normalizeToken(value: string): string {
   return value
     .toLowerCase()
-    .replace(/[.,/#!$%^&*;:{}=\-_`~()"'\s]/g, ' ')
+    .replace(/[.,\/#!$%^&*;:{}=-_`~()"'\s]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
 }
 
-/** The full searchable text of one voter — every field, in a stable order. */
-export function haystackOf(voter: VoterView): string {
+/**
+ * Every searchable field of one voter.
+ *
+ * Kept as a list of separate values rather than a joined string, so each field
+ * keeps its own boundaries once keyed — see the note at the top of the file.
+ * Order is stable, which is what makes the built index comparable between runs.
+ */
+export function searchableFieldsOf(voter: VoterView): string[] {
   const e = voter.effective;
-  return normalizeToken(
-    [
-      e.name,
-      voter.fatherOrHusbandName,
-      e.fatherOrHusbandName,
-      e.locality,
-      voter.locality,
-      e.houseNo,
-      voter.houseNo,
-      voter.epicId,
-      voter.gender,
-      e.gender,
-      String(voter.age),
-      String(voter.serialNo),
-      String(voter.wardNo),
-      String(voter.pdfPage),
-      voter.relationLabel,
-      e.phone,
-      voter.overlay.leaning ?? '',
-      voter.overlay.leaningNote ?? '',
-      voter.overlay.note ?? '',
-    ].join(' ')
-  );
+  return [
+    e.name,
+    voter.fatherOrHusbandName,
+    e.fatherOrHusbandName,
+    e.locality,
+    voter.locality,
+    e.houseNo,
+    voter.houseNo,
+    voter.epicId,
+    voter.gender,
+    e.gender,
+    String(voter.age),
+    String(voter.serialNo),
+    String(voter.wardNo),
+    String(voter.pdfPage),
+    voter.relationLabel,
+    e.phone,
+    voter.overlay.leaning ?? '',
+    voter.overlay.leaningNote ?? '',
+    voter.overlay.note ?? '',
+  ].filter(Boolean);
 }
 
-/** `voterId → haystack`, built once per loaded set. */
-export type SearchIndex = ReadonlyMap<string, string>;
+/**
+ * The full searchable key of one voter: both scripts, one space-joined string
+ * per script.
+ */
+export function haystackOf(voter: VoterView): SearchKey {
+  const fields = searchableFieldsOf(voter);
+  return {
+    native: fields.map((field) => keyOf(field).native).join(' '),
+    phonetic: fields.map((field) => keyOf(field).phonetic).join(' '),
+  };
+}
+
+/** `voterId → key`, built once per loaded set. */
+export type SearchIndex = ReadonlyMap<string, SearchKey>;
 
 export function buildIndex(voters: VoterView[]): SearchIndex {
-  const index = new Map<string, string>();
+  const index = new Map<string, SearchKey>();
   for (const voter of voters) index.set(voter.id, haystackOf(voter));
   return index;
 }
 
 /**
+ * Splits a query into keyed tokens.
+ *
+ * Each token keeps *both* forms, so it can be checked against the matching half
+ * of a key instead of being forced into one alphabet. Split on whitespace first,
+ * because `राम देवी` is two tokens and not one.
+ */
+function queryTokens(query: string): SearchKey[] {
+  return query
+    .split(/\s+/)
+    .map((token) => normalizeToken(token))
+    .filter(Boolean)
+    .map((token) => keyOf(token));
+}
+
+/**
  * Every token must appear in the voter's haystack. An empty query matches
- * everything, and a query that is only separators matches everything too —
- * the caller should not have to care that "  " normalises to nothing.
+ * everything, and a query that is only separators matches everything too — the
+ * caller should not have to care that "  " normalises to nothing.
  */
 export function matches(index: SearchIndex, voter: VoterView, query: string): boolean {
-  const tokens = normalizeToken(query).split(' ').filter(Boolean);
+  const tokens = queryTokens(query);
   if (!tokens.length) return true;
 
   const haystack = index.get(voter.id);
   if (haystack === undefined) return false;
 
-  return tokens.every((token) => haystack.includes(token));
+  return tokens.every((token) => keyContains(haystack, token));
 }
 
-/** Convenience: filter a list by `query` using a prebuilt index. */
+/**
+ * Convenience: filter a list by `query` using a prebuilt index, best match
+ * first.
+ *
+ * Tokens and ranks are computed **once per query**, outside the loop. Deriving
+ * them inside the comparator — which is what this did first — re-tokenises the
+ * query O(n log n) times: about 90,000 redundant passes on a full-ward search,
+ * and that is precisely the kind of thing a user feels as lag between
+ * keystrokes. `Array.prototype.sort` is stable, so equal ranks stay in roll
+ * order and the list does not shuffle as more characters arrive.
+ */
 export function searchVoters(
   voters: VoterView[],
   index: SearchIndex,
@@ -81,5 +157,20 @@ export function searchVoters(
 ): VoterView[] {
   const trimmed = query.trim();
   if (!trimmed) return voters;
-  return voters.filter((voter) => matches(index, voter, trimmed));
+
+  const tokens = queryTokens(trimmed);
+
+  const hits: { voter: VoterView; rank: number }[] = [];
+  for (const voter of voters) {
+    const haystack = index.get(voter.id);
+    if (haystack === undefined) continue;
+    if (!tokens.every((token) => keyContains(haystack, token))) continue;
+
+    let rank = 3;
+    for (const token of tokens) rank = Math.min(rank, rankKey(haystack, token));
+    hits.push({ voter, rank });
+  }
+
+  hits.sort((a, b) => a.rank - b.rank);
+  return hits.map((hit) => hit.voter);
 }

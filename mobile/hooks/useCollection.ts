@@ -1,4 +1,9 @@
 import { DEFAULT_LIMIT } from '@/lib/collections';
+import {
+  peek as peekCache,
+  save as saveCache,
+  snapshotFrom,
+} from '@/lib/cache/query-cache';
 import { messageFor } from '@/lib/errors';
 import { db } from '@/lib/firebase';
 import {
@@ -48,18 +53,34 @@ interface Snapshot<T> {
 }
 
 /**
- * A live Firestore listener over one collection, mapped to plain objects.
+ * A live Firestore listener over one collection, mapped to plain objects, with
+ * a durable cache underneath it.
  *
  * Contract:
  * - one `onSnapshot`, no refetch, no optimistic bookkeeping (the SDK's local
  *   echo already does that and rolls back on rejection);
  * - listener errors are terminal, so `retry()` resubscribes;
  * - `connected` is `!snapshot.metadata.fromCache` — it reads "serving from the
- *   server" rather than "a socket is open";
+ *   server" rather than "a socket is open". Rows replayed from our cache report
+ *   `false`, which is what makes the dashboard's live/cached pill honest;
  * - the returned view is *derived*, never cleared inside the effect: state is
  *   only ever written from the subscription callbacks, which is both the
  *   React-recommended shape and what keeps a query change from flashing the
  *   previous query's rows while the new one loads.
+ *
+ * ## The cache-first part
+ *
+ * On mount the hook seeds its state from `lib/cache/query-cache` **synchronously**
+ * if a copy exists, so a warm cache renders on the first frame and `loading` is
+ * already `false`. The subscription still runs; it just upgrades what is on
+ * screen instead of gating it. That is the difference between "the app is
+ * usable immediately and quietly catches up" and "the app shows skeletons on
+ * every launch because the platform has no IndexedDB".
+ *
+ * The seed is deliberately a render-phase adjustment (React's documented
+ * "adjust state when a prop changes" pattern) rather than an effect: an effect
+ * would run *after* the first paint, which is precisely the frame we are trying
+ * to avoid showing a spinner on.
  */
 export function useCollection<T>(
   name: string,
@@ -76,6 +97,8 @@ export function useCollection<T>(
   const [snapshot, setSnapshot] = useState<Snapshot<T> | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
+  /** Which `cacheName` has already been used to seed, so this runs once. */
+  const [seeded, setSeeded] = useState<string | null>(null);
 
   // Object identities change every render; serialise the query shape instead.
   const whereKey = whereFilter
@@ -83,6 +106,24 @@ export function useCollection<T>(
     : '';
   const orderKey = order ? `${order.field}:${order.direction ?? 'asc'}` : '';
   const queryKey = `${name}|${whereKey}|${orderKey}|${cap}|${attempt}`;
+  // The cache is keyed by the query's *identity*, not by its attempt number —
+  // otherwise every retry would miss and fall back to a skeleton.
+  const cacheName = `${name}|${whereKey}|${orderKey}|${cap}`;
+
+  // Render-phase seed. Guarded on `seeded` so it cannot loop, and skipped while
+  // an error is showing so a failed query does not get papered over by stale
+  // rows from a previous visit.
+  if (enabled && snapshot === null && error === null && seeded !== cacheName) {
+    const cached = peekCache(cacheName);
+    if (cached) {
+      setSnapshot({
+        key: queryKey,
+        docs: cached.docs.map((doc) => mapDoc(snapshotFrom(doc))),
+        connected: false,
+      });
+      setSeeded(cacheName);
+    }
+  }
 
   useEffect(() => {
     if (!enabled) return;
@@ -107,10 +148,25 @@ export function useCollection<T>(
           connected: !snapshot.metadata.fromCache,
         });
         setError(null);
+        // Persist only once the server has actually answered.
+        // `fromCache` here is the SDK's own per-session echo, which is empty on
+        // a cold start; writing it would persist nothing useful and, worse,
+        // would stamp a fresh `savedAt` onto data we have not confirmed.
+        if (!snapshot.metadata.fromCache) {
+          saveCache(
+            cacheName,
+            snapshot.docs.map((doc) => ({
+              id: doc.id,
+              data: doc.data() as Record<string, unknown>,
+            }))
+          );
+        }
       },
       (caught) => {
         setError(messageFor(caught));
-        setSnapshot(null);
+        // Deliberately *not* `setSnapshot(null)`: clearing here would throw
+        // away the cached rows and put the skeleton back on screen for a
+        // connection blip, which is the opposite of what the cache is for.
       }
     );
     // mapDoc is a module-level mapper in every caller — identity is stable;

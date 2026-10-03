@@ -40,6 +40,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   cacheStorage,
+  peekWard,
+  peekWards,
   readAll,
   readWard,
   readWards,
@@ -83,6 +85,16 @@ export interface RollState {
   /** `null` = every ward loaded. */
   wardNo: number | null;
   setWard: (wardNo: number | null) => void;
+  /**
+   * Loads the next batch of wards. Only meaningful when `wardNo` is `null`
+   * (the "all wards" selection); opening a single ward has nothing more to
+   * page through. Wire this to `FlatList`'s `onEndReached`.
+   */
+  loadMore: () => void;
+  /** True while a further batch exists. */
+  hasMore: boolean;
+  /** True while a `loadMore` batch is in flight. */
+  loadingMore: boolean;
   retry: () => void;
   /** Re-reads the overlay from storage (after an edit lands). */
   refresh: () => void;
@@ -90,13 +102,48 @@ export interface RollState {
   find: (voterId: string) => VoterView | undefined;
 }
 
-export function useRoll(initialWard: number | null = null): RollState {
+/**
+ * How many wards the "all wards" selection fetches at a time.
+ *
+ * The roll is 6,855 rows across 13 wards. Fetching all of it up front meant a
+ * single `getDocs` of every document, a `mergeVoter` pass and a full search
+ * index build before the first row could paint — on a mid-range Android over
+ * mobile data that is many seconds of nothing. Wards are the natural unit: each
+ * is already its own cache key and its own navigation target, and a karykarta
+ * looking one person up only ever needs the ward that person is in.
+ */
+const WARD_BATCH = 3;
+
+export function useRoll(
+  initialWard: number | null = null,
+  options: { eager?: boolean } = {}
+): RollState {
   const source = useMemo(() => getRollSource(), []);
 
-  const [wards, setWards] = useState<WardsBundle | null>(null);
+  /**
+   * Aggregate screens pass `eager: true` and get every ward immediately.
+   *
+   * The booth report is the reason this exists: it tallies voted / photos /
+   * edits across *all* wards, so a partial set of wards would report confident,
+   * wrong numbers. Being honest about that matters more than being fast on the
+   * one screen whose entire job is a total.
+   */
+  const eager = options.eager ?? false;
+
+  const [wards, setWards] = useState<WardsBundle | null>(() => peekWards());
   const [rows, setRows] = useState<RollVoter[]>([]);
   const [overlays, setOverlays] = useState<Record<string, VoterOverlay>>({});
   const [pendingIds, setPendingIds] = useState<ReadonlySet<string>>(new Set());
+  /**
+   * Whether the screen has nothing at all to show.
+   *
+   * Starts `true` because that is genuinely the case on a first-ever launch —
+   * but a warm memory mirror seeds `rows` during this same render pass (below),
+   * which flips it back before anything paints. Starting it `false` instead
+   * would be a lie on a genuinely cold cache, and would swap the skeleton for
+   * an empty-state flash, which is worse: "no voters" is a statement about the
+   * data and "still loading" is not.
+   */
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -106,10 +153,64 @@ export function useRoll(initialWard: number | null = null): RollState {
   const [wardNo, setWardNo] = useState<number | null>(initialWard);
   const [attempt, setAttempt] = useState(0);
   const [revision, setRevision] = useState(0);
+  /** How many wards the "all wards" selection has pulled in so far. */
+  const [visibleWards, setVisibleWards] = useState(WARD_BATCH);
+  const [loadingMore, setLoadingMore] = useState(false);
+  /** Which `seedKey` has already been used to seed, so this runs once. */
+  const [seeded, setSeeded] = useState<string | null>(null);
 
   // Guards against a stale response when the ward changes mid-flight. Bumped
   // by every load that starts, so only the newest one may commit.
   const requestRef = useRef(0);
+
+  /**
+   * Synchronous cache seed.
+   *
+   * The skeleton this replaces was not a slow network: it was one `await` on
+   * AsyncStorage that resolved a frame or two after mount, while the rows were
+   * already on disk. Every visit to the list — including coming back from a
+   * voter's detail screen — paid it.
+   *
+   * Run during render rather than in an effect on purpose. An effect runs
+   * *after* the first paint, so it would leave exactly the skeleton flash we are
+   * removing. React's documented "adjust state when a prop changes" pattern
+   * re-renders immediately without committing the intermediate frame, which is
+   * what makes the skeleton never appear.
+   *
+   * Guarded on the ward selection, so switching wards seeds from the new
+   * selection rather than showing the previous ward's rows under the new label.
+   */
+  const seedKey = `${wardNo ?? 'all'}:${visibleWards}:${eager}`;
+  if (rows.length === 0 && !error && seeded !== seedKey) {
+    const resident: RollVoter[] = [];
+    let newest: number | null = null;
+
+    if (wardNo != null) {
+      const entry = peekWard(wardNo);
+      if (entry) {
+        resident.push(...entry.voters);
+        newest = entry.savedAt;
+      }
+    } else {
+      // The "all wards" selection seeds from the wards already resident —
+      // whichever they are, in ward order, up to the visible slice.
+      const meta = wards?.wards ?? peekWards()?.wards ?? [];
+      for (const ward of meta.slice(0, eager ? meta.length : visibleWards)) {
+        const entry = peekWard(ward.wardNo);
+        if (!entry) continue;
+        resident.push(...entry.voters);
+        newest = newest === null ? entry.savedAt : Math.max(newest, entry.savedAt);
+      }
+    }
+
+    if (resident.length) {
+      setRows(resident);
+      setSeeded(seedKey);
+      setLoading(false);
+      setStale(true);
+      setRefreshedAt(newest);
+    }
+  }
 
   const refresh = useCallback(() => setRevision((n) => n + 1), []);
   const retry = useCallback(() => {
@@ -159,6 +260,10 @@ export function useRoll(initialWard: number | null = null): RollState {
 
   // -------------------------------------------------------------------------
   // 2. The selected ward's rows, plus the local overlay and sync queue.
+  //
+  // `wardNo === null` means "all wards", and that is a *paged* selection: only
+  // the first `visibleWards` wards are fetched, and the screen asks for more as
+  // the user scrolls. `eager` opts out, for the screens that must be complete.
   // -------------------------------------------------------------------------
   useEffect(() => {
     let cancelled = false;
@@ -173,18 +278,26 @@ export function useRoll(initialWard: number | null = null): RollState {
     (async () => {
       setRefreshing(true);
 
+      // The wards this pass covers. A single ward is just that ward; "all" is
+      // the first slice of the bundle, or all of it when `eager`.
+      const inScope: readonly number[] =
+        wardNo != null
+          ? [wardNo]
+          : eager || !wards
+            ? (wards?.wards ?? []).map((ward) => ward.wardNo)
+            : wards.wards.slice(0, visibleWards).map((ward) => ward.wardNo);
+
       // --- Overlay + queue: local, fast, and the reason a cached row can show
       // its own edits without any network at all.
       const overlay =
-        wardNo != null
-          ? await loadWardOverlay(overlayStorage, wardNo)
-          : // `wardNo === null` means every ward, so every ward's overlay has to
-            // come with it — otherwise edits vanish the moment the selector is
-            // set to "All".
+        inScope.length === 1
+          ? await loadWardOverlay(overlayStorage, inScope[0])
+          : // More than one ward, so every ward's overlay has to come with it —
+            // otherwise edits vanish the moment the selector is set to "All".
+            // Still scoped to `inScope`: loading overlays for wards whose rows
+            // have not been fetched is work with nothing to attach them to.
             (await Promise.all(
-              (wards?.wards ?? []).map((ward) =>
-                loadWardOverlay(overlayStorage, ward.wardNo)
-              )
+              inScope.map((ward) => loadWardOverlay(overlayStorage, ward))
             )).reduce<Record<string, VoterOverlay>>(
               (acc, wardOverlay) => Object.assign(acc, wardOverlay),
               {}
@@ -195,8 +308,8 @@ export function useRoll(initialWard: number | null = null): RollState {
 
       // --- Cache pass: render what the device already has, immediately.
       let haveRows = false;
-      if (wardNo != null) {
-        const cached = await readWard(cacheStorage, wardNo);
+      if (inScope.length === 1) {
+        const cached = await readWard(cacheStorage, inScope[0]);
         if (cancelled || token !== requestRef.current) return;
         if (cached) {
           haveRows = commit(setRows, cached.voters);
@@ -205,11 +318,15 @@ export function useRoll(initialWard: number | null = null): RollState {
             commit(setRefreshedAt, cached.savedAt);
           }
         }
-      } else if (wards) {
-        // Every ward: stitch together whichever per-ward copies exist. Wards
+      } else if (inScope.length) {
+        // Several wards: stitch together whichever per-ward copies exist. Wards
         // with no copy are simply missing from the first paint and arrive with
         // the network result.
-        const cachedByWard = await readAll(cacheStorage, wards.wards);
+        const wanted = new Set(inScope);
+        const cachedByWard = await readAll(
+          cacheStorage,
+          (wards?.wards ?? []).filter((ward) => wanted.has(ward.wardNo))
+        );
         if (cancelled || token !== requestRef.current) return;
         const stitched = [...cachedByWard.values()].flatMap((entry) => entry.voters);
         if (stitched.length) {
@@ -228,7 +345,17 @@ export function useRoll(initialWard: number | null = null): RollState {
 
       // --- Network pass: replaces the cache result when it lands.
       try {
-        const voters = await source.getVoters(wardNo);
+        // One query per ward, in parallel. A single `where wardNo == n` is
+        // ~500 documents — small enough that three of them at once is a much
+        // shorter wait than one query for all 6,855, and each result is its own
+        // cache entry either way.
+        const byWard = await Promise.all(
+          inScope.map(async (scope) => ({
+            wardNo: scope,
+            voters: await source.getVoters(scope),
+          }))
+        );
+        const voters = byWard.flatMap((entry) => entry.voters);
         if (!commit(setRows, voters)) return;
         commit(setStale, false);
         commit(setConnected, true);
@@ -236,22 +363,13 @@ export function useRoll(initialWard: number | null = null): RollState {
         const now = Date.now();
         commit(setRefreshedAt, now);
 
-        // Persist per ward so the *next* cold start is a cache hit. For the
-        // "all wards" selection each ward gets its own key rather than one
-        // giant blob rewritten on every fetch.
-        if (wardNo != null) {
-          await writeWard(cacheStorage, wardNo, voters);
-        } else if (wards) {
-          await Promise.all(
-            wards.wards.map((ward) =>
-              writeWard(
-                cacheStorage,
-                ward.wardNo,
-                voters.filter((voter) => voter.wardNo === ward.wardNo)
-              )
-            )
-          );
-        }
+        // Persist per ward so the *next* cold start is a cache hit. Each ward
+        // gets its own key rather than one giant blob rewritten on every fetch.
+        await Promise.all(
+          byWard.map((entry) =>
+            writeWard(cacheStorage, entry.wardNo, entry.voters)
+          )
+        );
       } catch (caught) {
         if (cancelled || token !== requestRef.current) return;
         commit(setConnected, false);
@@ -265,6 +383,10 @@ export function useRoll(initialWard: number | null = null): RollState {
         if (!cancelled && token === requestRef.current) {
           setLoading(false);
           setRefreshing(false);
+          // Cleared here rather than by a separate effect: only the newest
+          // request knows it finished, so a superseded batch cannot switch the
+          // footer spinner off while its rows are still on the way.
+          setLoadingMore(false);
         }
       }
     })();
@@ -272,7 +394,23 @@ export function useRoll(initialWard: number | null = null): RollState {
     return () => {
       cancelled = true;
     };
-  }, [source, wardNo, attempt, wards, revision]);
+  }, [source, wardNo, attempt, wards, revision, visibleWards, eager]);
+
+  // Switching ward starts the paging over. Without this, choosing "All" after
+  // reading deep into the list would leave the previously-loaded slice in place
+  // and silently show a different set of wards than the label claims.
+  useEffect(() => {
+    setVisibleWards(WARD_BATCH);
+  }, [wardNo, attempt]);
+
+  const totalWards = wards?.wards.length ?? 0;
+  const hasMore = wardNo === null && !eager && visibleWards < totalWards;
+
+  const loadMore = useCallback(() => {
+    if (wardNo !== null || eager) return;
+    setLoadingMore(true);
+    setVisibleWards((count) => Math.min(count + WARD_BATCH, Math.max(totalWards, count)));
+  }, [wardNo, eager, totalWards]);
 
   const voters = useMemo(
     () => rows.map((row) => mergeVoter(row, overlays[row.id], pendingIds.has(row.id))),
@@ -298,6 +436,9 @@ export function useRoll(initialWard: number | null = null): RollState {
     refreshedAt,
     wardNo,
     setWard: setWardNo,
+    loadMore,
+    hasMore,
+    loadingMore,
     retry,
     refresh,
     find,

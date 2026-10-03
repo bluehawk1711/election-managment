@@ -24,6 +24,7 @@ export function Badge({
 }: BadgeProps) {
   const primaryColor = useColor('primary');
   const primaryForegroundColor = useColor('primaryForeground');
+  const textColor = useColor('text');
   const secondaryColor = useColor('secondary');
   const secondaryForegroundColor = useColor('secondaryForeground');
   const destructiveColor = useColor('destructive');
@@ -75,7 +76,11 @@ export function Badge({
       case 'success':
         return { ...baseTextStyle, color: successForegroundColor };
       case 'outline':
-        return { ...baseTextStyle, color: primaryColor };
+        // An outline badge sits on whatever the surface happens to be, so it
+        // takes `text` rather than `primary`: the brand indigo is only 4.6:1
+        // against the light background and drops under 3:1 against the
+        // `secondary` cards these badges are most often placed on.
+        return { ...baseTextStyle, color: textColor };
       default:
         return { ...baseTextStyle, color: primaryForegroundColor };
     }

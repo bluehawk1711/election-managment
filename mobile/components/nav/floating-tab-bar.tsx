@@ -9,10 +9,10 @@ import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import type { BottomTabBarProps } from 'expo-router/build/react-navigation/bottom-tabs';
 import {
-  CalendarDays,
+  BarChart3,
   LayoutGrid,
-  ListChecks,
   SlidersHorizontal,
+  Users,
   Vote,
   type LucideProps,
 } from 'lucide-react-native';
@@ -21,12 +21,21 @@ import { StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSharedValue, withSpring } from 'react-native-reanimated';
 
-/** Route name → lucide icon; labels arrive from each screen's `title`. */
+/**
+ * Route name → lucide icon; labels arrive from each screen's `title`.
+ *
+ * Keyed by the exact route names registered in `(tabs)/_layout.tsx`. This list
+ * used to carry `tasks` and `calendar`, which stopped being tabs when the roll
+ * got the bar — so `voters` and `reports` were both missing and silently fell
+ * through to the `LayoutGrid` fallback, leaving Home and Reports showing the
+ * same icon. If a tab is added, add it here too; a missing entry is invisible
+ * until two tabs share a glyph.
+ */
 const TAB_ICONS: Record<string, ComponentType<LucideProps>> = {
   '(home)': LayoutGrid,
+  voters: Users,
   booths: Vote,
-  tasks: ListChecks,
-  calendar: CalendarDays,
+  reports: BarChart3,
   more: SlidersHorizontal,
 };
 
@@ -55,9 +64,13 @@ export function FloatingTabBar({
   const scheme = useColorScheme();
 
   const pillColor = useColor('surfaceContainerLowest');
-  const activeBg = useColor('primaryContainer');
-  const activeFg = useColor('onPrimaryContainer');
+  const primary = useColor('primary');
   const inactiveFg = useColor('mutedForeground');
+  // A 12%-primary tint rather than the full `primaryContainer` fill. The
+  // container colour is a solid block at pill size and dominated the bar; this
+  // reads as a highlight while leaving the icon and label clearly on top of it.
+  const activeBg = withOpacity(primary, 0.12);
+  const activeFg = primary;
 
   const [frames, setFrames] = useState<Record<string, TabFrame>>({});
   const activeKey = state.routes[state.index].key;
@@ -184,6 +197,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 6,
+    padding: 4,
   },
 });

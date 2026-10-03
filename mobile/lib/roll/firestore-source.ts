@@ -101,8 +101,19 @@ export const firestoreSource: RollSource = {
   kind: 'firestore',
 
   async getWards(): Promise<WardsBundle> {
+    // Ordered by `wardNo`, **not** `name`.
+    //
+    // `name` is the Hindi string `वार्ड 7`, so a lexicographic sort returns
+    // 1, 10, 11, 12, 13, 2, 3 … — which is exactly how it presented: the ward
+    // picker appeared to contain five wards and no others, because the first
+    // page of a dropdown was 1, 10, 11, 12, 13. `wardNo` is a number field, so
+    // Firestore sorts it numerically and the list reads 1…13.
+    //
+    // The sort is also applied client-side below rather than trusted from the
+    // query, because the per-ward cache stitches bundles together and the
+    // result must not depend on which one answered first.
     const snapshot = await getDocs(
-      query(collection(db, COLLECTIONS.wards), orderBy('name'))
+      query(collection(db, COLLECTIONS.wards), orderBy('wardNo'))
     );
     const wards: WardMeta[] = snapshot.docs.map((doc) => {
       const data = doc.data();
@@ -119,6 +130,8 @@ export const firestoreSource: RollSource = {
         pdfPages: str(data.pdfPages),
       };
     });
+
+    wards.sort((a, b) => a.wardNo - b.wardNo);
 
     return {
       generatedAt: '',

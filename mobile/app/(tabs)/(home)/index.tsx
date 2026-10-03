@@ -17,7 +17,6 @@ import { Text } from '@/components/ui/text';
 import { useToast } from '@/components/ui/toast';
 import { View } from '@/components/ui/view';
 import { useAuth } from '@/providers/auth-provider';
-import { useColor } from '@/hooks/useColor';
 import { useEvents } from '@/hooks/useEvents';
 import { useExpenses } from '@/hooks/useExpenses';
 import { useIssues } from '@/hooks/useIssues';
@@ -88,9 +87,6 @@ export default function HomeScreen() {
   const loading =
     reference.loading || tasksLoading || issuesLoading || eventsLoading || expensesLoading;
   const error = reference.error ?? tasksError;
-
-  const green = useColor('success');
-  const textMuted = useColor('textMuted');
 
   useEffect(() => {
     if (error) toast.error(t('common.errorTitle'), error);
@@ -289,7 +285,10 @@ export default function HomeScreen() {
         title={t('dash.brandTitle')}
         subtitle={t('home.title')}
         initials={initials}
-        onSearch={() => router.push('/(tabs)/more')}
+        // Search belongs to the roll. It used to open the More hub, which was
+        // never what the magnifier implied — a user tapping search is looking
+        // for a person, and the voter list is where people are.
+        onSearch={() => router.push('/(tabs)/voters')}
         onAvatar={() => router.push('/(tabs)/more/settings')}
       />
 
@@ -443,23 +442,8 @@ export default function HomeScreen() {
               <ActivityCard
                 rows={activityRows}
                 title={t('dash.recentActivity')}
-                subtitle={t('dash.liveStream')}
               />
             </Card>
-
-            <View style={{ flexDirection: 'row', gap: 8 }}>
-              <View
-                style={{
-                  width: 8,
-                  height: 8,
-                  borderRadius: 4,
-                  backgroundColor: reference.connected ? green : textMuted,
-                }}
-              />
-              <Text variant='caption'>
-                {reference.connected ? t('dash.live') : t('dash.cached')}
-              </Text>
-            </View>
 
             {error ? (
               <Card style={{ gap: 12 }}>

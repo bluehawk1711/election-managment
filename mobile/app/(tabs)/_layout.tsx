@@ -12,6 +12,12 @@ import { useTranslation } from 'react-i18next';
  * Tasks and Calendar are no longer tabs: they live behind the More hub
  * (`(tabs)/more/tasks`, `(tabs)/more/calendar`) so the five slots go to the
  * roll, which is what this build is for.
+ *
+ * **Voters is the landing tab.** Signing in drops the user straight onto the
+ * roll rather than a dashboard of campaign metrics: a karykarta opens this app
+ * standing in a lane to look someone up, and the dashboard is the second thing
+ * they want, not the first. It also means the roll's cache is read by the very
+ * first screen after auth, which is what makes that first frame instant.
  */
 export default function TabsLayout() {
   const { t } = useTranslation();
@@ -19,6 +25,7 @@ export default function TabsLayout() {
 
   return (
     <Tabs
+      initialRouteName='voters'
       tabBar={(props) => <FloatingTabBar {...props} />}
       screenOptions={{
         headerShown: false,

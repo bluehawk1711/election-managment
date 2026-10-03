@@ -2,6 +2,8 @@ import { Spinner } from '@/components/ui/spinner';
 import { ToastProvider } from '@/components/ui/toast';
 import { View } from '@/components/ui/view';
 import { useColorScheme } from '@/hooks/useColorScheme';
+import { prewarm } from '@/lib/cache/query-cache';
+import { cacheStorage, prewarm as prewarmRoll } from '@/lib/roll/cache';
 import '@/i18n';
 import { AuthProvider, useAuth } from '@/providers/auth-provider';
 import { ReferenceProvider } from '@/providers/reference-provider';
@@ -135,6 +137,28 @@ export default function RootLayout() {
     }
   }, [fontsLoaded, fontError]);
 
+  useEffect(() => {
+    // Drain the persisted caches into memory at startup, *before* sign-in.
+    //
+    // This is the whole reason both caches have a memory layer: by the time
+    // the user authenticates and `(tabs)` mounts, `ReferenceProvider` and
+    // `useRoll` read them **synchronously** and the first frame is real
+    // content rather than skeletons. The network fetches still run — they just
+    // refine what is already on screen instead of gating it.
+    //
+    // Deliberately not awaited and not gated on the splash: nothing here
+    // renders, and blocking the sign-in screen on a storage read would be a
+    // worse version of the problem being solved.
+    prewarm().catch(() => {});
+    // The roll, but only the first ward — not all thirteen. Warming the whole
+    // roll would mean parsing ~6,855 rows of JSON on every cold start, which
+    // costs more than the skeleton it saves. The wards bundle is 13 small
+    // documents and is always warmed; the first ward is what the default "all
+    // wards" selection opens on, and further wards load on demand and then stay
+    // resident for the rest of the session.
+    prewarmRoll(cacheStorage, [1]).catch(() => {});
+  }, []);
+
   if (!fontsLoaded && !fontError) {
     return null;
   }
@@ -156,3 +180,15 @@ export default function RootLayout() {
     </GestureHandlerRootView>
   );
 }
+
+/**
+ * Nothing here gates the tree on the warm-up.
+ *
+ * An earlier version did, and it was wrong: hiding the tree for the duration of
+ * a storage read trades a skeleton flash for a blank one. Starting the read at
+ * startup and *not* awaiting it is enough — the user still has to type an email
+ * and a password before `(tabs)` exists, and `prewarm()` is a handful of
+ * AsyncStorage reads, so the cache is resident long before it is needed. The
+ * only thing that has to be synchronous is `useCollection`'s read of the memory
+ * mirror, and that is.
+ */

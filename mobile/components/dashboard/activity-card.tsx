@@ -17,7 +17,13 @@ export type ActivityRow = {
 type Props = {
   rows: ActivityRow[];
   title: string;
-  subtitle: string;
+  /**
+   * Optional. It read "Live stream", which described the transport rather than
+   * the content — and a green dot next to it claimed a live connection that a
+   * cache-first app does not meaningfully have. The card is now allowed to have
+   * no subtitle, which is the honest default for a feed.
+   */
+  subtitle?: string;
 };
 
 /** Recent activity — merged feed of task/expense/issue mutations. */

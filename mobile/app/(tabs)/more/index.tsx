@@ -91,7 +91,17 @@ export default function MoreScreen() {
   return (
     <ScrollView
       style={{ flex: 1 }}
-      contentContainerStyle={{ padding: 20, paddingTop: 8, gap: 12 }}
+      contentContainerStyle={{
+        padding: 20,
+        paddingTop: 8,
+        gap: 12,
+        // The floating tab bar is an absolute overlay and contributes no
+        // height to this column, so every scroll container under `(tabs)` has
+        // to reserve room for it itself. The other four screens use 112; this
+        // one was missing it entirely, which put the last entry underneath the
+        // pill.
+        paddingBottom: 112,
+      }}
     >
       {/* The role is shown here rather than only in Settings because it is the
           single fact that explains why some entries are missing. A karykarta
