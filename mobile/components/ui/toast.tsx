@@ -5,6 +5,7 @@ import React, {
   useCallback,
   useContext,
   useEffect,
+  useMemo,
   useState,
 } from 'react';
 import {
@@ -21,6 +22,7 @@ import {
   GestureHandlerRootView,
 } from 'react-native-gesture-handler';
 import Animated, {
+  Easing,
   runOnJS,
   useAnimatedStyle,
   useSharedValue,
@@ -55,11 +57,26 @@ const TOAST_MARGIN = 8;
 const DYNAMIC_ISLAND_WIDTH = 126;
 const EXPANDED_WIDTH = screenWidth - 32;
 
-// Reanimated spring configuration
-const SPRING_CONFIG = {
-  stiffness: 120,
-  damping: 8,
-};
+// Motion constants.
+//
+// These were springs (`stiffness: 120, damping: 8`). A damping ratio that low is
+// very underdamped — the toast visibly overshot its resting position, bounced
+// past 1.0 on the way in, and wobbled again on the way out. On a notification
+// that appears over whatever the user was doing, that reads as a glitch rather
+// than as polish, and it is worse on a budget Android phone where the spring has
+// to be re-evaluated per frame.
+//
+// A short eased timing curve is the right shape here: a toast is a state change,
+// not a physical object, so it should move decisively and stop. Swipe-to-dismiss
+// still tracks the finger 1:1 — that part was never animated and is unchanged.
+const ENTER_DURATION = 220;
+const EXIT_DURATION = 160;
+const EASE_OUT = Easing.out(Easing.cubic);
+const EASE_IN = Easing.in(Easing.cubic);
+
+/** Scale the toast starts at. 0.8 was a big enough jump to read as a pop. */
+const ENTER_SCALE = 0.94;
+const EXIT_SCALE = 0.96;
 
 export function Toast({
   id,
@@ -86,7 +103,7 @@ export function Toast({
   const translateY = useSharedValue(-100);
   const translateX = useSharedValue(0);
   const opacity = useSharedValue(0);
-  const scale = useSharedValue(0.8);
+  const scale = useSharedValue(ENTER_SCALE);
   const width = useSharedValue(DYNAMIC_ISLAND_WIDTH);
   const height = useSharedValue(DYNAMIC_ISLAND_HEIGHT);
   const borderRadius = useSharedValue(18.5);
@@ -113,11 +130,16 @@ export function Toast({
         contentOpacity.value = 1;
       } else {
         // Animate in expanded toast
-        translateY.value = withSpring(0, SPRING_CONFIG);
-        opacity.value = withTiming(1, { duration: 300 });
-        scale.value = withSpring(1, SPRING_CONFIG);
-        // CORRECTED LINE: Use withDelay to wrap withTiming
-        contentOpacity.value = withDelay(100, withTiming(1, { duration: 300 }));
+        translateY.value = withTiming(0, { duration: ENTER_DURATION, easing: EASE_OUT });
+        opacity.value = withTiming(1, { duration: ENTER_DURATION, easing: EASE_OUT });
+        scale.value = withTiming(1, { duration: ENTER_DURATION, easing: EASE_OUT });
+        // The text trails the container slightly so the card is already in
+        // place by the time the words appear, which reads as one movement
+        // rather than two.
+        contentOpacity.value = withDelay(
+          80,
+          withTiming(1, { duration: ENTER_DURATION, easing: EASE_OUT })
+        );
       }
     } else {
       // If no content, show compact Dynamic Island with icon only
@@ -129,9 +151,9 @@ export function Toast({
         scale.value = 1;
       } else {
         // Animate in compact toast
-        translateY.value = withSpring(0, SPRING_CONFIG);
-        opacity.value = withTiming(1, { duration: 200 });
-        scale.value = withSpring(1, SPRING_CONFIG);
+        translateY.value = withTiming(0, { duration: ENTER_DURATION, easing: EASE_OUT });
+        opacity.value = withTiming(1, { duration: ENTER_DURATION, easing: EASE_OUT });
+        scale.value = withTiming(1, { duration: ENTER_DURATION, easing: EASE_OUT });
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -181,13 +203,13 @@ export function Toast({
       runOnJS(onDismiss)(id);
     };
 
-    translateY.value = withSpring(-100, SPRING_CONFIG);
-    opacity.value = withTiming(0, { duration: 250 }, (finished) => {
+    translateY.value = withTiming(-100, { duration: EXIT_DURATION, easing: EASE_IN });
+    opacity.value = withTiming(0, { duration: EXIT_DURATION, easing: EASE_IN }, (finished) => {
       if (finished) {
         onDismissAction();
       }
     });
-    scale.value = withSpring(0.8, SPRING_CONFIG);
+    scale.value = withTiming(EXIT_SCALE, { duration: EXIT_DURATION, easing: EASE_IN });
   }, [id, onDismiss, reduceMotion]);
 
   const panGesture = Gesture.Pan()
@@ -218,16 +240,18 @@ export function Toast({
         // Animate out horizontally
         translateX.value = withTiming(
           translationX > 0 ? screenWidth : -screenWidth,
-          { duration: 250 }
+          { duration: EXIT_DURATION, easing: EASE_IN }
         );
-        opacity.value = withTiming(0, { duration: 250 }, (finished) => {
+        opacity.value = withTiming(0, { duration: EXIT_DURATION, easing: EASE_IN }, (finished) => {
           if (finished) {
             onDismissAction();
           }
         });
       } else if (!reduceMotion) {
-        // Snap back with spring animation
-        translateX.value = withSpring(0, SPRING_CONFIG);
+        // Snap back. Still a spring rather than a timing, because this one
+        // *is* tracking a finger and the overshoot is the gesture feeling
+        // physical — but critically damped, so it settles immediately.
+        translateX.value = withSpring(0, { damping: 26, stiffness: 320 });
       }
     });
 
@@ -444,21 +468,35 @@ export function ToastProvider({ children, maxToasts = 3 }: ToastProviderProps) {
       });
     },
     [addToast]
-  );
-
-  const contextValue: ToastContextType = {
+  );// Memoised, and that is not a micro-optimisation.
+//
+// `useToast()` returns this object, and consumers routinely put it in a
+// `useCallback` dependency list. As a bare object literal it is a NEW reference
+// on every render of the provider, so every one of those callbacks is
+// invalidated on every render of the provider — the memoisation silently does
+// nothing. The React Compiler sees a dependency that changes underneath it and
+// refuses to compile the component at all ("Compilation Skipped: Existing
+// memoization could not be preserved"), which is a real perf loss on top of the
+// broken memo.
+//
+// The value itself only changes when `addToast`/`createVariantToast` do, and
+// those are already `useCallback`-wrapped, so this memo is stable in practice.
+const contextValue: ToastContextType = useMemo(
+  () => ({
     toast: addToast,
-    success: (title, description) =>
+    success: (title: string, description?: string) =>
       createVariantToast('success', title, description),
-    error: (title, description) =>
+    error: (title: string, description?: string) =>
       createVariantToast('error', title, description),
-    warning: (title, description) =>
+    warning: (title: string, description?: string) =>
       createVariantToast('warning', title, description),
-    info: (title, description) =>
+    info: (title: string, description?: string) =>
       createVariantToast('info', title, description),
     dismiss: dismissToast,
     dismissAll,
-  };
+  }),
+  [addToast, createVariantToast, dismissToast, dismissAll]
+);
 
   const containerStyle: ViewStyle = {
     position: 'absolute',

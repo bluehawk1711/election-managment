@@ -7,12 +7,12 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Text } from '@/components/ui/text';
 import { useColor } from '@/hooks/useColor';
 import { useRoll } from '@/hooks/useRoll';
-import { canReadWard } from '@/lib/roles';
+import { can, canReadWard } from '@/lib/roles';
 import type { VoterView, WardsBundle } from '@/lib/roll/types';
 import { useAuth } from '@/providers/auth-provider';
 import { useRouter } from 'expo-router';
-import { BarChart3 } from 'lucide-react-native';
-import { useEffect, useMemo, useState } from 'react';
+import { BarChart3, ShieldAlert } from 'lucide-react-native';
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, View } from 'react-native';
 
@@ -45,7 +45,12 @@ export default function ReportsScreen() {
   const bundle: WardsBundle | null = roll.wards;
 
   const role = profile?.role ?? null;
-  const scope = { wardNo: profile?.wardNo ?? null };
+  const wardNo = profile?.wardNo ?? null;
+
+  // Memoised on its own: an object literal in the render body is a new
+  // reference every pass, which would make every `useMemo` below that lists
+  // it as a dependency recompute unconditionally.
+  const scope = useMemo(() => ({ wardNo }), [wardNo]);
 
   const allowedWards = useMemo(() => {
     const all = (bundle?.wards ?? []).map((ward) => ward.wardNo);
@@ -103,6 +108,22 @@ export default function ReportsScreen() {
         {[0, 1, 2].map((row) => (
           <Skeleton key={row} height={120} variant='rounded' />
         ))}
+      </View>
+    );
+  }
+
+  // No role is a real state, not an empty report. Every signed-in account starts
+  // with no capabilities, and `firestore.rules` denies every read — so without
+  // this branch a user with no role sees "No voters synced yet", which reads as
+  // a data problem and sends them chasing one that does not exist.
+  if (!can(role, 'voterRead')) {
+    return (
+      <View style={styles.center}>
+        <EmptyState
+          icon={ShieldAlert}
+          title={t('common.noRoleTitle')}
+          body={t('common.noRoleBody')}
+        />
       </View>
     );
   }
@@ -165,7 +186,10 @@ export default function ReportsScreen() {
               key={ward.wardNo}
               onPress={() =>
                 router.push({
-                  pathname: '/(tabs)/voters/index',
+                  // Not `/(tabs)/voters/index`: an `index` route is addressed by
+                  // its folder path. expo-router's typed routes reject the
+                  // explicit `/index` form, which is how this was caught.
+                  pathname: '/(tabs)/voters',
                   params: { ward: String(ward.wardNo) },
                 })
               }

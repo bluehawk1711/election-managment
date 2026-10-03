@@ -1,4 +1,4 @@
-import { dueLabel } from '@/app/(tabs)/more/tasks/due';
+import { dueLabel } from '@/lib/tasks/due';
 import { FilterBar, FilterItem } from '@/components/campaign/filter-bar';
 import { ListRow } from '@/components/campaign/list-row';
 import { SearchInput } from '@/components/campaign/search-input';

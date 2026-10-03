@@ -1,3 +1,4 @@
+import { DetailRow } from '@/components/roll/detail-row';
 import { Chip } from '@/components/campaign/chip';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -27,7 +28,12 @@ import {
   overlayStorage,
   putOverlay,
 } from '@/lib/roll/overlay';
-import type { Leaning, VotedStatus, VoterOverlay } from '@/lib/roll/types';
+import type {
+  Leaning,
+  VotedStatus,
+  VoterLocation,
+  VoterOverlay,
+} from '@/lib/roll/types';
 import { BORDER_RADIUS } from '@/theme/globals';
 import { useAuth } from '@/providers/auth-provider';
 import * as ImagePicker from 'expo-image-picker';
@@ -44,9 +50,34 @@ import {
   Phone,
   XCircle,
 } from 'lucide-react-native';
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Alert, Pressable, StyleSheet } from 'react-native';
+
+/**
+ * Reads a one-off GPS fix and returns it in `VoterLocation` shape.
+ *
+ * Module-level on purpose: the React Compiler treats any function declared in
+ * the component body as part of render, so calling `Date.now()` in there is a
+ * purity violation (`react-hooks/purity`) even though it only ever runs from an
+ * on-press. Keeping the impure work out here keeps the component pure.
+ *
+ * Returns `null` when permission is denied; throws when the fix cannot be read.
+ */
+async function captureCurrentLocation(): Promise<VoterLocation | null> {
+  const permission = await Location.requestForegroundPermissionsAsync();
+  if (permission.status !== 'granted') return null;
+
+  const position = await Location.getCurrentPositionAsync({
+    accuracy: Location.Accuracy.Balanced,
+  });
+  return {
+    lat: position.coords.latitude,
+    lng: position.coords.longitude,
+    accuracy: position.coords.accuracy ?? null,
+    updatedAt: Date.now(),
+  };
+}
 
 /** The leaning options, in the order plan-voters.md §2 fixes them. */
 const LEANING: Leaning[] = ['right', 'centerRight', 'center', 'centerLeft', 'left'];
@@ -66,7 +97,7 @@ export default function VoterDetailScreen() {
   const { t } = useTranslation();
   const router = useRouter();
   const toast = useToast();
-  const { user, profile } = useAuth();
+  const { user } = useAuth();
   const outline = useColor('outline');
   const muted = useColor('muted');
 
@@ -83,29 +114,39 @@ export default function VoterDetailScreen() {
   // overlay for whichever ward the row reports once it arrives.
   const wardNo = voter?.wardNo ?? (Number.isFinite(wardParam) ? wardParam : null);
 
-  const refresh = useCallback(() => roll.refresh(), [roll]);
-
+  // No `useCallback` here on purpose. The React Compiler already memoises
+  // component-local functions, and it can only do that if there is no manual
+  // memoisation to preserve — a hand-written `useCallback` whose dependency
+  // list includes anything derived from the `roll` object (which `useRoll`
+  // returns as a fresh literal on every render) makes the compiler skip the
+  // whole component with "Existing memoization could not be preserved".
   const uid = user?.uid ?? 'local';
 
-  const save = useCallback(
-    async (overlay: Partial<VoterOverlay>, label: string) => {
-      if (wardNo == null || !voterId) return;
-      setBusy(label);
-      try {
-        await putOverlay(overlayStorage, { voterId, wardNo, overlay, uid });
-        await refresh();
-        toast.success(t('voters.savedLocally'));
-      } catch {
-        toast.error(t('common.errorTitle'));
-      } finally {
-        setBusy(null);
-      }
-    },
-    [wardNo, voterId, uid, refresh, toast, t]
-  );
+  const save = async (overlay: Partial<VoterOverlay>, label: string) => {
+    if (wardNo == null || !voterId) return;
+    setBusy(label);
+    try {
+      await putOverlay(overlayStorage, { voterId, wardNo, overlay, uid });
+      roll.refresh();
+      toast.success(t('voters.savedLocally'));
+    } catch {
+      toast.error(t('common.errorTitle'));
+    } finally {
+      setBusy(null);
+    }
+  };
 
   // Fallback used only when the overlay has to be read outside a write, e.g.
   // the queue length check below.
+  //
+  // The dependency is `voter?.pending` — a boolean derived from the overlay —
+  // rather than `voter` itself, which is a fresh object on every render of the
+  // list. Depending on the object re-runs this on every pass, and the React
+  // Compiler cannot preserve that memoisation ("Existing memoization could not
+  // be preserved"), which is what the lint error was reporting. Depending on
+  // the one boolean that actually changes when the queue grows is both correct
+  // and what the compiler can keep.
+  const pending = voter?.pending ?? false;
   const [queueSize, setQueueSize] = useState(0);
   useEffect(() => {
     let cancelled = false;
@@ -115,7 +156,7 @@ export default function VoterDetailScreen() {
     return () => {
       cancelled = true;
     };
-  }, [voter?.pending]);
+  }, [pending]);
 
   if (!voter) {
     return (
@@ -167,27 +208,14 @@ export default function VoterDetailScreen() {
   };
 
   const captureLocation = async () => {
-    const permission = await Location.requestForegroundPermissionsAsync();
-    if (permission.status !== 'granted') {
-      Alert.alert(t('voters.locationFailed'));
-      return;
-    }
     setBusy('location');
     try {
-      const position = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.Balanced,
-      });
-      await save(
-        {
-          location: {
-            lat: position.coords.latitude,
-            lng: position.coords.longitude,
-            accuracy: position.coords.accuracy ?? null,
-            updatedAt: Date.now(),
-          },
-        },
-        'location'
-      );
+      const location = await captureCurrentLocation();
+      if (!location) {
+        Alert.alert(t('voters.locationFailed'));
+        return;
+      }
+      await save({ location }, 'location');
     } catch {
       toast.error(t('voters.locationFailed'));
     } finally {
@@ -203,30 +231,6 @@ export default function VoterDetailScreen() {
     const ok = await openExternal(url);
     if (!ok) toast.error(failed);
   };
-
-  const Row = ({
-    label,
-    value,
-    hint,
-  }: {
-    label: string;
-    value: string;
-    hint?: string;
-  }) => (
-    <View style={styles.row}>
-      <Text variant='caption' style={{ color: outline }}>
-        {label}
-      </Text>
-      <View style={styles.rowValue}>
-        <Text>{value || '—'}</Text>
-        {hint ? (
-          <Text variant='caption' style={{ color: outline }}>
-            {hint}
-          </Text>
-        ) : null}
-      </View>
-    </View>
-  );
 
   return (
     <View style={styles.root}>
@@ -408,7 +412,7 @@ export default function VoterDetailScreen() {
         {/* Contact */}
         <Text variant='subtitle'>{t('voters.contact')}</Text>
         <Card style={styles.card}>
-          <Row label={t('common.phone')} value={e.phone} hint={t('voters.phoneHint')} />
+          <DetailRow label={t('common.phone')} value={e.phone} hint={t('voters.phoneHint')} />
           <View style={styles.actions}>
             <Button
               size='sm'
@@ -445,17 +449,17 @@ export default function VoterDetailScreen() {
         {/* Roll details — read-only, straight from the CSV */}
         <Text variant='subtitle'>{t('voters.rollInfo')}</Text>
         <Card style={styles.card}>
-          <Row label={t('voters.epic')} value={voter.epicId} />
-          <Row label={t('voters.father')} value={e.fatherOrHusbandName} hint={voter.relationLabel} />
-          <Row label={t('voters.house')} value={e.houseNo} />
-          <Row label={String(e.age)} value={`${e.age}`} />
-          <Row label={t('voters.gender')} value={e.gender} />
-          <Row label={t('voters.locality')} value={e.locality} />
-          <Row
+          <DetailRow label={t('voters.epic')} value={voter.epicId} />
+          <DetailRow label={t('voters.father')} value={e.fatherOrHusbandName} hint={voter.relationLabel} />
+          <DetailRow label={t('voters.house')} value={e.houseNo} />
+          <DetailRow label={String(e.age)} value={`${e.age}`} />
+          <DetailRow label={t('voters.gender')} value={e.gender} />
+          <DetailRow label={t('voters.locality')} value={e.locality} />
+          <DetailRow
             label={t('common.ward')}
             value={t('voters.ward', { no: voter.wardNo })}
           />
-          <Row label={t('voters.pdfPage', { no: voter.pdfPage })} value={`#${voter.pdfPage}`} />
+          <DetailRow label={t('voters.pdfPage', { no: voter.pdfPage })} value={`#${voter.pdfPage}`} />
         </Card>
 
         <Text variant='caption' style={{ color: outline, textAlign: 'center' }}>

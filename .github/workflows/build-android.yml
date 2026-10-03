@@ -55,30 +55,25 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-
+      # pnpm before Node: `actions/setup-node`'s built-in pnpm cache needs the
+      # package manager on PATH first, and it caches the *virtual store* the
+      # same way the old hand-rolled `actions/cache` step did — but without the
+      # `pnpm store path` probe step and without the second, slower restore of
+      # the whole store on top of it.
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
           version: ${{ env.PNPM_VERSION }}
 
-      - name: Get pnpm store directory
-        id: pnpm-cache
-        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
-
-      - name: Cache pnpm dependencies
-        uses: actions/cache@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('mobile/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+          cache-dependency-path: mobile/pnpm-lock.yaml
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --frozen-lockfile --prefer-offline
 
       # ── Java / Gradle ──────────────────────────────────────────────────
       - name: Setup Java
@@ -87,15 +82,60 @@ jobs:
           distribution: "temurin"
           java-version: ${{ env.JAVA_VERSION }}
 
-      - name: Cache Gradle
+      # This replaces the old `actions/cache` step over ~/.gradle. It caches
+      # more of the right things (Gradle's dependency cache, the *build cache*,
+      # the wrapper distributions and the transform cache), keyed on the
+      # Gradle version and the wrapper checksum rather than on a hand-picked
+      # list of files, and it degrades to a miss instead of failing the job.
+      #
+      # The build cache is the single biggest win here: Hermes bytecode
+      # compilation, the RN C++/CMake object files and resource processing all
+      # become cache hits on every run after the first, so a rebuild is
+      # minutes rather than tens of minutes.
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      # ── Prebuilt native project ────────────────────────────────────────
+      # `expo prebuild` regenerates ~40 Gradle files from app.json /
+      # app.config.ts. That is cheap next to a native build, but it is pure
+      # waste when nothing that feeds it has changed — so the generated tree
+      # is cached, keyed on everything prebuild actually reads (lockfile,
+      # config, app config, constants and the raw asset files it copies into
+      # res/). A native dependency bump changes the lockfile, so a new key — a
+      # stale `android/` can never be built against.
+      #
+      # `android/` is gitignored, so nothing here can leak a generated file
+      # into the repo, and the tree is saved back in its PRISTINE form (see
+      # "Restore pristine build.gradle" below) so the CI-injected signing and
+      # versionCode edits never accumulate across runs.
+      - name: Compute Android project cache key
+        id: android-project-key
+        run: |
+          echo "key=android-project-${{ runner.os }}-node${{ env.NODE_VERSION }}-${{ hashFiles('mobile/package.json', 'mobile/pnpm-lock.yaml', 'mobile/app.json', 'mobile/app.config.ts', 'mobile/constants/brand.json', 'mobile/assets/**') }}" >> $GITHUB_OUTPUT
+
+      # Build outputs are excluded: they are gigabytes, they are already held
+      # by the Gradle cache, and an APK left inside `android/` would be a stale
+      # artifact waiting to be found by a later step.
+      - name: Restore cached Android project
+        id: android-project
         uses: actions/cache@v4
         with:
           path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: gradle-${{ runner.os }}-${{ hashFiles('mobile/pnpm-lock.yaml', 'mobile/app.json', 'mobile/app.config.ts') }}
-          restore-keys: |
-            gradle-${{ runner.os }}-
+            mobile/android
+            !mobile/android/.gradle/
+            !mobile/android/build/
+            !mobile/android/app/build/
+            !mobile/android/.cxx/
+            !mobile/android/app/.cxx/
+          key: ${{ steps.android-project-key.outputs.key }}
+
+      - name: Generate native Android project
+        if: steps.android-project.outputs.cache-hit != 'true'
+        run: |
+          npx expo prebuild --platform android --clean --no-install
+          # Keep an untouched copy so the cache can be saved in the state
+          # prebuild produced, before this run's sed/append edits.
+          cp android/app/build.gradle "$RUNNER_TEMP/build.gradle.pristine"
 
       # ── Environment ────────────────────────────────────────────────────
       # EXPO_PUBLIC_* values are inlined into the JS bundle by babel at build
@@ -120,9 +160,6 @@ jobs:
           EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID=${{ secrets.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID }}
           ENVEOF
 
-      - name: Generate native Android project
-        run: npx expo prebuild --platform android --clean --no-install
-
       # ── Package guard ──────────────────────────────────────────────────
       # constants/brand.json is the single source of truth (app.config.ts
       # reads it), so the guard reads it rather than duplicating the string
@@ -138,6 +175,46 @@ jobs:
             exit 1
           fi
 
+      # ── Gradle tuning ──────────────────────────────────────────────────
+      # Written after prebuild because that is what generates the file, and
+      # re-asserted on every run (including a cache hit) so a restored tree
+      # from an older workflow revision still gets the current settings.
+      # Duplicate keys in a Gradle properties file resolve last-wins, so the
+      # block below overrides the 2g heap prebuild defaults.
+      #
+      # The configuration cache is enabled via properties rather than command
+      # line flags so `problems=warn` applies: a plugin that cannot take part
+      # should cost a warning on a run that is already warm, not a failed
+      # build. Gradle documents warn mode as a migration aid rather than a
+      # permanent setting, and it can store a degraded entry — if a CC problem
+      # ever shows up here, the fix is to mark the offending task incompatible
+      # and go back to the default `problems=fail`.
+      - name: Tune Gradle performance
+        run: |
+          # Idempotent: strip a previous run's block (it can come back from the
+          # android/ cache) before appending this run's. The awk pass also
+          # normalises the trailing newline, which prebuild omits — without it
+          # the first appended line would be glued onto the last property and
+          # its marker would never match again.
+          awk '
+            /^# >>> CI tuning >>>$/ { skip = 1; next }
+            /^# <<< CI tuning <<<$/{ skip = 0; next }
+            skip != 1        { print }
+          ' android/gradle.properties > android/gradle.properties.tmp
+          mv android/gradle.properties.tmp android/gradle.properties
+
+          cat >> android/gradle.properties <<'EOF'
+          # >>> CI tuning >>>
+          org.gradle.caching=true
+          org.gradle.parallel=true
+          org.gradle.jvmargs=-Xmx4096m -XX:MaxMetaspaceSize=1024m -Dfile.encoding=UTF-8
+          org.gradle.configuration-cache=true
+          org.gradle.configuration-cache.problems=warn
+          # <<< CI tuning <<<
+          EOF
+          echo "--- gradle.properties (CI block) ---"
+          tail -6 android/gradle.properties
+
       # ── Version code ───────────────────────────────────────────────────
       # Commit count is monotonic on an un-rewritten history, and the attempt
       # offset keeps a re-run from colliding with the previous run's APK.
@@ -150,10 +227,24 @@ jobs:
 
       # ── Release signing (Gradle-level, signed inline by assembleRelease) ─
       # android/ is regenerated by prebuild, so the signing config is injected
-      # here rather than committed. The keystore is decoded from the
-      # ANDROID_KEYSTORE_BASE64 secret.
-      - name: Prepare release signing
+      # here rather than committed.
+      #
+      # The keystore secrets are OPTIONAL. An APK has to be signed to be
+      # installable at all, but "signed" does not mean "signed with the upload
+      # key" — the Android Gradle plugin ships a `debug` signing config and
+      # generates a debug keystore on first use. So when the upload-key secrets
+      # are absent (a fork, a branch without access to the `production`
+      # environment, a smoke test) this signs with the debug key instead of
+      # failing. The APK then installs by sideload exactly as before; it just
+      # cannot be uploaded to Play, and every downstream step says so.
+      #
+      # What this deliberately does NOT do is silently skip signing. An unsigned
+      # release APK fails at the last step of the build, after ~40 minutes, with
+      # a confusing message — so the fallback is explicit, and the artifact name,
+      # summary and step output all carry which key was used.
+      - name: Prepare signing
         if: inputs.build_type == 'release'
+        id: signing
         env:
           KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
           STORE_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
@@ -163,20 +254,36 @@ jobs:
           set -euo pipefail
           KS=android/app/release.keystore
 
-          if [ -n "$KEYSTORE_BASE64" ]; then
-            echo "$KEYSTORE_BASE64" | base64 -d > "$KS"
-            echo "Keystore decoded from ANDROID_KEYSTORE_BASE64 secret"
-          else
-            echo "::error::ANDROID_KEYSTORE_BASE64 is empty — set the ANDROID_* secrets"
-            exit 1
+          if [ -z "$KEYSTORE_BASE64" ]; then
+            echo "::warning::ANDROID_KEYSTORE_BASE64 is not set — falling back to the Android debug keystore. The APK will be signed and installable, but NOT accepted by Google Play."
+            echo "key_type=debug" >> $GITHUB_OUTPUT
+            cat >> android/app/build.gradle <<'EOF'
+
+          // ── Debug-key signing fallback (injected by CI when the ANDROID_*
+          //    secrets are absent). `signingConfigs.debug` is defined and
+          //    generated by the Android Gradle plugin itself, so this needs no
+          //    keystore file and no credentials.
+          android {
+              buildTypes {
+                  release {
+                      signingConfig signingConfigs.debug
+                  }
+              }
+          }
+          EOF
+            echo "Debug signing config injected into app/build.gradle"
+            exit 0
           fi
+
+          echo "$KEYSTORE_BASE64" | base64 -d > "$KS"
+          echo "Keystore decoded from ANDROID_KEYSTORE_BASE64 secret"
 
           # ── Fail fast: validate credentials BEFORE the 40-minute build ──
           # An empty/mistyped secret previously burned a full Gradle build
           # before failing at signing. keytool catches it in ~5s.
           for VAR in STORE_PASS ALIAS KEY_PASS; do
             if [ -z "${!VAR}" ]; then
-              echo "::error::$VAR is empty — set the ANDROID_* secrets"
+              echo "::error::$VAR is empty but ANDROID_KEYSTORE_BASE64 is set — either configure all four ANDROID_* secrets or none. Refusing to fall back to the debug key, because a half-configured upload key is much more likely to be a typo than a deliberate choice."
               exit 1
             fi
           done
@@ -186,6 +293,7 @@ jobs:
             exit 1
           fi
           echo "Signing credentials verified against keystore (alias: $ALIAS)"
+          echo "key_type=upload" >> $GITHUB_OUTPUT
 
           cat >> android/app/build.gradle <<'EOF'
 
@@ -206,34 +314,55 @@ jobs:
               }
           }
           EOF
-          echo "Signing config injected into app/build.gradle"
+          echo "Upload-key signing config injected into app/build.gradle"
 
       # ── Build APK ──────────────────────────────────────────────────────
-      # arm64-v8a only on release (test devices are all arm64) — skips
-      # armeabi-v7a/x86 native builds and roughly halves build time.
+      # arm64-v8a only, on both build types: it is the only ABI a real phone
+      # runs, and dropping armeabi-v7a/x86/x86_64 removes three of the four
+      # CMake/NDK passes over the React Native sources — roughly half the
+      # native build. The trade-off is that the dev APK no longer installs on
+      # an x86_64 emulator.
+      #
+      # --build-cache + org.gradle.caching (set above) is what makes warm runs
+      # cheap; the configuration cache skips re-running configuration on the
+      # way in.
       - name: Build Android APK
         working-directory: mobile/android
+        env:
+          KEY_TYPE: ${{ steps.signing.outputs.key_type }}
         run: |
           chmod +x gradlew
+          GRADLE_FLAGS="--build-cache --parallel --no-daemon"
           if [ "${{ inputs.build_type }}" = "release" ]; then
-            ./gradlew assembleRelease \
-              -Dorg.gradle.jvmargs="-Xmx4g -XX:MaxMetaspaceSize=1g" \
-              -PreactNativeArchitectures=arm64-v8a \
-              -Pandroid.lint.enabled=false \
-              -x lintVitalRelease \
-              -PANDROID_KEYSTORE_FILE="${{ github.workspace }}/mobile/android/app/release.keystore" \
-              -PANDROID_KEYSTORE_PASSWORD="${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" \
-              -PANDROID_KEY_ALIAS="${{ secrets.ANDROID_KEY_ALIAS }}" \
-              -PANDROID_KEY_PASSWORD="${{ secrets.ANDROID_KEY_PASSWORD }}" \
-              --no-daemon \
-              --parallel \
-              --build-cache
+            # The `-PANDROID_*` properties are ONLY passed on the upload-key
+            # path. On the debug fallback the injected Gradle config reads
+            # `signingConfigs.debug` and never looks at them — but passing
+            # `-PANDROID_KEYSTORE_PASSWORD=""` would still set the property to an
+            # empty string, and the release config's `?:` elvis only defaults on
+            # a *missing* property, not an empty one. Passing them anyway is a
+            # silent way to get an empty keystore password.
+            if [ "$KEY_TYPE" = "upload" ]; then
+              ./gradlew assembleRelease \
+                -PreactNativeArchitectures=arm64-v8a \
+                -Pandroid.lint.enabled=false \
+                -x lintVitalRelease \
+                -PANDROID_KEYSTORE_FILE="${{ github.workspace }}/mobile/android/app/release.keystore" \
+                -PANDROID_KEYSTORE_PASSWORD="${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" \
+                -PANDROID_KEY_ALIAS="${{ secrets.ANDROID_KEY_ALIAS }}" \
+                -PANDROID_KEY_PASSWORD="${{ secrets.ANDROID_KEY_PASSWORD }}" \
+                $GRADLE_FLAGS
+            else
+              echo "Building a debug-key-signed release APK (no upload keystore configured)"
+              ./gradlew assembleRelease \
+                -PreactNativeArchitectures=arm64-v8a \
+                -Pandroid.lint.enabled=false \
+                -x lintVitalRelease \
+                $GRADLE_FLAGS
+            fi
           else
             ./gradlew assembleDebug \
-              -Dorg.gradle.jvmargs="-Xmx4g -XX:MaxMetaspaceSize=1g" \
-              --no-daemon \
-              --parallel \
-              --build-cache
+              -PreactNativeArchitectures=arm64-v8a \
+              $GRADLE_FLAGS
           fi
 
       - name: Disk usage after build
@@ -241,17 +370,73 @@ jobs:
         run: df -h /
 
       # ── Verify signature (release only) ────────────────────────────────
+      # Verifies that the APK is signed AT ALL, on both paths. `jarsigner`
+      # exits non-zero on an unsigned APK, so this is the assertion that the
+      # debug fallback actually produced something installable — it is the one
+      # check that stops "signed with the debug key" from quietly becoming
+      # "not signed" because an injected Gradle config was dropped.
       - name: Verify APK signature
         if: inputs.build_type == 'release'
+        env:
+          KEY_TYPE: ${{ steps.signing.outputs.key_type }}
         run: |
           APK=$(find android -name "*.apk" -path "*/release/*" | head -1)
+          if [ -z "$APK" ]; then
+            echo "::error::No release APK found to verify"
+            exit 1
+          fi
           jarsigner -verify "$APK"
-          echo "APK is signed with the upload keystore"
+          if [ "$KEY_TYPE" = "upload" ]; then
+            echo "APK is signed with the upload keystore"
+          else
+            echo "::warning::APK is signed with the Android DEBUG keystore. It installs by sideload but Google Play will reject it. Configure the ANDROID_* secrets for a Play-ready build."
+            echo "APK is signed with the debug keystore"
+          fi
 
       # ── Cleanup — never let the keystore leak into caches/artifacts ────
+      # `if: always()` so it runs even when an earlier step failed, which is
+      # exactly when a decoded keystore is most likely to be left behind.
+      # `rm -f` rather than `rm` so it is a no-op on the debug-fallback path,
+      # where no keystore was ever written — without this, `set -e` would fail
+      # a cleanup step on every unconfigured release build and mask the real
+      # error with a confusing exit code.
+      #
+      # This runs BEFORE the android/ cache is saved, so a keystore can never
+      # end up in a cache entry.
       - name: Remove decoded keystore
         if: always()
         run: rm -f android/app/release.keystore
+
+      # Undo this run's build.gradle edits so the cached copy is the pristine
+      # prebuild output. Without this the versionCode sed and the appended
+      # signing block would be re-applied on top of the cached copy every run
+      # and accumulate.
+      - name: Restore pristine build.gradle
+        if: always()
+        run: |
+          if [ -f "$RUNNER_TEMP/build.gradle.pristine" ]; then
+            cp "$RUNNER_TEMP/build.gradle.pristine" android/app/build.gradle
+            echo "build.gradle restored to its pre-CI-edit state"
+          else
+            echo "::warning::No pristine build.gradle snapshot — the android/ cache will be skipped for this run"
+            echo "SKIP_ANDROID_CACHE=1" >> $GITHUB_ENV
+          fi
+
+      # Saves on a miss, no-ops on a hit. Deliberately before artifact upload:
+      # it is the slowest remaining step and the APK upload does not depend
+      # on it.
+      - name: Save Android project cache
+        if: always() && env.SKIP_ANDROID_CACHE != '1'
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            mobile/android
+            !mobile/android/.gradle/
+            !mobile/android/build/
+            !mobile/android/app/build/
+            !mobile/android/.cxx/
+            !mobile/android/app/.cxx/
+          key: ${{ steps.android-project-key.outputs.key }}
 
       # ── Upload artifact ────────────────────────────────────────────────
       - name: Find APK file
@@ -274,14 +459,34 @@ jobs:
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ inputs.build_type == 'release' && 'app-release-apk' || 'app-dev-debug' }}-${{ github.sha }}
+          # The name carries the signing key. A debug-key release APK and an
+          # upload-key release APK are both called `app-release-apk` otherwise,
+          # and the only way to tell them apart in the artifacts list is to
+          # remember which run was which.
+          name: >-
+            ${{ inputs.build_type == 'release'
+                && format('app-release-apk-{0}', steps.signing.outputs.key_type != 'upload' && 'debug-signed' || 'upload-key')
+                || 'app-dev-debug'
+            }}-${{ github.sha }}
           path: ${{ steps.find-apk.outputs.apk_path }}
           retention-days: 14
           if-no-files-found: error
 
       # ── Summary ────────────────────────────────────────────────────────
       - name: Build summary
+        env:
+          KEY_TYPE: ${{ steps.signing.outputs.key_type }}
         run: |
+          if [ "${{ inputs.build_type }}" = "release" ]; then
+            if [ "$KEY_TYPE" = "upload" ]; then
+              SIGNING="upload keystore — Play-ready"
+            else
+              SIGNING="**debug keystore — sideload only, NOT accepted by Google Play**"
+            fi
+          else
+            SIGNING="debug keystore"
+          fi
+
           echo "## Android APK Build Complete" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "| Property | Value |" >> $GITHUB_STEP_SUMMARY
@@ -289,7 +494,8 @@ jobs:
           echo "| **Build Type** | \`${{ inputs.build_type }}\` |" >> $GITHUB_STEP_SUMMARY
           echo "| **Environment** | \`${{ inputs.build_type == 'release' && 'production' || 'dev' }}\` |" >> $GITHUB_STEP_SUMMARY
           echo "| **Package** | ${{ env.package }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Signing** | \`${{ inputs.build_type == 'release' && 'upload keystore (release)' || 'debug keystore' }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Signing** | $SIGNING |" >> $GITHUB_STEP_SUMMARY
+          echo "| **ABIs** | \`arm64-v8a\` |" >> $GITHUB_STEP_SUMMARY
           echo "| **APK** | \`${{ steps.find-apk.outputs.apk_path }}\` |" >> $GITHUB_STEP_SUMMARY
           echo "| **Commit** | \`${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY

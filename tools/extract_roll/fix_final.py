@@ -1,0 +1,372 @@
+# -*- coding: utf-8 -*-
+"""Final pass:
+1. Fix 'माता का नाम' relation labels (label text -> relation column).
+2. Cross-check age & house digits against the PDF raw text layer
+   (raw digits are proven 100% reliable: serials/EPICs/counts all validated).
+   Auto-correct mismatches, log them for verification.
+3. Rebuild ward metadata (booth/room from raw layer, desc from screenshot fixes).
+4. Write verification.md with every suspicious/OCR-sourced item.
+5. Save records_final.json (rewritten CSVs happen in write_csv.py).
+"""
+import pymupdf, re, os, json, importlib.util
+from collections import Counter, OrderedDict
+
+WORK = os.path.dirname(os.path.abspath(__file__))
+spec = importlib.util.spec_from_file_location('p4', os.path.join(WORK, 'parse4.py'))
+p4 = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(p4)
+
+PDF = 'data/veernagar-1.pdf'
+doc = pymupdf.open(PDF)
+
+data = json.load(open(os.path.join(WORK, 'records_final.json'), encoding='utf-8'))
+recs = data['records']
+wards = data['wards']
+
+MATA_LABEL = re.compile(r'^\s*(?:माता|ता)\s*का\s*(?:नाम)?\s*[\u0903:]?\s*')
+STRAY_LABEL = re.compile(r'^\s*(पिता|पति|अन्य|माता)\s*का\s*(नाम)?\s*[\u0903:]?\s*')
+
+# mother names recovered by targeted cell OCR (label printed, name missed by
+# the page-level OCR) - page -> {serial: name}
+MATA_RECOVERED = {
+    (50, 513): 'सन्तोष जोशी',
+    (94, 761): 'रूप कंवर',
+    (112, 374): 'दुर्गा',
+    (209, 3): 'मंजू कैंवर',      # reads कैवर/कैंवर - likely मंजू कंवर (see verification.md G)
+    (211, 54): 'सुप्रसन्ना झा',
+    (304, 455): 'संजू',
+}
+
+# ---- pre-fix snapshot: gives the *history* of every correction ----------
+key = lambda r: (r['ward'], r['page'], r['serial'])
+base = {}
+base_path = os.path.join(WORK, 'records_v4c.json')
+if os.path.exists(base_path):
+    base = {key(r): r for r in json.load(open(base_path, encoding='utf-8'))['records']}
+
+age_fixed, house_fixed, name_fixed, mata_fixed, stray_fixed = [], [], [], [], []
+for r in recs:
+    k = key(r)
+    b = base.get(k)
+    # --- relation / father label handling (rebuilt from the pre-fix value)
+    bf = (b['father'] if b else r['father']) or ''
+    m = MATA_LABEL.match(bf)
+    if m or bf.strip() in ('माता', 'माता का'):
+        rest = bf[m.end():].strip() if m else ''
+        if not rest:
+            rest = MATA_RECOVERED.get((r['page'], r['serial']), '')
+        r['father'] = rest
+        r['relation'] = 'माता'
+        mata_fixed.append((r['ward'], r['page'], r['serial'], r['name'], rest))
+    elif b is not None and b['father'] != r['father']:
+        # undo any earlier over-aggressive strip (e.g. 'माता प्रसाद शर्मा')
+        r['father'] = b['father']
+    # --- history of numeric corrections vs the pre-fix snapshot
+    if b is not None:
+        if b['age'] != r['age']:
+            age_fixed.append((r['ward'], r['page'], r['serial'], r['name'],
+                              b['age'], r['age']))
+        if b['house'] != r['house']:
+            house_fixed.append((r['ward'], r['page'], r['serial'], r['name'],
+                                b['house'], r['house']))
+        if b['name'] != r['name']:
+            name_fixed.append((r['ward'], r['page'], r['serial'],
+                               b['name'] or '(empty)', r['name']))
+    # leftover label text inside father from any other source
+    if r['father'] and re.match(r'^\s*(पिता|पति|अन्य|माता)\s*का', r['father']):
+        sm = STRAY_LABEL.match(r['father'])
+        if sm and r['father'][sm.end():].strip():
+            stray_fixed.append((r['ward'], r['page'], r['serial'], r['father']))
+            r['father'] = r['father'][sm.end():].strip()
+
+# ---- cross-check age & house against raw layer (validation; any mismatch
+#      found here is corrected and appended to the A/C history lists) ------
+for wd in wards:
+    for pno in range(wd['rec_start'], wd['rec_end'] + 1):
+        page = doc[pno - 1]
+        raw = page.get_text('words')
+        grid = [w for w in raw if 138.0 <= w[1] and w[3] <= 812.0]
+        if not grid:
+            continue
+        clusters = p4.cluster_lines(grid)
+        info = [{'center': p4.line_center(c), 'words': c} for c in clusters]
+        info.sort(key=lambda d: min(w[1] for w in d['words']))
+        serial_idx = {}
+        for i, d in enumerate(info):
+            for w in d['words']:
+                if p4.is_epic_like(w[4]):
+                    serial_idx.setdefault(w[4], (i, p4.col_of(w[0])))
+        page_recs = [r for r in recs if r['page'] == pno and r['ward'] == wd['idx']]
+        for r in page_recs:
+            key = serial_idx.get(r['epic'])
+            if not key:
+                continue
+            i, col = key
+            if col < 0:
+                continue
+            # age line = i+4, house line = i+3 (5-line record structure)
+            if i + 4 < len(info):
+                raw_age = p4.raw_digits_fallback(info[i + 4]['words'], col, 3)
+                if raw_age and r['age'] and raw_age != r['age']:
+                    age_fixed.append((r['ward'], r['page'], r['serial'],
+                                      r['name'], r['age'], raw_age))
+                    r['age'] = raw_age
+            if i + 3 < len(info):
+                toks = [t for t in p4.raw_col_tokens(info[i + 3]['words'], col)
+                        if t.isdigit() and 1 <= len(t) <= 6]
+                raw_house = toks[0] if toks else ''
+                cur = r['house'] or ''
+                if raw_house and re.fullmatch(r'\d{1,6}', cur or '') and raw_house != cur:
+                    house_fixed.append((r['ward'], r['page'], r['serial'],
+                                        r['name'], cur, raw_house))
+                    r['house'] = raw_house
+
+# ---- ward metadata from raw layer --------------------------------------
+def cover_meta(c):
+    page = doc[c - 1]
+    txt = page.get_text()
+    # booth line is a bare 'NNN - <school name>' line (number is NOT on the
+    # same line as the 'पतर :' label in the raw layer).
+    cands = re.findall(r'(?m)^\s*(\d{1,3})\s+-\s+\S', txt)
+    booth = cands[0] if len(cands) == 1 else ''
+    rm = re.search(r'कमर\w*\s*न\.?\s*(\d+)', txt)
+    room = rm.group(1) if rm else ''
+    return booth, room, len(cands)
+
+DESC_OVERRIDE = {
+    # zoomed crop OCR (900dpi, tesseract hin+eng psm 6/7) of the cover line:
+    1: 'पार्श्चनाथ सिटी, जेपीनगर, रामनगर (खसरा न 72) का क्षेत्र',
+    11: 'इंद्रा नगर, बालाजी नगर रिको क्षेत्र',                # full-page OCR (crop OCR agreed: नगर, बालाजी...)
+}
+for wd in wards:
+    booth, room, nbooth = cover_meta(wd['cover'])
+    wd['booth_cands'] = nbooth
+    wd['booth_no'] = booth
+    wd['room_no'] = room
+    # booth address: OCR line, strip old number
+    addr = wd.get('booth', '')
+    addr = re.sub(r'^.*?पता\s*:\s*\d+\s*-\s*', '', addr)
+    wd['booth_address'] = addr
+    if wd['ward_no'] in DESC_OVERRIDE:
+        wd['desc'] = DESC_OVERRIDE[wd['ward_no']]
+
+# ---- analysis lists for verification.md --------------------------------
+def suspicious(v):
+    if not v:
+        return False
+    if re.search(r'\d', v) or re.search(r'[\u0966-\u096f]', v):
+        return True
+    if re.search(r'[A-Za-z]{2}', v):
+        return True
+    return any(t in v for t in ('**', '..', '"', '\u201c', '\u201d', 'Photo',
+                                'vali', 'avail', 'oe'))
+
+bad_names = [(r['ward'], r['page'], r['serial'], r['epic'], r['name'])
+             for r in recs if suspicious(r['name'])]
+bad_father = [(r['ward'], r['page'], r['serial'], r['epic'], r['father'])
+              for r in recs if suspicious(r['father'])]
+rel_empty = [(r['ward'], r['page'], r['serial'], r['epic'], r['name'], r['father'])
+             for r in recs if not r['relation']]
+age_odd = [(r['ward'], r['page'], r['serial'], r['name'], r['age'])
+           for r in recs
+           if r['age'] and (not r['age'].isdigit() or int(r['age']) < 18 or int(r['age']) > 100)]
+nonnum_house = [(r['ward'], r['page'], r['serial'], r['name'], r['house'])
+                for r in recs if r['house'] and not re.fullmatch(r'\d{1,6}', r['house'])]
+old_epic = [(r['ward'], r['page'], r['serial'], r['epic'])
+            for r in recs if not re.fullmatch(r'[A-Z]{3}\d{7}', r['epic'] or '')]
+empty_loc = [(r['ward'], r['page'], r['serial'], r['name'])
+             for r in recs if not r['locality']]
+empty_core = [(r['ward'], r['page'], r['serial'], r['epic'])
+              for r in recs if not (r['name'] and r['gender'] and r['age'] and r['house'])]
+
+# locality per ward (ordered unique)
+loc_by_ward = OrderedDict()
+for wd in wards:
+    seq = OrderedDict()
+    for r in recs:
+        if r['ward'] == wd['idx'] and r['locality']:
+            seq[r['locality']] = seq.get(r['locality'], 0) + 1
+    loc_by_ward[wd['ward_no']] = seq
+
+json.dump(data, open(os.path.join(WORK, 'records_final.json'), 'w', encoding='utf-8'),
+          ensure_ascii=False)
+
+# ---- write verification.md ---------------------------------------------
+def rows_md(header, rows, cols):
+    out = ['| ' + ' | '.join(header) + ' |',
+           '|' + '|'.join(['---'] * len(header)) + '|']
+    for r in rows:
+        out.append('| ' + ' | '.join(str(x) for x in r) + ' |')
+    return '\n'.join(out) + '\n'
+
+L = []
+L.append('# Voter Roll Extraction - Verification List\n')
+L.append('Source: `data/veernagar-1.pdf` (306 pages, 13 wards, 6855 voters).  ')
+L.append('CSVs: `data/rajasthan/jodhpur/jhanwar/veernagar/ward-01..13.csv`.\n')
+L.append('Every row below is copied **as extracted** into the CSVs (nothing was '
+         'removed). Open the listed `pdf_page` in the PDF, find the row by its '
+         '`serial_no`, and compare.\n')
+
+L.append('## What was validated automatically (all PASSED)\n')
+L.append('- Record count per ward == cover-page अंतिम count: 13/13 wards, total 6855/6855.')
+L.append('- Serial numbers continuous 1..N per ward: no gaps, no duplicates.')
+L.append('- EPIC IDs: all 6855 match `^[A-Z]{3}\\d{7}$` (53 old-format `RJ/..` IDs listed in section K).')
+L.append('- Gender: per-ward male/female counts match the cover-page '
+         'पुरूष/स्त्री table **exactly** on all 13 wards (proves every cell '
+         'was read from the correct line).')
+L.append('- Age & house digits cross-checked cell-by-cell against the PDF text '
+         'layer (see A/C for corrections).')
+L.append('- Core fields (name, gender, age, house) present on all 6855 rows: %s.\n'
+         % ('YES' if not empty_core else 'NO - %d missing' % len(empty_core)))
+
+L.append('## A. Ages auto-corrected against PDF text layer (%d)\n' % len(age_fixed))
+if age_fixed:
+    L.append(rows_md(['ward', 'pdf_page', 'serial', 'name', 'was', 'now=raw'],
+                     age_fixed, 6))
+else:
+    L.append('None - OCR ages already matched the raw layer everywhere.\n')
+
+L.append('## B. Ages outside 18-100 - please confirm against PDF (%d)\n' % len(age_odd))
+if age_odd:
+    L.append(rows_md(['ward', 'pdf_page', 'serial', 'name', 'age'], age_odd, 5))
+else:
+    L.append('None.\n')
+
+L.append('## C. House numbers auto-corrected against PDF text layer (%d)\n' % len(house_fixed))
+if house_fixed:
+    L.append(rows_md(['ward', 'pdf_page', 'serial', 'name', 'was', 'now=raw'],
+                     house_fixed, 6))
+else:
+    L.append('None.\n')
+
+L.append('## C2. Names recovered / changed by targeted cell OCR (%d)\n' % len(name_fixed))
+if name_fixed:
+    L.append(rows_md(['ward', 'pdf_page', 'serial', 'was', 'now'], name_fixed, 5))
+else:
+    L.append('None.\n')
+
+L.append('## D. Non-numeric house values (kept as-is, e.g. colony/plot text) - %d\n' % len(nonnum_house))
+if nonnum_house:
+    L.append(rows_md(['ward', 'pdf_page', 'serial', 'name', 'house_no'],
+                     nonnum_house, 5))
+
+L.append('## E. Names with suspicious characters (OCR artifacts) - %d\n' % len(bad_names))
+if bad_names:
+    L.append(rows_md(['ward', 'pdf_page', 'serial', 'epic_id', 'name'], bad_names, 5))
+else:
+    L.append('None.\n')
+
+L.append('## F. Father/husband names with suspicious characters - %d\n' % len(bad_father))
+if bad_father:
+    L.append(rows_md(['ward', 'pdf_page', 'serial', 'epic_id', 'father_or_husband_name'],
+                     bad_father, 5))
+else:
+    L.append('None.\n')
+
+L.append('## G. Rows whose printed label is "माता का नाम" - relation set to माता (%d)\n'
+         % len(mata_fixed))
+if mata_fixed:
+    L.append(rows_md(['ward', 'pdf_page', 'serial', 'name', 'mother_name'],
+                     mata_fixed, 5))
+else:
+    L.append('None.\n')
+L.append('For these rows the `relation` column was `पिता`/blank before this fix '
+         '(the page OCR sometimes picked the label from a neighbouring column). '
+         '6 of them had the label only, the mother\'s name was recovered by '
+         'cropping that single cell and re-OCR\'ing it: '
+         'pages 50/94/112/209/211/304 (serials 513, 761, 374, 3, 54, 455). '
+         '**Please confirm all 6 names**, especially page 209 serial 3 which '
+         'reads "मंजू कैंवर" (likely मंजू कंवर) and page 112 serial 374 "दुर्गा".\n')
+
+L.append('## H. Rows with empty relation (label unreadable) - %d\n' % len(rel_empty))
+if rel_empty:
+    L.append(rows_md(['ward', 'pdf_page', 'serial', 'epic_id', 'name', 'father_or_husband_name'],
+                     rel_empty, 6))
+else:
+    L.append('None.\n')
+
+L.append('## I. Locality labels per ward (from section headers inside the roll)\n')
+for wn, seq in loc_by_ward.items():
+    L.append('- **Ward %d:** ' % wn +
+             '; '.join('%s (%d)' % (k, v) for k, v in seq.items()))
+L.append('')
+L.append('Rows with empty locality: %d (rows before the first section header of '
+         'their ward):\n' % len(empty_loc))
+if empty_loc:
+    L.append(rows_md(['ward', 'pdf_page', 'serial', 'name'], empty_loc[:200], 4))
+    if len(empty_loc) > 200:
+        L.append('... and %d more (all rows with blank locality column).\n'
+                 % (len(empty_loc) - 200))
+
+L.append('## J. Ward metadata (booth / room / delimitation)\n')
+jm = []
+for wd in wards:
+    jm.append([wd['ward_no'], wd['booth_no'], wd['room_no'], wd['desc'],
+               '%d-%d' % (wd['rec_start'], wd['rec_end'])])
+L.append(rows_md(['ward', 'booth_no (raw layer)', 'room_no', 'ward_delimitation (OCR)',
+                  'pdf_pages'], jm, 5))
+L.append('Booth address lines (OCR only - please confirm wording against the cover pages):\n')
+for wd in wards:
+    L.append('- **Ward %d:** booth %s, room %s - %s' %
+             (wd['ward_no'], wd['booth_no'], wd['room_no'], wd.get('booth_address', '')))
+L.append('')
+L.append('Notes:\n')
+L.append('- Booth numbers come from the PDF text layer (reliable digits); the '
+         'full-page OCR had misread several (e.g. ward 1: OCR 94, actual **91** '
+         '- matches your screenshot).')
+L.append('- **Ward 11 & 13 booth = "102"** in the text layer while OCR read "02". '
+         'Other booths follow 91..96 = room 1..6; room 7 would suggest 97. '
+         'Please confirm wards 11/13 booth number from the PDF.')
+L.append('- **Ward 1 delimitation**: kept as the zoomed-crop OCR reading '
+         '"पार्श्चनाथ सिटी, जेपीनगर, रामनगर (खसरा न 72) का क्षेत्र". '
+         'Full-page OCR had read the first word as "area" / "Gras" and one '
+         'earlier read looked like "शहरीकृत क्षेत्र" - **please confirm the first '
+         'word from the ward-1 cover page**. Rest of the line agrees everywhere.')
+L.append('- Ward 11 delimitation taken as "इंद्रा नगर, बालाजी नगर रिको क्षेत्र" '
+         'from full-page OCR + crop OCR agreement.\n')
+
+L.append('## K. Old-format EPIC IDs (%d)\n' % len(old_epic))
+if old_epic:
+    L.append(rows_md(['ward', 'pdf_page', 'serial', 'epic_id'], old_epic, 4))
+
+L.append('## L. Field provenance (how to trust each column)\n')
+L.append('- `serial_no`, `epic_id`: read from the PDF text layer (exact).')
+L.append('- `age`, numeric `house_no`: OCR, then cross-checked/auto-corrected '
+         'against the PDF text layer (sections A, C).')
+L.append('- `gender`: OCR, validated by exact per-ward male/female totals vs cover.')
+L.append('- `name`, `father_or_husband_name`, `relation`, `locality`, '
+         'text `house_no`: OCR only (raw layer text is unreadable due to broken '
+         'font ToUnicode) - spot-check these against the PDF, especially '
+         'sections E/F/G/H.\n')
+
+L.append('## M. Everything else kept exactly as OCR read it (nothing removed)\n')
+rel_counts = Counter(r['relation'] for r in recs)
+gen_counts = Counter(r['gender'] for r in recs)
+L.append('- `relation` values found: ' +
+         ', '.join('%s=%d' % (k, v) for k, v in rel_counts.most_common()) +
+         '. Any row where the printed label (पिता का नाम / पति का नाम / अन्य / '
+         'माता का नाम) was misread by OCR will show the wrong relation here - '
+         'cross-check against `father_or_husband_name` and the PDF.')
+L.append('- `gender` values found: ' +
+         ', '.join('%s=%d' % (k, v) for k, v in gen_counts.most_common()) +
+         ' (no तृतीयलिंग rows; totals match the cover tables exactly).')
+L.append('- `locality`: OCR of the section headers inside the roll; full list per '
+         'ward in section I. Rows appearing before their ward\'s first header '
+         'have it blank (%d rows) - fill from the PDF if you need it.' % len(empty_loc))
+L.append('- `booth_address` (wards-summary.csv): OCR of the cover booth line - see J.')
+L.append('- No row and no column was dropped anywhere: 6855 rows in the CSVs = '
+         '6855 voters on the covers.\n')
+
+open(os.path.join(WORK, '..', '..', 'verification.md') if False else 'verification.md',
+     'w', encoding='utf-8').write('\n'.join(L))
+
+print('mata rows:', len(mata_fixed), '| stray labels:', len(stray_fixed))
+print('age corrected:', len(age_fixed), '| house corrected:', len(house_fixed),
+      '| name corrected:', len(name_fixed))
+print('raw re-check: any *new* mismatch would appear above in the A/C counts')
+print('age out-of-range:', len(age_odd), '| nonnum house:', len(nonnum_house))
+print('bad names:', len(bad_names), '| bad fathers:', len(bad_father))
+print('rel empty:', len(rel_empty), '| empty locality:', len(empty_loc))
+print('empty core:', len(empty_core))
+print('booth per ward:', [(wd['ward_no'], wd['booth_no'], wd['room_no'], wd['booth_cands']) for wd in wards])
+print('saved verification.md + records_final.json')

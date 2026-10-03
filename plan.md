@@ -1,5 +1,9 @@
 # Election Campaign Management App — Build Plan
 
+> **Voter-roll phase:** the extracted roll (`data/rajasthan/…/ward-*.csv`, 6855 voters) and
+> its screens/roles/local-edit design are planned in **`plan-voters.md`** — read that for
+> everything from V0 onward. This file stays the foundation + status log.
+
 > Expo (RN) + Firebase prototype. Blueprint: `mobile/Election_Campaign_Management_App_Blueprint.pdf`
 > Design system: `DESIGN.md` (root) · Screen mocks: `stich_ui/<screen>/{code.html,screen.png}`
 > Working dir: `mobile/` · Repo root: this folder (git + `.github` here)

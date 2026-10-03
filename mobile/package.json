@@ -13,6 +13,8 @@
     "test:rules": "jest --config jest.rules.config.js",
     "seed": "node scripts/seed.mjs",
     "seed:roll": "node scripts/seed-roll.mjs",
+    "verify:roll": "node scripts/verify-roll.mjs",
+    "create:user": "node scripts/create-user.mjs",
     "emulators": "firebase emulators:start",
     "emulators:seed": "firebase emulators:exec --only firestore \"node scripts/seed.mjs\"",
     "rules:test": "firebase emulators:exec --only firestore,storage \"npm run test:rules\"",

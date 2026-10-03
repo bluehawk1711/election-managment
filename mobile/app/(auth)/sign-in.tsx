@@ -1,9 +1,7 @@
 import { AuthScreen } from '@/components/auth/auth-screen';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Text } from '@/components/ui/text';
 import { useToast } from '@/components/ui/toast';
-import { View } from '@/components/ui/view';
 import { messageFor } from '@/lib/errors';
 import { auth } from '@/lib/firebase';
 import { router } from 'expo-router';
@@ -43,38 +41,26 @@ export default function SignInScreen() {
   const canSubmit = email.trim().length > 0 && password.length > 0;
 
   return (
-    <AuthScreen
-      title='Welcome back'
-      subtitle='Sign in to continue.'
-      footer={
-        <>
-          <Button
-            variant='ghost'
-            onPress={() => router.push('/forgot-password')}
-          >
-            Forgot your password?
-          </Button>
+    <AuthScreen title='Welcome back' subtitle='Sign in to continue.'>
+      {/* ── Not shipping yet ──────────────────────────────────────────────
+          Both footer entry points are commented out for now.
 
-          <View
-            style={{
-              flexDirection: 'row',
-              justifyContent: 'center',
-              alignItems: 'center',
-              gap: 4,
-            }}
-          >
-            <Text variant='caption'>New here?</Text>
-            <Button
-              variant='link'
-              size='sm'
-              onPress={() => router.push('/sign-up')}
-            >
-              Create an account
-            </Button>
-          </View>
-        </>
-      }
-    >
+          · "Forgot your password?" — the reset flow depends on
+            EXPO_PUBLIC_FIREBASE_LINK_URL and a claimed Universal Link /
+            App Link domain. Without one it lands the user on Firebase's
+            hosted page and they never come back to the app, which is a
+            worse dead end than no button at all. The flow is built and
+            tested; it needs the Hosting domain wired up first.
+
+          · "Create an account" — accounts are provisioned by a super admin
+            (More → Accounts) or by `pnpm run create:user`. Public self
+            sign-up would put the election roll behind an open door: every new
+            account would be role-less, and no role means no capabilities, so a
+            stranger would install the app and see nothing but the no-role
+            empty state.
+
+          Re-enable by passing them back as `footer` on the `AuthScreen` above;
+          `router` is still imported for the email-link button below. */}
       <Input
         label='Email'
         icon={Mail}

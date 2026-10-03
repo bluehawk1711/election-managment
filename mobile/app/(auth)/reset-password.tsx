@@ -92,6 +92,7 @@ export default function ResetPasswordScreen() {
   if (invalid) {
     return (
       <AuthScreen
+        logo={false}
         title='That link has expired'
         subtitle='Reset links can only be used once, and they last an hour.'
       >
@@ -104,7 +105,7 @@ export default function ResetPasswordScreen() {
 
   if (!email) {
     return (
-      <AuthScreen title='Opening your link' subtitle='One moment.'>
+      <AuthScreen logo={false} title='Opening your link' subtitle='One moment.'>
         <View style={{ alignItems: 'center', paddingVertical: 24 }}>
           <Spinner size='lg' variant='circle' />
         </View>
@@ -113,7 +114,7 @@ export default function ResetPasswordScreen() {
   }
 
   return (
-    <AuthScreen title='Choose a new password' subtitle={`For ${email}.`}>
+    <AuthScreen logo={false} title='Choose a new password' subtitle={`For ${email}.`}>
       <Input
         label='New password'
         icon={Lock}

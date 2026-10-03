@@ -262,13 +262,14 @@ describe('/users/{uid}', () => {
   });
 
   it('requires onboarded === false on create', async () => {
-    // A fresh uid — `beforeEach` already created documents for ALICE..DAKSH,
-    // and a create against an existing document is a denied update.
+    // A brand-new account: no `users` document exists for this uid yet, which
+    // is the real sign-up path. `beforeEach` only seeds ALICE..DAKSH.
     const FRESH = 'uid-fresh';
+    const fresh = testEnv.authenticatedContext(FRESH).firestore();
 
     // Otherwise a client could sign up already onboarded and skip the flow.
     await assertFails(
-      setDoc(doc(bob(), 'users', FRESH), {
+      setDoc(doc(fresh, 'users', FRESH), {
         email: 'fresh@example.com',
         displayName: null,
         photoURL: null,
@@ -278,8 +279,14 @@ describe('/users/{uid}', () => {
       })
     );
 
+    // Note this also pins down that a create does NOT trip the role-grant
+    // `update` rule above. Firestore evaluates `update` rules during a `create`,
+    // and `&&` does not short-circuit, so the role lookup runs against a
+    // document that does not exist — which is why that rule needs `exists()`
+    // and `resource != null` guards. Without them this assertion fails with an
+    // opaque `PERMISSION_DENIED: evaluation error` rather than the plain denial.
     await assertSucceeds(
-      setDoc(doc(bob(), 'users', FRESH), {
+      setDoc(doc(fresh, 'users', FRESH), {
         email: 'fresh@example.com',
         displayName: null,
         photoURL: null,
@@ -293,8 +300,11 @@ describe('/users/{uid}', () => {
   it('will not let a client grant itself a role on create', async () => {
     // `role` is not in the create allow-list, so sign-up cannot produce an
     // admin. Roles are granted afterwards, through the superAdmin update rule.
+    const SNEAKY = 'uid-selfpromoted';
+    const sneaky = testEnv.authenticatedContext(SNEAKY).firestore();
+
     await assertFails(
-      setDoc(doc(cara(), 'users', 'uid-selfpromoted'), {
+      setDoc(doc(sneaky, 'users', SNEAKY), {
         email: 'sneaky@example.com',
         displayName: null,
         photoURL: null,
@@ -553,7 +563,12 @@ describe('role assignment', () => {
         role: 'admin',
       })
     );
-    await assertSucceeds(updateDoc(doc(alice(), 'users', CARA), { displayName: 'Renamed' }));
+
+    // Renaming someone else's profile is denied too — that is the self-service
+    // rule, which is scoped to your own document. Renaming YOUR OWN is the
+    // write that has to keep working.
+    await assertFails(updateDoc(doc(alice(), 'users', CARA), { displayName: 'Renamed' }));
+    await assertSucceeds(updateDoc(doc(alice(), 'users', ALICE), { displayName: 'Ada' }));
   });
 });
 

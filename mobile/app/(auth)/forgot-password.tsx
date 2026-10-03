@@ -55,6 +55,7 @@ export default function ForgotPasswordScreen() {
   if (sent) {
     return (
       <AuthScreen
+        logo={false}
         title='Check your email'
         subtitle={`If an account exists for ${email.trim()}, a reset link is on its way.`}
       >

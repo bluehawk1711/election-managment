@@ -14,13 +14,25 @@ import { Text } from '@/components/ui/text';
 import { useToast } from '@/components/ui/toast';
 import { View } from '@/components/ui/view';
 import { useAvatarUpload } from '@/hooks/useAvatarUpload';
+import { useLanguage } from '@/hooks/useLanguage';
 import { useProfile } from '@/hooks/useProfile';
 import { messageFor } from '@/lib/errors';
 import { auth } from '@/lib/firebase';
+import { clearCache, cacheStorage } from '@/lib/roll/cache';
+import { roleLabelKey } from '@/lib/roles';
 import { useAuth } from '@/providers/auth-provider';
 import { sendEmailVerification } from 'firebase/auth';
-import { User } from 'lucide-react-native';
+import { Database, User } from 'lucide-react-native';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { Pressable, StyleSheet } from 'react-native';
+
+/** Native names — a reader who cannot read the current language still knows
+ *  their own, which is the whole point of putting the switcher in Settings. */
+const LANGUAGE_NAMES: Record<string, string> = {
+  en: 'English',
+  hi: 'हिन्दी',
+};
 
 const initialsOf = (value: string) =>
   value
@@ -38,16 +50,32 @@ const PROVIDER_LABELS: Record<string, string> = {
 };
 
 export default function SettingsScreen() {
+  const { t } = useTranslation();
   const { user, profile } = useAuth();
   const { update, saving } = useProfile();
   const { upload, uploading, progress } = useAvatarUpload();
+  const { language, languages, setLanguage } = useLanguage();
   const toast = useToast();
 
   const [displayName, setDisplayName] = useState(profile?.displayName ?? '');
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [sendingVerification, setSendingVerification] = useState(false);
+  const [clearingCache, setClearingCache] = useState(false);
 
   const providerId = user?.providerData[0]?.providerId;
+
+  /**
+   * Drops the downloaded roll. Deliberately does NOT touch the user overlay:
+   * `clearCache` only removes `roll:cache:*`, and fieldwork edits live under
+   * `roll:overlay:*`. Losing a field visit's notes to reclaim a few megabytes of
+   * voter roll would be a genuinely bad trade.
+   */
+  const clearRollCache = async () => {
+    setClearingCache(true);
+    await clearCache(cacheStorage);
+    setClearingCache(false);
+    toast.success(t('more.cacheCleared'));
+  };
 
   const changeAvatar = async (assets: MediaAsset[]) => {
     const asset = assets[0];
@@ -115,6 +143,19 @@ export default function SettingsScreen() {
               {`Signed in with ${PROVIDER_LABELS[providerId] ?? providerId}`}
             </Badge>
           )}
+
+          {/* Role and ward, shown on the identity card rather than buried in a
+              settings row: this is the one thing that explains why some screens
+              are empty and others are not, and a user who cannot see it has no
+              way to know whether to ask for access or wait. */}
+          <View style={styles.badgeRow}>
+            <Badge variant={profile?.role ? 'secondary' : 'destructive'}>
+              {t(roleLabelKey(profile?.role ?? null))}
+            </Badge>
+            {profile?.role === 'karykarta' ? (
+              <Badge variant='secondary'>{t('voters.ward', { no: profile.wardNo ?? 0 })}</Badge>
+            ) : null}
+          </View>
         </View>
 
         <MediaPicker
@@ -177,9 +218,64 @@ export default function SettingsScreen() {
 
       <Separator />
 
+      {/* Language. A segmented pair rather than a picker: there are two, and
+          Hindi is the default, so the common action (switch to English) should
+          be one tap. `useLanguage` persists through i18next to AsyncStorage, so
+          this survives a restart. */}
+      <Card style={{ gap: 12 }}>
+        <View style={{ gap: 2 }}>
+          <Text variant='subtitle'>{t('more.language')}</Text>
+          <Text variant='caption'>{t('more.languageHint')}</Text>
+        </View>
+        <View style={styles.languageRow}>
+          {languages.map((code) => {
+            const active = code === language;
+            return (
+              <Pressable
+                key={code}
+                onPress={() => setLanguage(code)}
+                style={({ pressed }) => [
+                  styles.languageChip,
+                  active && styles.languageChipActive,
+                  pressed && styles.pressed,
+                ]}
+                accessibilityRole='radio'
+                accessibilityState={{ selected: active }}
+              >
+                <Text
+                  variant='caption'
+                  style={active ? styles.languageTextActive : undefined}
+                >
+                  {LANGUAGE_NAMES[code] ?? code}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      </Card>
+
+      <Separator />
+
       <View style={{ alignItems: 'center' }}>
         <ModeToggle />
       </View>
+
+      {/* Local data. Only the downloaded roll — see `clearRollCache` above for
+          why this does not extend to the overlay. */}
+      <Card style={{ gap: 12 }}>
+        <View style={{ gap: 2 }}>
+          <Text variant='subtitle'>{t('more.localData')}</Text>
+          <Text variant='caption'>{t('more.clearCacheHint')}</Text>
+        </View>
+        <Button
+          variant='outline'
+          icon={Database}
+          loading={clearingCache}
+          onPress={clearRollCache}
+        >
+          {t('more.clearCache')}
+        </Button>
+      </Card>
 
       <Separator />
 
@@ -203,3 +299,18 @@ export default function SettingsScreen() {
     </ScrollView>
   );
 }
+
+const styles = StyleSheet.create({
+  badgeRow: { flexDirection: 'row', gap: 6, flexWrap: 'wrap', justifyContent: 'center' },
+  languageRow: { flexDirection: 'row', gap: 8 },
+  languageChip: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 999,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: '#8888',
+  },
+  languageChipActive: { backgroundColor: '#2563eb', borderColor: '#2563eb' },
+  languageTextActive: { color: '#fff', fontWeight: '600' },
+  pressed: { opacity: 0.7 },
+});

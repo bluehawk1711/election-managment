@@ -297,6 +297,17 @@ export const hi: Record<TranslationKey, string> = {
   'voters.notesPlaceholder': 'टीम को जो जानना चाहिए…',
   'voters.photoPermission': 'फ़ोटो जोड़ने के लिए फ़ोटो लाइब्रेरी अनुमति चाहिए।',
 
+  // सूची की ताज़गी / ऑफ़लाइन
+  'roll.offline': 'ऑफ़लाइन — इस डिवाइस पर सहेजी सूची दिख रही है',
+  'roll.refreshing': 'अपडेट हो रहा है…',
+  'roll.cachedAt': 'इस डिवाइस पर {{when}} सहेजा गया',
+  'roll.fresh': 'अद्यतन है',
+
+  // अभी कोई भूमिका नहीं
+  'common.noRoleTitle': 'अभी कोई भूमिका नहीं दी गई',
+  'common.noRoleBody':
+    'मतदाता सूची दिखने से पहले कोई एडमिन आपको भूमिका और वार्ड देगा। अपने अभियान समन्वयक से पूछें।',
+
   // Voter edit sheet
   'voters.editHint': 'सिंक चालू होने तक बदलाव केवल इस डिवाइस पर रहेंगे।',
   'voters.noChanges': 'सहेजने को कुछ नहीं — कोई फ़ील्ड नहीं बदला।',
@@ -335,6 +346,14 @@ export const hi: Record<TranslationKey, string> = {
   'accounts.emailInvalid': 'मान्य ईमेल पता डालें।',
   'accounts.passwordShort': 'पासवर्ड कम से कम 6 अक्षरों का हो।',
   'accounts.nameRequired': 'प्रदर्शन नाम आवश्यक है।',
+  'accounts.empty': 'अभी कोई खाता नहीं',
+  'accounts.roleRequired': 'भूमिका चुनें।',
+  'accounts.wardRequired': 'कार्यकर्ता के लिए वार्ड आवश्यक है।',
+  'accounts.updated': 'खाता अपडेट हुआ',
+  'accounts.updatedHint': '{{name}} अब {{role}} हैं।',
+  'accounts.cantEditSelf': 'आप अपनी भूमिका नहीं बदल सकते।',
+  'accounts.listDenied':
+    'खाते देखने का अधिकार केवल सुपर एडमिन को है। सुपर एडमिन से अनुमति लें।',
 
   // Roles
   'role.karykarta': 'कार्यकर्ता',
@@ -342,4 +361,24 @@ export const hi: Record<TranslationKey, string> = {
   'role.superAdmin': 'सुपर एडमिन',
   'role.developer': 'डेवलपर',
   'role.none': 'कोई भूमिका नहीं',
+
+  // और (More) हब + सेटिंग्स
+  'more.title': 'और',
+  'more.accounts': 'खाते',
+  'more.accountsHint': 'खाते बनाएँ और भूमिका दें',
+  'more.settings': 'सेटिंग्स',
+  'more.settingsHint': 'भाषा, प्रोफ़ाइल और स्थानीय डेटा',
+  'more.language': 'भाषा',
+  'more.languageHint': 'ऐप की भाषा चुनें',
+  'more.profile': 'प्रोफ़ाइल',
+  'more.localData': 'स्थानीय डेटा',
+  'more.clearCache': 'कैश सूची हटाएँ',
+  'more.clearCacheHint': 'डाउनलोड की गई मतदाता सूची। आपके बदलाव बने रहेंगे।',
+  'more.cacheCleared': 'कैश सूची हटा दी गई',
+  'more.signOut': 'साइन आउट',
+  'settings.title': 'सेटिंग्स',
+  'settings.account': 'खाता',
+  'settings.yourRole': 'आपकी भूमिका',
+  'settings.yourWard': 'आपका वार्ड',
+  'settings.allWards': 'सभी वार्ड',
 };

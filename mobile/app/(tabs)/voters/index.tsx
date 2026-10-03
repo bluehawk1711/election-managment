@@ -11,16 +11,44 @@ import { Text } from '@/components/ui/text';
 import { useColor } from '@/hooks/useColor';
 import { useRoll } from '@/hooks/useRoll';
 import { useAuth } from '@/providers/auth-provider';
-import { canReadWard } from '@/lib/roles';
+import { can, canReadWard } from '@/lib/roles';
 import { searchVoters } from '@/lib/roll/search';
 import type { VoterView } from '@/lib/roll/types';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Users } from 'lucide-react-native';
+import { ShieldAlert, Users } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FlatList, StyleSheet, View } from 'react-native';
 
 type StatusFilter = 'all' | 'voted' | 'unvoted' | 'edited';
+
+/**
+ * How many rows `FlatList` renders per screenful of overscan.
+ *
+ * React Native mounts views lazily, so a long list only ever builds a window of
+ * rows — but the default window is 21, and at ~76pt a row that is ~1,600pt of
+ * mounted views for a list that may show 800. Lowering it to 5 keeps about one
+ * screen ahead of the user and is the difference between smooth scrolling and
+ * visible jank on a mid-range Android, which is what most karykarta run.
+ *
+ * `removeClippedSubviews` unmounts off-screen views on Android (a no-op on iOS,
+ * which clips for free, so it is not worth branching for). `initialNumToRender`
+ * sizes the first paint — set to two screens so the list is full immediately
+ * rather than visibly growing. `maxToRenderPerBatch` keeps one scroll frame from
+ * building a burst of work on the JS thread.
+ *
+ * **`getItemLayout` is deliberately absent.** It is the single biggest win
+ * available here and it is unsafe on this list: `ListRow` is not a fixed height.
+ * A row with a "Voted" chip or a "Pending sync" chip is taller than one with
+ * neither, and a voter with no locality has no subtitle line at all. Handing
+ * FlatList a constant would make scroll-to-offset and tap targeting wrong by a
+ * row that grows as chips appear — worse than the measurement it skips.
+ *
+ * The real fix is to make `ListRow` a fixed height and give the trailing chips a
+ * fixed slot; that is a component change, not a screen change, so it belongs in
+ * its own commit rather than buried here.
+ */
+const WINDOW_SIZE = 5;
 
 /**
  * Voter list (plan-voters.md §6.1).
@@ -31,6 +59,17 @@ type StatusFilter = 'all' | 'voted' | 'unvoted' | 'edited';
  *
  * A karykarta only ever sees their assigned ward: the selector offers no
  * other option and `visibleWards` would drop the rows anyway.
+ *
+ * ## Reading the freshness flags
+ *
+ * `useRoll` serves the device cache first and refetches in the background, so
+ * three states are normal here and none of them is an error:
+ *
+ * - cache hit + fetch in flight → rows render, `stale` is true, `refreshing`
+ *   is true. The banner says so in one line rather than blocking on a spinner.
+ * - cache miss + fetch in flight → `loading`, skeletons.
+ * - cache hit + fetch failed → `connected` is false. The banner says "offline"
+ *   and the list stays usable. This is the case the whole cache exists for.
  */
 export default function VotersScreen() {
   const { t } = useTranslation();
@@ -134,6 +173,13 @@ export default function VotersScreen() {
   const emptyAll = !loading && !roll.error && scoped.length === 0;
   const emptyFiltered = !loading && scoped.length > 0 && filtered.length === 0;
 
+  // No role is a real state, not an error: every signed-in account starts with
+  // no capabilities (`lib/roles.ts`), and `firestore.rules` denies every read.
+  // Rendering this as "no voters found" would tell a karykarta their ward is
+  // empty, which is wrong and sends them looking for a data problem that is not
+  // there.
+  const noRole = !can(profile?.role ?? null, 'voterRead');
+
   const openWard = (wardNo: number | null) => {
     roll.setWard(wardNo);
     setQuery('');
@@ -177,6 +223,12 @@ export default function VotersScreen() {
         renderItem={renderRow}
         keyboardShouldPersistTaps='handled'
         contentContainerStyle={styles.listContent}
+        // See the constants above for why each of these is set.
+        windowSize={WINDOW_SIZE}
+        initialNumToRender={WINDOW_SIZE * 2}
+        maxToRenderPerBatch={WINDOW_SIZE}
+        updateCellsBatchingPeriod={40}
+        removeClippedSubviews
         ListHeaderComponent={
           <View style={styles.header}>
             <SearchInput
@@ -196,7 +248,26 @@ export default function VotersScreen() {
               </Text>
             ) : null}
 
-            {roll.error ? (
+            {/* Freshness. Rendered only when there is something to say: a
+                cache hit that is already up to date shows no banner at all, so
+                the common case (list loaded, fresh) has zero chrome. */}
+            {roll.connected === false && scoped.length > 0 ? (
+              <View style={[styles.banner, { borderColor: outline }]}>
+                <Text variant='caption'>{t('roll.offline')}</Text>
+              </View>
+            ) : roll.stale && roll.refreshing ? (
+              <Text variant='caption' style={{ color: outline }}>
+                {t('roll.refreshing')}
+              </Text>
+            ) : null}
+
+            {noRole ? (
+              <EmptyState
+                icon={ShieldAlert}
+                title={t('common.noRoleTitle')}
+                body={t('common.noRoleBody')}
+              />
+            ) : roll.error ? (
               <Card style={styles.gap}>
                 <Text variant='caption'>{t('voters.errorBody')}</Text>
                 <Button size='sm' variant='outline' onPress={roll.retry}>
@@ -205,30 +276,35 @@ export default function VotersScreen() {
               </Card>
             ) : null}
 
-            {loading ? (
+            {loading && !noRole ? (
               <View style={styles.gap}>
                 {[0, 1, 2, 3, 4, 5].map((row) => (
                   <Skeleton key={row} height={76} variant='rounded' />
                 ))}
               </View>
-            ) : emptyAll ? (
+            ) : emptyAll && !noRole ? (
               <EmptyState
                 icon={Users}
                 title={t('voters.title')}
                 body={t('voters.emptyBody')}
               />
-            ) : emptyFiltered ? (
+            ) : emptyFiltered && !noRole ? (
               <EmptyState
                 icon={Users}
                 title={t('voters.noMatches')}
                 body={t('voters.noMatchesBody')}
               />
-            ) : (
+            ) : null}
+
+            {/* Counted below the states, not above: a header reading "0 voters"
+                next to an empty-state message is two things saying the same
+                thing, and the message is the one worth reading. */}
+            {!loading && !noRole && !roll.error && filtered.length > 0 ? (
               <SectionHeader
                 title={t('voters.title')}
                 hint={t('voters.count', { count: filtered.length })}
               />
-            )}
+            ) : null}
           </View>
         }
       />
@@ -247,4 +323,5 @@ const styles = StyleSheet.create({
   header: { gap: 12, marginBottom: 4 },
   gap: { gap: 8 },
   trailing: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  banner: { borderWidth: StyleSheet.hairlineWidth, borderRadius: 12, padding: 10 },
 });

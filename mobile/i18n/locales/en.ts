@@ -301,6 +301,20 @@ export const en = {
   'voters.notesPlaceholder': 'Anything the team should know…',
   'voters.photoPermission': 'Photo library permission is needed to attach a photo.',
 
+  // Roll freshness / offline. `useRoll` serves the device cache first and
+  // refetches in the background, so the list is readable before the network
+  // answers — this banner is what tells the user which copy they are reading.
+  'roll.offline': 'Offline — showing the roll saved on this device',
+  'roll.refreshing': 'Updating…',
+  'roll.cachedAt': 'Saved on this device {{when}}',
+  'roll.fresh': 'Up to date',
+
+  // No role yet. Every signed-in account starts with no capabilities, so this
+  // is a real state a user lands on, not an error case.
+  'common.noRoleTitle': 'No role assigned yet',
+  'common.noRoleBody':
+    'An admin has to assign you a role and ward before the voter roll becomes visible. Ask your campaign coordinator.',
+
   // Voter edit sheet
   'voters.editHint': 'Changes stay on this device until sync is switched on.',
   'voters.noChanges': 'Nothing to save — no field changed.',
@@ -339,6 +353,14 @@ export const en = {
   'accounts.emailInvalid': 'Enter a valid email address.',
   'accounts.passwordShort': 'Password must be at least 6 characters.',
   'accounts.nameRequired': 'Display name is required.',
+  'accounts.empty': 'No accounts yet',
+  'accounts.roleRequired': 'Pick a role.',
+  'accounts.wardRequired': 'A karykarta must be assigned a ward.',
+  'accounts.updated': 'Account updated',
+  'accounts.updatedHint': '{{name}} is now {{role}}.',
+  'accounts.cantEditSelf': 'You cannot change your own role.',
+  'accounts.listDenied':
+    'Only a super admin can list accounts. Ask a super admin for access.',
 
   // Roles
   'role.karykarta': 'Karykarta',
@@ -346,6 +368,26 @@ export const en = {
   'role.superAdmin': 'Super admin',
   'role.developer': 'Developer',
   'role.none': 'No role assigned',
+
+  // More hub + settings
+  'more.title': 'More',
+  'more.accounts': 'Accounts',
+  'more.accountsHint': 'Create accounts and assign roles',
+  'more.settings': 'Settings',
+  'more.settingsHint': 'Language, profile and local data',
+  'more.language': 'Language',
+  'more.languageHint': 'Choose the language the app is shown in',
+  'more.profile': 'Profile',
+  'more.localData': 'Local data',
+  'more.clearCache': 'Clear cached roll',
+  'more.clearCacheHint': 'Downloaded voter roll. Your own edits are kept.',
+  'more.cacheCleared': 'Cached roll cleared',
+  'more.signOut': 'Sign out',
+  'settings.title': 'Settings',
+  'settings.account': 'Account',
+  'settings.yourRole': 'Your role',
+  'settings.yourWard': 'Your ward',
+  'settings.allWards': 'All wards',
 } as const;
 
 export type TranslationKey = keyof typeof en;

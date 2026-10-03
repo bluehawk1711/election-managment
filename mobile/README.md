@@ -126,6 +126,68 @@ These are not in `app.json` already because a placeholder host claims nothing,
 and because the CLI writes `expo.scheme` as a string when it scaffolds. Both are
 native entitlements, so this needs a build — it cannot work in Expo Go.
 
+## Accounts and roles
+
+A Firestore Auth account is only half an account. Capabilities come from a
+`users/{uid}` document, and **no role means no capabilities** — that is
+deliberate, in the app and in `firestore.rules` alike. A user with no profile
+document can sign in and then see nothing but the no-role empty state.
+
+That creates a bootstrap problem: `users` starts empty, so nobody can sign in to
+*be* a super admin, and the in-app **More → Accounts** flow (which is the normal
+way to add people) needs an existing super admin. Break the cycle with the
+Admin SDK, whose IAM credentials bypass the rules — which is exactly why this
+is a script and not a screen:
+
+```bash
+export GOOGLE_APPLICATION_CREDENTIALS="$PWD/service-account.json"
+
+pnpm run create:user -- --email you@example.com --role superAdmin
+```
+
+Omit `--password` and one is generated and printed **once**. Pass
+`NEW_USER_PASSWORD=...` instead of `--password` to keep it out of your shell
+history. Then sign in as that account and use **More → Accounts** for everyone
+after it.
+
+| Flag | Notes |
+|------|-------|
+| `--email` | required |
+| `--role` | `karykarta` \| `admin` \| `superAdmin` \| `developer` (default `superAdmin`) |
+| `--ward <n>` | **required for `karykarta`** — ignored for every other role |
+| `--name <text>` | `displayName`, set on both the Auth user and the profile |
+| `--password <text>` | omit to have one generated |
+| `--unverified` | leave the email unverified (default: verified, so it can sign in at once) |
+| `--adopt` | the Auth user already exists — grant it a role and leave the password alone |
+
+`--adopt` covers the other bootstrap case: you made the user in the Firebase
+console and only the profile document is missing. **Without** `--adopt` the
+script refuses to touch an existing email rather than resetting its password,
+because a script that can silently reset a password can lock a real account
+owner out of their own project. Reset it deliberately in the console instead
+(Authentication → Users → Reset password).
+
+Check what an account actually ended up with — Auth record, profile document,
+and whether the password really signs in:
+
+```bash
+pnpm exec node scripts/check-account.mjs you@example.com 'the-password'
+```
+
+The roll itself is seeded separately, and verified the same way:
+
+```bash
+pnpm run seed:roll -- --dry-run   # parse + validate, writes nothing
+pnpm run seed:roll                # refuses if `voters` already has data
+pnpm run verify:roll              # read-only; per ward and per gender
+```
+
+Note that the Firebase CLI cannot do any of this. `firebase login` holds a
+**user** OAuth token, and Firestore evaluates `firestore.rules` against any
+request carrying an end-user identity — the rules make `voters` and `wards`
+read-only from clients, so a CLI- or REST-based import is denied. Only IAM
+(service account) credentials bypass the rules.
+
 ## Security rules
 
 `firestore.rules` is the boundary. The route guards in `app/_layout.tsx` are a

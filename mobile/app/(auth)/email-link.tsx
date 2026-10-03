@@ -73,6 +73,7 @@ export default function EmailLinkScreen() {
   if (sent) {
     return (
       <AuthScreen
+        logo={false}
         title='Check your email'
         subtitle={`We sent a sign-in link to ${email.trim()}.`}
       >

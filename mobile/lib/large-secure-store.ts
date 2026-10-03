@@ -43,6 +43,33 @@ import aesjs from 'aes-js';
  * jailbroken device, that is not nothing.
  */
 export class LargeSecureStore {
+  /**
+   * Maps an arbitrary storage key onto a SecureStore-legal one.
+   *
+   * This indirection is not optional. SecureStore accepts only
+   * `[A-Za-z0-9._-]` in a key, and the one caller here — Firebase Auth's
+   * `getReactNativePersistence` — uses keys like
+   * `firebase:authUser:AIza…:[DEFAULT]`, which contain `:` and `[`. Passing
+   * that straight through makes every read and write throw
+   * `Invalid key provided to SecureStore`, which Auth surfaces as
+   * `auth/internal-error: Failed to initialize current user` — the session
+   * silently never restores and every launch looks like a sign-out.
+   *
+   * Hashed rather than sanitised: replacing the illegal characters would map
+   * distinct keys onto the same entry (`a:b` and `a-b` collide), and one
+   * record decrypting with another record's key is exactly the failure this
+   * class exists to prevent.
+   */
+  private async _secureKey(key: string): Promise<string> {
+    const digest = await Crypto.digestStringAsync(
+      Crypto.CryptoDigestAlgorithm.SHA256,
+      key
+    );
+    // Prefix carries the derivation version, so changing this scheme later
+    // orphans old entries instead of failing to read them.
+    return `ls1.${digest}`;
+  }
+
   private async _encrypt(key: string, value: string) {
     const encryptionKey = Crypto.getRandomValues(new Uint8Array(32));
 
@@ -53,7 +80,7 @@ export class LargeSecureStore {
     const encryptedBytes = cipher.encrypt(aesjs.utils.utf8.toBytes(value));
 
     await SecureStore.setItemAsync(
-      key,
+      await this._secureKey(key),
       aesjs.utils.hex.fromBytes(encryptionKey)
     );
 
@@ -61,7 +88,9 @@ export class LargeSecureStore {
   }
 
   private async _decrypt(key: string, value: string) {
-    const encryptionKeyHex = await SecureStore.getItemAsync(key);
+    const encryptionKeyHex = await SecureStore.getItemAsync(
+      await this._secureKey(key)
+    );
     if (!encryptionKeyHex) return null;
 
     const cipher = new aesjs.ModeOfOperation.ctr(
@@ -102,6 +131,6 @@ export class LargeSecureStore {
 
   async removeItem(key: string) {
     await AsyncStorage.removeItem(key);
-    await SecureStore.deleteItemAsync(key);
+    await SecureStore.deleteItemAsync(await this._secureKey(key));
   }
 }

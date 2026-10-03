@@ -46,6 +46,20 @@ jest.mock('expo-crypto', () => ({
     for (let i = 0; i < array.length; i++) array[i] = (i * 7 + 13) % 256;
     return array;
   },
+  CryptoDigestAlgorithm: { SHA256: 'SHA-256' },
+  // Stands in for a real digest. Only two properties matter to the class under
+  // test: the output is deterministic for a given input, and different inputs
+  // give different outputs. This is a simple rolling FNV-1a, salted per
+  // character, which satisfies both.
+  digestStringAsync: jest.fn(async (_algorithm: string, input: string) => {
+    let hash = 2166136261;
+    for (let i = 0; i < input.length; i++) {
+      hash ^= input.charCodeAt(i) + i;
+      hash = Math.imul(hash, 16777619);
+    }
+    // 64 hex chars, matching a real SHA-256 digest's shape.
+    return hash.toString(16).padStart(8, '0').repeat(8);
+  }),
 }));
 
 describe('LargeSecureStore', () => {
@@ -102,14 +116,44 @@ describe('LargeSecureStore', () => {
     expect(mockAsyncStorage.get('session')).not.toContain('super-secret-token');
     // The key, and only the key, is in SecureStore — 32 bytes as hex,
     // comfortably under the 2048-byte limit however large the value gets.
-    expect(mockSecureStore.get('session')).toHaveLength(64);
+    expect([...mockSecureStore.values()]).toHaveLength(1);
+    expect([...mockSecureStore.values()][0]).toHaveLength(64);
+  });
+
+  // The regression that shipped: Firebase Auth's own storage keys contain `:`
+  // and `[`, which SecureStore rejects outright, and Auth reports the failure
+  // only as `auth/internal-error: Failed to initialize current user`.
+  it('derives a SecureStore-legal key from an illegal one', async () => {
+    await store.setItem('firebase:authUser:AIzaSyKey:[DEFAULT]', 'token');
+
+    expect([...mockSecureStore.keys()]).toHaveLength(1);
+    const [stored] = [...mockSecureStore.keys()];
+    expect(stored).toMatch(/^[A-Za-z0-9._-]+$/);
+    expect(stored).not.toContain(':');
+    expect(stored).not.toContain('[');
+    // The AsyncStorage half keeps the original key, so nothing else in the
+    // app has to know about the derivation.
+    expect(mockAsyncStorage.has('firebase:authUser:AIzaSyKey:[DEFAULT]')).toBe(
+      true
+    );
+  });
+
+  it('gives two different keys two different SecureStore entries', async () => {
+    // A sanitising scheme would map both of these onto the same entry, and one
+    // record would then be decrypted with the other's key.
+    await store.setItem('a:b', 'first');
+    await store.setItem('a-b', 'second');
+
+    expect(mockSecureStore.size).toBe(2);
+    expect(await store.getItem('a:b')).toBe('first');
+    expect(await store.getItem('a-b')).toBe('second');
   });
 
   it('returns null for a value whose key is gone', async () => {
     await store.setItem('session', 'token');
     // Reinstalled on Android, Keychain cleared, a partial write — the
     // ciphertext outlives its key and is unrecoverable.
-    mockSecureStore.delete('session');
+    for (const key of [...mockSecureStore.keys()]) mockSecureStore.delete(key);
 
     expect(await store.getItem('session')).toBeNull();
     // And it cleans up, so the next read is not a second failure.
@@ -121,7 +165,7 @@ describe('LargeSecureStore', () => {
     await store.removeItem('session');
 
     expect(mockAsyncStorage.has('session')).toBe(false);
-    expect(mockSecureStore.has('session')).toBe(false);
+    expect(mockSecureStore.size).toBe(0);
     expect(await store.getItem('session')).toBeNull();
   });
 });

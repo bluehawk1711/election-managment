@@ -224,10 +224,18 @@ export const Input = forwardRef<TextInput, InputProps>(
                 gap: 8,
               }}
             >
-              {/* Left section - Icon + Label (fixed width to simulate grid column) */}
+              {/* Left section - Icon + Label.
+                  Sized to its content rather than a fixed 120pt column: the
+                  old fixed width silently ellipsised anything longer than the
+                  column, so a field could render as a bare icon with a
+                  truncated or invisible label. `flexShrink: 0` keeps the icon
+                  and the whole label intact, and `flex: 1` on the input below
+                  plus `minWidth: 0` lets the field give the space back when
+                  the row runs out of it — the standard fix for a flex child
+                  that refuses to shrink below its content. */}
               <View
                 style={{
-                  width: label ? 120 : 'auto',
+                  flexShrink: 0,
                   flexDirection: 'row',
                   alignItems: 'center',
                   gap: 8,
@@ -240,8 +248,6 @@ export const Input = forwardRef<TextInput, InputProps>(
                 {label && (
                   <Text
                     variant='caption'
-                    numberOfLines={1}
-                    ellipsizeMode='tail'
                     style={[
                       {
                         color: error ? danger : muted,
@@ -256,7 +262,7 @@ export const Input = forwardRef<TextInput, InputProps>(
               </View>
 
               {/* TextInput section - takes remaining space */}
-              <View style={{ flex: 1 }}>
+              <View style={{ flex: 1, minWidth: 0 }}>
                 <TextInput
                   ref={ref}
                   style={[getInputStyle(), inputStyle]}
@@ -547,10 +553,11 @@ export const GroupedInputItem = forwardRef<TextInput, GroupedInputItemProps>(
                 gap: 8,
               }}
             >
-              {/* Icon & Label */}
+              {/* Icon & Label. Natural width, not a fixed column — see the
+                  note on the same block in `Input`. */}
               <View
                 style={{
-                  width: label ? 120 : 'auto',
+                  flexShrink: 0,
                   flexDirection: 'row',
                   alignItems: 'center',
                   gap: 8,
@@ -563,8 +570,6 @@ export const GroupedInputItem = forwardRef<TextInput, GroupedInputItemProps>(
                 {label && (
                   <Text
                     variant='caption'
-                    numberOfLines={1}
-                    ellipsizeMode='tail'
                     style={[
                       {
                         color: error ? danger : muted,
@@ -579,7 +584,7 @@ export const GroupedInputItem = forwardRef<TextInput, GroupedInputItemProps>(
               </View>
 
               {/* Input */}
-              <View style={{ flex: 1 }}>
+              <View style={{ flex: 1, minWidth: 0 }}>
                 <TextInput
                   ref={ref}
                   style={[

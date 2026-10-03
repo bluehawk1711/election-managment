@@ -5,7 +5,7 @@
     "scheme": "election-campaign",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/logo.png",
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true,
@@ -15,16 +15,15 @@
       "package": "com.campaignos.app",
       "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/images/splash.png",
-        "backgroundImage": "./assets/images/splash.png",
-        "monochromeImage": "./assets/images/splash.png"
+        "backgroundColor": "#4F46E5",
+        "foregroundImage": "./assets/images/logo.png",
+        "monochromeImage": "./assets/images/logo.png"
       },
       "predictiveBackGestureEnabled": true
     },
     "web": {
       "output": "static",
-      "favicon": "./assets/images/icon.png"
+      "favicon": "./assets/images/logo.png"
     },
     "plugins": [
       "expo-asset",
@@ -40,8 +39,8 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/icon.png",
-          "imageWidth": 200,
+          "image": "./assets/images/logo.png",
+          "imageWidth": 180,
           "resizeMode": "contain",
           "backgroundColor": "#FFFFFF",
           "dark": {

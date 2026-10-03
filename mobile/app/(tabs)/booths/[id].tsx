@@ -1,4 +1,5 @@
 import { Chip } from '@/components/campaign/chip';
+import { DetailRow } from '@/components/roll/detail-row';
 import { SectionHeader } from '@/components/campaign/section-header';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -63,15 +64,6 @@ export default function BoothDetailScreen() {
   const coordinator = reference.memberName(booth.coordinatorId);
   const staffed = !!booth.coordinatorId;
 
-  const Row = ({ label, value }: { label: string; value: string }) => (
-    <View style={styles.row}>
-      <Text variant='caption' style={{ color: outline }}>
-        {label}
-      </Text>
-      <Text style={styles.rowValue}>{value || '—'}</Text>
-    </View>
-  );
-
   return (
     <View style={styles.root}>
       <View style={styles.pad}>
@@ -92,13 +84,13 @@ export default function BoothDetailScreen() {
 
         <SectionHeader title={t('common.overview')} />
         <Card style={styles.card}>
-          <Row label={t('common.address')} value={booth.address} />
-          <Row label={t('booths.coordinator')} value={coordinator} />
-          <Row
+          <DetailRow label={t('common.address')} value={booth.address} />
+          <DetailRow label={t('booths.coordinator')} value={coordinator} />
+          <DetailRow
             label={t('booths.estimatedVoters')}
             value={String(booth.estimatedVoters)}
           />
-          <Row label={t('common.ward')} value={reference.wardName(booth.wardId)} />
+          <DetailRow label={t('common.ward')} value={reference.wardName(booth.wardId)} />
         </Card>
 
         <Button
@@ -127,6 +119,4 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     gap: 12,
   },
-  row: { flexDirection: 'row', justifyContent: 'space-between', gap: 12 },
-  rowValue: { flex: 1, textAlign: 'right' },
 });

@@ -11,6 +11,7 @@
  *   document has no `role` yet has no capabilities, so a freshly created
  *   account starts inert rather than privileged.
  */
+import type { TranslationKey } from '@/i18n/locales/en';
 
 export const APP_ROLES = ['karykarta', 'admin', 'superAdmin', 'developer'] as const;
 export type AppRole = (typeof APP_ROLES)[number];
@@ -85,11 +86,22 @@ export function canReadWard(role: unknown, scope: Scope, wardNo: number): boolea
   return visible.includes(wardNo);
 }
 
-/** The i18n key for a role label (`role.karykarta`, …). */
-export function roleLabelKey(role: unknown): string {
-  return typeof role === 'string' && (APP_ROLES as readonly string[]).includes(role)
+/**
+ * The i18n key for a role label.
+ *
+ * Typed as the key union rather than `string` so a screen cannot call
+ * `t(roleLabelKey(role))` and get away with it — `useTranslation`'s `t` only
+ * accepts known keys, which turns a renamed or deleted role into a compile
+ * error instead of a key that renders as the literal text `role.karykarta`.
+ *
+ * The cast is unavoidable and safe: the template builds `role.${role}` only
+ * after checking membership in `APP_ROLES`, and all four plus `role.none` exist
+ * in both locales. `__tests__/i18n-parity.test.ts` keeps the two locales equal.
+ */
+export function roleLabelKey(role: unknown): TranslationKey {
+  return (typeof role === 'string' && (APP_ROLES as readonly string[]).includes(role)
     ? `role.${role}`
-    : 'role.none';
+    : 'role.none') as TranslationKey;
 }
 
 /** Parses an untrusted value (a Firestore field) into a role, or `null`. */

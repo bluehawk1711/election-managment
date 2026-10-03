@@ -207,6 +207,39 @@ service cloud.firestore {
                     && request.resource.data.keys().hasOnly(
                          ['email', 'displayName', 'photoURL', 'onboarded', 'createdAt', 'updatedAt']);
 
+      // A super admin creating someone ELSE's account (More → Accounts → New).
+      //
+      // `userId != request.auth.uid` again: signing up must never be a route to
+      // a role, so the self-create path above stays role-free and this one only
+      // ever writes somebody else's document.
+      //
+      // `onboarded == true` because this is the one path that SKIPS onboarding
+      // — the admin is setting the account up, not the account owner, and the
+      // owner never sees the onboarding flow at all. Combined with a mandatory
+      // `role` (checked below, and the field is required by the exact key set),
+      // that means every account made here is usable immediately: there is no
+      // "created but not yet configured" state to get stuck in.
+      allow create: if canManageAccounts()
+                    && userId != request.auth.uid
+                    && request.resource.data.onboarded == true
+                    && request.resource.data.keys().hasOnly(
+                         ['email', 'displayName', 'photoURL', 'onboarded',
+                          'role', 'wardNo', 'createdAt', 'updatedAt'])
+                    && text(request.resource.data.email, 3, 320)
+                    && request.resource.data.role in
+                         ['karykarta', 'admin', 'superAdmin', 'developer']
+                    // A karykarta must be ward-scoped and nothing else may be:
+                    // an admin with a `wardNo` looks restricted in the UI
+                    // (`visibleWards` ignores it for every role but karykarta)
+                    // while the rules disagree, and the two disagreeing is how
+                    // "why can this user see ward 9" tickets get filed.
+                    && ((request.resource.data.role == 'karykarta'
+                         && request.resource.data.wardNo is int
+                         && request.resource.data.wardNo > 0)
+                        || (request.resource.data.role != 'karykarta'
+                            && !request.resource.data.keys().hasAny(['wardNo'])))
+                    && noPoliticalFields(request.resource.data);
+
       // Self-service update: the profile fields and nothing else. `email` is
       // absent on purpose — it mirrors the Firebase Auth record.
       allow update: if isOwner(userId)
@@ -219,34 +252,70 @@ service cloud.firestore {
       // the same rule, and the only thing between them is remembering which
       // fields you sent.
       //
-      // Every parenthesised comparison below is load-bearing. `x in [...]` binds
-      // looser than `==` in the rules language, so `hasAny([...]) == x in [...]`
-      // without parens parses as `(hasAny([...]) == x) in [...]` — a list
-      // `in` a boolean, which is a runtime error, not a denial. That failure
-      // surfaces as an opaque `PERMISSION_DENIED: evaluation error`, which is
-      // exactly the kind of thing you spend an afternoon on.
+      // `resource != null` is load-bearing: `resource` is null on a create, the
+      // emulator evaluates this clause during a create too, and an unguarded
+      // `resource.data` read there is an evaluation error rather than a clean
+      // `false`.
+      //
+      // The two validation blocks below are written defensively, and both
+      // defensivenesses are load-bearing. Three separate ways to write this
+      // rule "correctly" produce a runtime error instead of a denial, each
+      // surfacing as an opaque `PERMISSION_DENIED: evaluation error` on writes
+      // that are otherwise perfectly valid:
+      //
+      //   - `hasAny(['role']) == (role in [...])` — `==` binds looser than `in`
+      //     here, so it parses as `(bool == role) in [...]`, a list `in` a bool.
+      //   - `request.resource.data.role == resource.data.role` — when the field
+      //     is absent, `resource.data.role` is *undefined*, and comparing
+      //     anything to undefined is an error. That fires on every profile
+      //     written before the `role` field existed, which is every real one.
+      //   - `request.resource.data.wardNo is int` alone — fine, but it lets a
+      //     client set `wardNo` to 0 or a negative number.
+      //
+      // So each block validates the RESULTING document, not the delta:
+      // "after this write, is the field either absent or a legal value?"
+      //
+      // Validating the delta instead — "was it touched, and if so is the new
+      // value legal?" — looks equivalent and is not. Guarding it with
+      // `!resource.data.keys().hasAll([...])` (skip the check when the field was
+      // not there before) lets the very first role assignment through
+      // unvalidated, because a profile written before the `role` field existed
+      // has none. Every real profile is in that state. Checking the result
+      // instead has no such hole and reads shorter.
+      //
+      // The rule this all comes down to, and the one worth remembering:
+      // **Firestore rules `&&` and `||` do not short-circuit.** Both operands
+      // are always evaluated, so a guard on one side of `||` does not protect
+      // the other side from a type error. Every read of a possibly-absent
+      // field below goes through `.get(field, default)`.
       allow update: if canManageAccounts()
-                    // `resource` is null on a create. The emulator evaluates
-                    // this clause during a create too (to report why the write
-                    // was refused), and an unguarded `resource.data` read there
-                    // is an evaluation error rather than a clean `false`.
                     && resource != null
                     && userId != request.auth.uid
                     && request.resource.data.diff(resource.data).affectedKeys()
                          .hasOnly(['role', 'wardNo'])
-                    // Two ways to read the same thing: "role was touched and now
-                    // holds a valid role" or "role was not touched at all". The
-                    // equality is what enforces that a role can never be set to
-                    // something outside the vocabulary — a client clearing
-                    // `role` to null is a touch, and null is not in the list.
-                    && (request.resource.data.diff(resource.data).affectedKeys().hasAny(['role'])
-                        == (request.resource.data.role in
-                              ['karykarta', 'admin', 'superAdmin', 'developer']))
-                    // Same shape for the ward: touched means "positive int now",
-                    // untouched means the check does not apply.
-                    && (request.resource.data.diff(resource.data).affectedKeys().hasAny(['wardNo'])
-                        == (request.resource.data.wardNo is int
-                            && request.resource.data.wardNo > 0));
+                    // After this write, `wardNo` is either absent, null (an
+                    // unrestricted role — `visibleWards` reads null as "no
+                    // restriction", not "broken profile"), or a positive ward.
+                    // `0` and negatives are rejected.
+                    //
+                    // `data.get(field, default)` rather than `data.field` is
+                    // required here, not stylistic. Reading an absent field
+                    // yields `undefined`, and ANY use of an undefined value is
+                    // a rules error — including the `||` and `&&` branches
+                    // guarded by a `keys().hasAll()` check on the line above,
+                    // because **rules `&&` and `||` do not short-circuit**. Both
+                    // sides of every operator are evaluated. `get` supplies the
+                    // default so the comparison always has a real value to work
+                    // with, and a role that was never set validates as null,
+                    // which fails the `in` check exactly as it should.
+                    && (request.resource.data.get('wardNo', null) == null
+                        || (request.resource.data.get('wardNo', null) is int
+                            && request.resource.data.get('wardNo', null) > 0))
+                    // After this write, `role` is either absent or one of the
+                    // four. It can never be nulled out or set to something
+                    // invented, whatever the previous value was.
+                    && request.resource.data.get('role', null) in
+                         ['karykarta', 'admin', 'superAdmin', 'developer'];
 
       // Deleting an account is an admin action. Self-deletion stays available
       // because the Auth record outlives the document otherwise, and the
