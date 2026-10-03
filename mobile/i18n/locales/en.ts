@@ -220,6 +220,26 @@ export const en = {
   'tasks.descriptionPlaceholder': 'What needs to be done?',
   'tasks.assigneePlaceholder': 'Unassigned',
   'tasks.createHint': 'Status starts as Pending — move it from the task screen.',
+
+  // Booths module
+  'booths.count': '{{count}} booths',
+  'booths.ready': 'Ready',
+  'booths.unassigned': 'Unassigned',
+  'booths.noCoordinator': 'No coordinator assigned',
+  'booths.coordinator': 'Coordinator',
+  'booths.assignHint': 'Pick someone from the team roster — changes save instantly.',
+  'booths.assignedToast': 'Coordinator assigned',
+  'booths.clearedToast': 'Coordinator removed',
+  'booths.workers': '{{count}} workers',
+  'booths.estimatedVoters': 'Est. voters',
+  'booths.voters': 'Voters',
+  'booths.issues': 'Issues',
+  'booths.votersEmpty': 'No voters synced for this booth yet.',
+  'booths.tasksEmpty': 'No tasks assigned to this booth yet.',
+  'booths.issuesEmpty': 'No issues reported for this booth yet.',
+  'booths.emptyBody': 'Booths appear here once the campaign geography is seeded.',
+  'booths.noMatches': 'No matching booths',
+  'booths.noMatchesBody': 'Try a different search or clear the filters.',
 } as const;
 
 export type TranslationKey = keyof typeof en;
