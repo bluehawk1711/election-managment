@@ -6,18 +6,39 @@ rules_version = '2';
 // client code — are what stands between a user and the data. The route guards
 // in app/_layout.tsx are a convenience; this file is the boundary.
 //
-// Model: ONE shared campaign. Every signed-in user (single role for this
-// prototype) reads and writes the same campaign documents — booths, voters,
-// tasks, issues, events, expenses, compliance. `users/{uid}` stays strictly
-// owner-scoped, and anything not named below is denied outright.
+// Model: ONE shared campaign, plus a **read-only imported roll**.
 //
-// Two design rules worth stating out loud:
+// Three access tiers, defined in plan-voters.md §5 and mirrored by
+// `lib/roles.ts` on the client:
 //
-// 1. **No political profiling, ever.** The voter document schema is closed
-//    (exact key set) and `noPoliticalFields` rejects `party`, `preference`,
-//    `votedFor` and friends even if someone edits this file's clients. The
-//    blueprint's product boundary is enforced here, not in the UI.
-// 2. **Exact key sets.** `hasOnly + hasAll` means an unknown field is a
+//   karykarta    reads the roll of their assigned ward only
+//   admin        reads every ward, manages campaign content
+//   superAdmin   everything admin can, plus assigns roles and wards
+//   developer    everything superAdmin can (this prototype's escape hatch)
+//
+// A user with **no role** has no capabilities at all. That is deliberate: a
+// freshly created account is inert rather than privileged, and a super admin
+// has to grant access explicitly. `lib/roles.ts` says the same thing and the
+// rules tests assert it.
+//
+// Three design rules worth stating out loud:
+//
+// 1. **The base roll is read-only from the client.** `voters` and the roll
+//    `wards` are imported data — byte-identical to the CSVs `EXTRACTION.md`
+//    documents, seeded by `scripts/seed-roll.mjs` with the Admin SDK. No
+//    client, patched or otherwise, can create, update or delete a roll row.
+//    Everything a user adds (photo, location, corrections, voted, leaning)
+//    lives in the **overlay**, which today is local-only AsyncStorage
+//    (`lib/roll/overlay.ts`) and syncs later.
+//
+// 2. **No political profiling, ever.** `noPoliticalFields` rejects `party`,
+//    `preference`, `votedFor` and friends on every collection a client may
+//    write. The blueprint's product boundary is enforced here, not in the UI.
+//    On the roll this is belt-and-braces — clients cannot write there at all —
+//    but it also guards the collections that do accept writes, so a future
+//    change that opens the roll up cannot silently open profiling with it.
+//
+// 3. **Exact key sets.** `hasOnly + hasAll` means an unknown field is a
 //    rejected write rather than silently stored data nobody validates — and
 //    it keeps `orderBy` fields present on every document (Firestore drops
 //    documents missing an ordered field, so a typo would make rows vanish).
@@ -33,12 +54,89 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // ----- identity -------------------------------------------------------
+
     function signedIn() {
       return request.auth != null;
     }
 
     function isOwner(uid) {
       return signedIn() && request.auth.uid == uid;
+    }
+
+    /**
+     * The caller's `users/{uid}` document, or `null` when there is none.
+     *
+     * The `exists()` guard in every caller is load-bearing, for two reasons
+     * that both surface as an opaque `PERMISSION_DENIED: evaluation error`
+     * rather than a readable denial:
+     *
+     * 1. `get()` on a missing document is an *error*, not `false`. A signed-in
+     *    user with no profile yet — everyone between sign-up and their first
+     *    snapshot — would otherwise get an unreadable failure instead of "you
+     *    have no role".
+     * 2. **Firestore evaluates `update` rules during a `create`.** `&&` does
+     *    not short-circuit there, so a role check on the `update` path runs even
+     *    when the write is a profile creation, and errors if the caller's
+     *    document does not exist yet. `rules-tests/` pins this down: a plain
+     *    sign-up `create` and the role-grant `update` rule live on the same
+     *    path and must both succeed.
+     *
+     * Verified empirically against the emulator, not assumed — the reasoning
+     * above is wrong in at least one place otherwise.
+     *
+     * Every helper needs a capability goes through here. Rules have no caching
+     * for `get()` — a `list` re-evaluates the rule for each returned document,
+     * so reading a ward of 800 voters performs 800 profile reads. That is the
+     * price of storing roles in a document instead of custom claims (a claim
+     * cannot be revoked without a token refresh, which is why it is the wrong
+     * tool for a role an admin can take away). The practical fix is what the
+     * per-ward `where` queries in `firestore-source.ts` already do: never ask
+     * for more than one ward.
+     */
+    function callerProfile() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+
+    /**
+     * `true` when the caller may read voter data at all.
+     *
+     * `exists()` rather than a field read, so a missing document or an
+     * unparseable one denies by default instead of erroring the whole query.
+     */
+    function canReadVoters() {
+      return signedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+             && callerProfile().data.role in
+                  ['karykarta', 'admin', 'superAdmin', 'developer'];
+    }
+
+    /** Roles that see the whole roll, not one ward. */
+    function canSeeAllWards() {
+      return signedIn()
+             && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+             && callerProfile().data.role in ['admin', 'superAdmin', 'developer'];
+    }
+
+    /**
+     * `true` when the caller may read this specific roll row.
+     *
+     * Written against `resource.data`, so Firestore evaluates it per returned
+     * document rather than against the query. That has a consequence worth
+     * being explicit about, because it is the opposite of the intuitive
+     * reading:
+     *
+     * A karykarta asking for the WHOLE collection does not get an empty result,
+     * it gets a permission error — the rule rejects every row outside their
+     * ward, and one rejected row fails the whole query. That is the safe
+     * direction to fail in, and it is why `lib/roll/firestore-source.ts` always
+     * pairs `wardNo == null` with a role that `visibleWards` says is
+     * unrestricted.
+     */
+    function canReadVoter(data) {
+      return canReadVoters()
+             && (canSeeAllWards()
+                 || (callerProfile().data.role == 'karykarta'
+                     && callerProfile().data.wardNo == data.wardNo));
     }
 
     // ----- schema helpers -------------------------------------------------
@@ -59,37 +157,101 @@ service cloud.firestore {
       return value is int || value is float;
     }
 
+    /**
+     * The product boundary, server-side.
+     *
+     * A denylist rather than an allowlist because the collections a client may
+     * write differ from each other and already have exact key sets on their own
+     * rules — this is the one check that applies everywhere, including to any
+     * collection added later, which is exactly the moment an allowlist here
+     * would be forgotten to extend.
+     */
     function noPoliticalFields(data) {
       return !data.keys().hasAny(
         ['party', 'partyAffiliation', 'preference', 'votedFor', 'support', 'voteChoice']
       );
     }
 
-    // ----- profile (unchanged from the starter) ---------------------------
+    /** Campaign-content write: any role that can read voters may edit. */
+    function canEditCampaign() {
+      return canReadVoters();
+    }
+
+    /** Accounts, roles and ward assignment — `accountManage` in lib/roles.ts. */
+    function canManageAccounts() {
+      return signedIn()
+             && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+             && callerProfile().data.role in ['superAdmin', 'developer'];
+    }
+
+    // ----- profile --------------------------------------------------------
 
     match /users/{userId} {
       // The document id IS the uid, which is what lets this be checked without
       // reading the document first.
       allow get: if isOwner(userId);
 
-      // No `list`. Nothing in the app queries this collection, and allowing it
-      // would let any signed-in user enumerate every account.
+      // Listing is an account-management capability, not a self-service one:
+      // it exposes every user's email and role. Only super admins and
+      // developers get it, and it is what `more/users` runs on.
+      allow list: if canManageAccounts();
 
       // `onboarded == false` on create means a client cannot sign up already
       // onboarded and skip the flow.
+      //
+      // `role` and `wardNo` are absent from this allow-list on purpose: a
+      // client must not be able to create itself as an admin. Roles are granted
+      // by an existing super admin through the `update` rule below.
       allow create: if isOwner(userId)
                     && request.resource.data.onboarded == false
                     && request.resource.data.keys().hasOnly(
                          ['email', 'displayName', 'photoURL', 'onboarded', 'createdAt', 'updatedAt']);
 
-      // `diff().affectedKeys().hasOnly()` is the Firestore way to say "these
-      // fields and no others". `email` is absent on purpose: it mirrors the
-      // Firebase Auth record.
+      // Self-service update: the profile fields and nothing else. `email` is
+      // absent on purpose — it mirrors the Firebase Auth record.
       allow update: if isOwner(userId)
+                    && resource != null
                     && request.resource.data.diff(resource.data).affectedKeys()
                          .hasOnly(['displayName', 'photoURL', 'onboarded', 'updatedAt']);
 
-      allow delete: if isOwner(userId);
+      // Granting or changing a role is a separate, explicit path — otherwise
+      // "update your display name" and "promote yourself to superAdmin" would be
+      // the same rule, and the only thing between them is remembering which
+      // fields you sent.
+      //
+      // Every parenthesised comparison below is load-bearing. `x in [...]` binds
+      // looser than `==` in the rules language, so `hasAny([...]) == x in [...]`
+      // without parens parses as `(hasAny([...]) == x) in [...]` — a list
+      // `in` a boolean, which is a runtime error, not a denial. That failure
+      // surfaces as an opaque `PERMISSION_DENIED: evaluation error`, which is
+      // exactly the kind of thing you spend an afternoon on.
+      allow update: if canManageAccounts()
+                    // `resource` is null on a create. The emulator evaluates
+                    // this clause during a create too (to report why the write
+                    // was refused), and an unguarded `resource.data` read there
+                    // is an evaluation error rather than a clean `false`.
+                    && resource != null
+                    && userId != request.auth.uid
+                    && request.resource.data.diff(resource.data).affectedKeys()
+                         .hasOnly(['role', 'wardNo'])
+                    // Two ways to read the same thing: "role was touched and now
+                    // holds a valid role" or "role was not touched at all". The
+                    // equality is what enforces that a role can never be set to
+                    // something outside the vocabulary — a client clearing
+                    // `role` to null is a touch, and null is not in the list.
+                    && (request.resource.data.diff(resource.data).affectedKeys().hasAny(['role'])
+                        == (request.resource.data.role in
+                              ['karykarta', 'admin', 'superAdmin', 'developer']))
+                    // Same shape for the ward: touched means "positive int now",
+                    // untouched means the check does not apply.
+                    && (request.resource.data.diff(resource.data).affectedKeys().hasAny(['wardNo'])
+                        == (request.resource.data.wardNo is int
+                            && request.resource.data.wardNo > 0));
+
+      // Deleting an account is an admin action. Self-deletion stays available
+      // because the Auth record outlives the document otherwise, and the
+      // `userId != request.auth.uid` guard keeps the two paths from overlapping.
+      allow delete: if canManageAccounts() && userId != request.auth.uid;
     }
 
     // ----- campaign -------------------------------------------------------
@@ -97,7 +259,8 @@ service cloud.firestore {
     match /campaigns/{campaignId} {
       allow read: if signedIn();
 
-      allow create, update: if signedIn()
+      allow create, update: if canEditCampaign()
+        && noPoliticalFields(request.resource.data)
         && exactKeys(request.resource.data,
             ['name', 'candidateName', 'constituencyName', 'electionDate',
              'tagline', 'startDate', 'updatedAt'])
@@ -115,38 +278,51 @@ service cloud.firestore {
     }
 
     // ----- geography ------------------------------------------------------
+    //
+    // Two kinds of ward document share this path:
+    //
+    //   wards/{1..13}      the imported roll, from scripts/seed-roll.mjs
+    //   wards/ward-<slug>  campaign geography, from scripts/seed.mjs
+    //
+    // Both are seeded data and both are denied to client writes below.
 
     match /constituencies/{docId} {
       allow read: if signedIn();
-      allow create, update: if signedIn()
+      allow create, update: if canEditCampaign()
+        && noPoliticalFields(request.resource.data)
         && exactKeys(request.resource.data, ['name', 'code'])
         && text(request.resource.data.name, 1, 120)
         && text(request.resource.data.code, 0, 40);
-      allow delete: if signedIn();
+      allow delete: if canEditCampaign();
     }
 
     match /wards/{docId} {
-      allow read: if signedIn();
-      allow create, update: if signedIn()
-        && exactKeys(request.resource.data, ['name', 'constituencyId'])
-        && text(request.resource.data.name, 1, 120)
-        && text(request.resource.data.constituencyId, 1, 128);
-      allow delete: if signedIn();
+      // Ward metadata is not ward-scoped. A karykarta has to see the ward
+      // selector to know which ward is theirs, and 13 rows of delimitation text
+      // is not a disclosure worth gating.
+      allow read: if canReadVoters();
+
+      // Client writes denied: every ward document is seeded data. This is what
+      // makes `wardNo` trustworthy — a client cannot add a ward, so it also
+      // cannot invent one to widen its own scope.
+      allow create, update, delete: if false;
     }
 
     match /areas/{docId} {
-      allow read: if signedIn();
-      allow create, update: if signedIn()
+      allow read: if canReadVoters();
+      allow create, update: if canEditCampaign()
+        && noPoliticalFields(request.resource.data)
         && exactKeys(request.resource.data, ['name', 'wardId', 'constituencyId'])
         && text(request.resource.data.name, 1, 120)
         && text(request.resource.data.wardId, 1, 128)
         && text(request.resource.data.constituencyId, 1, 128);
-      allow delete: if signedIn();
+      allow delete: if canEditCampaign();
     }
 
     match /booths/{docId} {
-      allow read: if signedIn();
-      allow create, update: if signedIn()
+      allow read: if canReadVoters();
+      allow create, update: if canEditCampaign()
+        && noPoliticalFields(request.resource.data)
         && exactKeys(request.resource.data,
             ['number', 'name', 'address', 'areaId', 'wardId', 'constituencyId',
              'estimatedVoters', 'coordinatorId'])
@@ -160,41 +336,35 @@ service cloud.firestore {
         && request.resource.data.estimatedVoters is int
         && request.resource.data.estimatedVoters >= 0
         && text(request.resource.data.coordinatorId, 0, 128);
-      allow delete: if signedIn();
+      allow delete: if canEditCampaign();
     }
 
     // ----- voter roll -----------------------------------------------------
+    //
+    // `voters/{w{ward}-{serial}}`, seeded by scripts/seed-roll.mjs from the
+    // CSVs `EXTRACTION.md` documents. See the note on `canReadVoter` for what a
+    // karykarta asking for the whole collection gets.
 
     match /voters/{docId} {
-      allow read: if signedIn();
+      allow read: if canReadVoter(resource.data);
 
-      allow create, update: if signedIn()
-        // The blueprint's product boundary, enforced server-side.
-        && noPoliticalFields(request.resource.data)
-        && exactKeys(request.resource.data,
-            ['rollId', 'name', 'gender', 'age', 'houseNo', 'mobile',
-             'boothId', 'areaId', 'wardId', 'constituencyId'])
-        && text(request.resource.data.rollId, 1, 32)
-        && text(request.resource.data.name, 1, 120)
-        && request.resource.data.gender in ['male', 'female', 'other']
-        && request.resource.data.age is int
-        && request.resource.data.age >= 18
-        && request.resource.data.age <= 120
-        && text(request.resource.data.houseNo, 0, 24)
-        && text(request.resource.data.mobile, 0, 15)
-        && text(request.resource.data.boothId, 1, 128)
-        && text(request.resource.data.areaId, 1, 128)
-        && text(request.resource.data.wardId, 1, 128)
-        && text(request.resource.data.constituencyId, 1, 128);
-
-      allow delete: if signedIn();
+      // Read-only, unconditionally. The imported roll is the reference copy of
+      // an official document; a typo in the app must not be able to corrupt it,
+      // and no amount of client-side care is worth that guarantee being
+      // enforced only by convention.
+      //
+      // User edits go to the overlay (`lib/roll/overlay.ts`), which is local
+      // today. When sync lands it writes to its own collection with its own
+      // rule block, and this one stays as it is.
+      allow create, update, delete: if false;
     }
 
     // ----- team -----------------------------------------------------------
 
     match /teamMembers/{docId} {
-      allow read: if signedIn();
-      allow create, update: if signedIn()
+      allow read: if canReadVoters();
+      allow create, update: if canEditCampaign()
+        && noPoliticalFields(request.resource.data)
         && exactKeys(request.resource.data,
             ['name', 'phone', 'role', 'status', 'areaId', 'boothId'])
         && text(request.resource.data.name, 1, 120)
@@ -203,15 +373,16 @@ service cloud.firestore {
         && request.resource.data.status in ['active', 'inactive']
         && text(request.resource.data.areaId, 0, 128)
         && text(request.resource.data.boothId, 0, 128);
-      allow delete: if signedIn();
+      allow delete: if canEditCampaign();
     }
 
     // ----- field tasks ----------------------------------------------------
 
     match /tasks/{docId} {
-      allow read: if signedIn();
+      allow read: if canReadVoters();
 
-      allow create: if signedIn()
+      allow create: if canEditCampaign()
+        && noPoliticalFields(request.resource.data)
         && exactKeys(request.resource.data,
             ['title', 'description', 'assigneeId', 'areaId', 'boothId',
              'dueDate', 'status', 'report', 'createdBy', 'createdAt', 'updatedAt'])
@@ -228,7 +399,8 @@ service cloud.firestore {
         && request.resource.data.createdAt == request.time
         && request.resource.data.updatedAt == request.time;
 
-      allow update: if signedIn()
+      allow update: if canEditCampaign()
+        && noPoliticalFields(request.resource.data)
         && exactKeys(request.resource.data,
             ['title', 'description', 'assigneeId', 'areaId', 'boothId',
              'dueDate', 'status', 'report', 'createdBy', 'createdAt', 'updatedAt'])
@@ -243,15 +415,16 @@ service cloud.firestore {
         && text(request.resource.data.createdBy, 0, 128)
         && request.resource.data.createdAt == resource.data.createdAt;
 
-      allow delete: if signedIn();
+      allow delete: if canEditCampaign();
     }
 
     // ----- civic issues ---------------------------------------------------
 
     match /issues/{docId} {
-      allow read: if signedIn();
+      allow read: if canReadVoters();
 
-      allow create: if signedIn()
+      allow create: if canEditCampaign()
+        && noPoliticalFields(request.resource.data)
         && exactKeys(request.resource.data,
             ['category', 'title', 'description', 'areaId', 'photoUrl', 'status',
              'reportedBy', 'reportedAt', 'updatedAt'])
@@ -266,7 +439,8 @@ service cloud.firestore {
         && request.resource.data.reportedAt == request.time
         && request.resource.data.updatedAt == request.time;
 
-      allow update: if signedIn()
+      allow update: if canEditCampaign()
+        && noPoliticalFields(request.resource.data)
         && exactKeys(request.resource.data,
             ['category', 'title', 'description', 'areaId', 'photoUrl', 'status',
              'reportedBy', 'reportedAt', 'updatedAt'])
@@ -280,16 +454,16 @@ service cloud.firestore {
         && text(request.resource.data.reportedBy, 0, 120)
         && request.resource.data.reportedAt == resource.data.reportedAt;
 
-      allow delete: if signedIn();
+      allow delete: if canEditCampaign();
     }
 
     // ----- calendar -------------------------------------------------------
 
     match /events/{docId} {
-      allow read: if signedIn();
-      allow create, update: if signedIn()
-        && exactKeys(request.resource.data,
-            ['title', 'type', 'startsAt', 'endsAt', 'location', 'description', 'createdAt'])
+      allow read: if canReadVoters();
+      allow create, update: if canEditCampaign()
+        && noPoliticalFields(request.resource.data)
+        && exactKeys(request.resource.data, ['title', 'type', 'startsAt', 'endsAt', 'location', 'description', 'createdAt'])
         && text(request.resource.data.title, 1, 200)
         && request.resource.data.type in ['meeting', 'training', 'public', 'deadline']
         && requiredMillis(request.resource.data.startsAt)
@@ -298,15 +472,16 @@ service cloud.firestore {
         && text(request.resource.data.description, 0, 2000)
         && (request.resource.data.createdAt == null
             || request.resource.data.createdAt is timestamp);
-      allow delete: if signedIn();
+      allow delete: if canEditCampaign();
     }
 
     // ----- expenses -------------------------------------------------------
 
     match /expenses/{docId} {
-      allow read: if signedIn();
+      allow read: if canReadVoters();
 
-      allow create: if signedIn()
+      allow create: if canEditCampaign()
+        && noPoliticalFields(request.resource.data)
         && exactKeys(request.resource.data,
             ['date', 'category', 'amount', 'description', 'receiptUrl', 'status',
              'createdBy', 'createdAt'])
@@ -322,7 +497,8 @@ service cloud.firestore {
         && text(request.resource.data.createdBy, 0, 128)
         && request.resource.data.createdAt == request.time;
 
-      allow update: if signedIn()
+      allow update: if canEditCampaign()
+        && noPoliticalFields(request.resource.data)
         && exactKeys(request.resource.data,
             ['date', 'category', 'amount', 'description', 'receiptUrl', 'status',
              'createdBy', 'createdAt'])
@@ -338,16 +514,16 @@ service cloud.firestore {
         && text(request.resource.data.createdBy, 0, 128)
         && request.resource.data.createdAt == resource.data.createdAt;
 
-      allow delete: if signedIn();
+      allow delete: if canEditCampaign();
     }
 
     // ----- compliance checklist ------------------------------------------
 
     match /compliance/{docId} {
-      allow read: if signedIn();
-      allow create, update: if signedIn()
-        && exactKeys(request.resource.data,
-            ['title', 'category', 'status', 'dueDate', 'notes', 'updatedAt'])
+      allow read: if canReadVoters();
+      allow create, update: if canEditCampaign()
+        && noPoliticalFields(request.resource.data)
+        && exactKeys(request.resource.data, ['title', 'category', 'status', 'dueDate', 'notes', 'updatedAt'])
         && text(request.resource.data.title, 1, 200)
         && text(request.resource.data.category, 1, 80)
         && request.resource.data.status in ['done', 'pending', 'attention']
@@ -355,7 +531,7 @@ service cloud.firestore {
         && text(request.resource.data.notes, 0, 1000)
         && (request.resource.data.updatedAt == null
             || request.resource.data.updatedAt is timestamp);
-      allow delete: if signedIn();
+      allow delete: if canEditCampaign();
     }
 
     // Deliberately no `match /{document=**}`. Anything not named above is

@@ -1,5 +1,4 @@
 import { AuthScreen } from '@/components/auth/auth-screen';
-import { OAuthButtons } from '@/components/auth/oauth-buttons';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Text } from '@/components/ui/text';
@@ -124,9 +123,6 @@ export default function SignInScreen() {
         </Button>
       )}
 
-      {/* Renders nothing — separator included — when no provider is
-          configured. */}
-      <OAuthButtons disabled={loading} />
     </AuthScreen>
   );
 }

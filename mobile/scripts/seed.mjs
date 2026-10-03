@@ -15,6 +15,8 @@
  * `EXPO_PUBLIC_FIREBASE_PROJECT_ID` variable, the same key inside
  * `.env.local`/`.env`, then `.firebaserc`.
  *
+ * Writes land in the `default` database — see `FIRESTORE_DATABASE_ID` below.
+ *
  * Admin SDK on purpose: the seed writes hundreds of documents and bypasses
  * firestore.rules (server-side validation is for clients; the data written
  * here matches the rules exactly anyway — same key sets, same vocabularies).
@@ -462,9 +464,21 @@ const COLLECTION_NAMES = [
 // Write it
 // ---------------------------------------------------------------------------
 
+/**
+ * The database id is `default`, not `(default)`.
+ *
+ * `getFirestore()` with no arguments resolves to `'(default)'`, which does not
+ * exist in this project — it was provisioned as ENTERPRISE with an explicitly
+ * named database (see `firebase.json`, `"database": "default"`). Reads there
+ * come back `5 NOT_FOUND: no such database`. `FIRESTORE_DATABASE_ID` in
+ * `lib/firebase.ts` is the client-side twin of this constant; keep the two in
+ * step.
+ */
+const FIRESTORE_DATABASE_ID = 'default';
+
 async function main() {
   initializeApp({ credential: applicationDefault(), projectId });
-  const db = getFirestore();
+  const db = getFirestore(FIRESTORE_DATABASE_ID);
 
   // 1. Refuse to touch non-empty data without --force.
   const nonEmpty = [];

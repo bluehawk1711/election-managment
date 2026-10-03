@@ -144,9 +144,24 @@ describe('profileFromDoc', () => {
       displayName: 'Ada',
       photoURL: null,
       onboarded: true,
+      role: null,
+      wardNo: null,
       createdAt: 1000,
       updatedAt: null,
     });
+  });
+
+  it('reads role and ward scope, rejecting an unknown role', () => {
+    const result = profileFromDoc(
+      docSnap('uid-1', { role: 'karykarta', wardNo: 7 })
+    );
+
+    expect(result?.role).toBe('karykarta');
+    expect(result?.wardNo).toBe(7);
+
+    // An unrecognised value is not a role — the account keeps no capabilities
+    // rather than silently inheriting a default (plan-voters.md §5).
+    expect(profileFromDoc(docSnap('uid-1', { role: 'superuser' }))?.role).toBeNull();
   });
 
   it('treats a missing onboarded flag as false, never as true', () => {

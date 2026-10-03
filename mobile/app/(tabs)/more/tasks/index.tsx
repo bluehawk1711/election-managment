@@ -1,4 +1,4 @@
-import { dueLabel } from '@/app/(tabs)/tasks/due';
+import { dueLabel } from '@/app/(tabs)/more/tasks/due';
 import { FilterBar, FilterItem } from '@/components/campaign/filter-bar';
 import { ListRow } from '@/components/campaign/list-row';
 import { SearchInput } from '@/components/campaign/search-input';
@@ -96,7 +96,7 @@ export default function TasksScreen() {
         <View style={{ flex: 1 }}>
           <SearchInput value={query} onChangeText={setQuery} />
         </View>
-        <Button size='icon' onPress={() => router.push('/(tabs)/tasks/new')} accessibilityLabel={t('tasks.create')}>
+        <Button size='icon' onPress={() => router.push('/(tabs)/more/tasks/new')} accessibilityLabel={t('tasks.create')}>
           <Plus size={20} />
         </Button>
       </View>
@@ -132,7 +132,7 @@ export default function TasksScreen() {
           title={t('common.empty')}
           body={t('tasks.emptyBody')}
           actionLabel={t('tasks.create')}
-          onAction={() => router.push('/(tabs)/tasks/new')}
+          onAction={() => router.push('/(tabs)/more/tasks/new')}
         />
       ) : emptyFiltered ? (
         <EmptyState icon={ClipboardList} title={t('tasks.noMatches')} body={t('tasks.noMatchesBody')} />
@@ -151,7 +151,7 @@ export default function TasksScreen() {
                   .join(' · ')}
                 meta={due.text}
                 onPress={() =>
-                  router.push({ pathname: '/(tabs)/tasks/[id]', params: { id: task.id } })
+                  router.push({ pathname: '/(tabs)/more/tasks/[id]', params: { id: task.id } })
                 }
                 trailing={<StatusBadge status={task.status} />}
               />

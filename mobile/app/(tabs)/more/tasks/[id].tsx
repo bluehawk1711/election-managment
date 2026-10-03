@@ -1,4 +1,4 @@
-import { dueLabel } from '@/app/(tabs)/tasks/due';
+import { dueLabel } from '@/app/(tabs)/more/tasks/due';
 import { useConfirm } from '@/components/campaign/confirm-dialog';
 import { StatusBadge } from '@/components/campaign/status-badge';
 import { Button } from '@/components/ui/button';

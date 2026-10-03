@@ -19,6 +19,7 @@ import {
   Timestamp,
   updateDoc,
   where,
+  type Firestore,
 } from 'firebase/firestore';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
@@ -41,11 +42,16 @@ import path from 'node:path';
 
 const ALICE = 'uid-alice';
 const BOB = 'uid-bob';
+const CARA = 'uid-cara';
+const DAKSH = 'uid-daksh';
 
 const CONS_ID = 'cons-jodhpur';
 const WARD_ID = 'ward-ratanada';
 const AREA_ID = 'area-chowk';
 const BOOTH_ID = 'booth-118';
+
+/** The roll's ward numbering — a separate axis from the campaign's ward slugs. */
+const ROLL_WARD = 3;
 
 let testEnv: RulesTestEnvironment;
 
@@ -78,6 +84,45 @@ beforeEach(async () => {
       onboarded: true,
       createdAt: now,
       updatedAt: now,
+      role: 'superAdmin',
+      wardNo: null,
+    });
+
+    // A karykarta scoped to one ward. The ward-scoping tests below all run as
+    // this user, because "can read their ward" is only interesting when there
+    // is a ward they cannot read.
+    await setDoc(doc(db, 'users', BOB), {
+      email: 'bob@example.com',
+      displayName: 'Bob',
+      photoURL: null,
+      onboarded: true,
+      createdAt: now,
+      updatedAt: now,
+      role: 'karykarta',
+      wardNo: ROLL_WARD,
+    });
+
+    // Signed in, but no role has been assigned. This is every account between
+    // sign-up and a super admin granting access — it must have no capabilities,
+    // not default ones.
+    await setDoc(doc(db, 'users', CARA), {
+      email: 'cara@example.com',
+      displayName: 'Cara',
+      photoURL: null,
+      onboarded: true,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    await setDoc(doc(db, 'users', DAKSH), {
+      email: 'daksh@example.com',
+      displayName: 'Daksh',
+      photoURL: null,
+      onboarded: true,
+      createdAt: now,
+      updatedAt: now,
+      role: 'admin',
+      wardNo: null,
     });
 
     await setDoc(doc(db, 'campaigns', 'active'), {
@@ -104,6 +149,41 @@ beforeEach(async () => {
       coordinatorId: '',
     });
 
+    // The imported roll, in the shape `scripts/seed-roll.mjs` writes. Two rows
+    // so a ward-scoping test can assert that the other ward's row is *not*
+    // readable, not merely that the query returns nothing.
+    await setDoc(doc(db, 'voters', `w${ROLL_WARD}-1`), {
+      wardNo: ROLL_WARD,
+      serialNo: 1,
+      epicId: 'CTK4949558',
+      name: 'मुकेश कुमार',
+      relation: 'father',
+      relationLabel: 'पिता',
+      fatherOrHusbandName: 'अर्जुन शर्मा',
+      houseNo: '0',
+      age: 54,
+      gender: 'male',
+      genderLabel: 'पुरूष',
+      locality: 'बाबा रामदेव नगर',
+      pdfPage: 3,
+    });
+
+    await setDoc(doc(db, 'voters', 'w7-1'), {
+      wardNo: 7,
+      serialNo: 1,
+      epicId: 'CTK4949600',
+      name: 'हरिराम',
+      relation: 'father',
+      relationLabel: 'पिता',
+      fatherOrHusbandName: 'सीताराम',
+      houseNo: '0',
+      age: 51,
+      gender: 'male',
+      genderLabel: 'पुरूष',
+      locality: 'शंकरनगर',
+      pdfPage: 33,
+    });
+
     await setDoc(doc(db, 'tasks', 'task-1'), {
       title: 'Sweep the north lane',
       description: '',
@@ -122,7 +202,16 @@ beforeEach(async () => {
 
 const alice = () => testEnv.authenticatedContext(ALICE).firestore();
 const bob = () => testEnv.authenticatedContext(BOB).firestore();
+const cara = () => testEnv.authenticatedContext(CARA).firestore();
+const daksh = () => testEnv.authenticatedContext(DAKSH).firestore();
 const anon = () => testEnv.unauthenticatedContext().firestore();
+
+/** Queries the roll the way `lib/roll/firestore-source.ts` does. */
+const votersInWard = (db: Firestore, wardNo: number) =>
+  getDocs(query(collection(db, 'voters'), where('wardNo', '==', wardNo)));
+
+/** The roll row of `ROLL_WARD`, written in `beforeEach`. */
+const ownWardVoter = (db: Firestore) => doc(db, 'voters', `w${ROLL_WARD}-1`);
 
 const validTask = (overrides: Record<string, unknown> = {}) => ({
   title: 'Knock every door on lane 4',
@@ -163,17 +252,24 @@ describe('/users/{uid}', () => {
     await assertFails(getDoc(doc(anon(), 'users', ALICE)));
   });
 
-  it('denies listing the collection', async () => {
-    // No `list` rule at all. Allowing it would let any signed-in user
-    // enumerate every account in the project.
-    await assertFails(getDocs(collection(alice(), 'users')));
+  it('allows a superAdmin to list users, and nobody else', async () => {
+    // The list exposes every account's email and role, so it is an
+    // account-management capability — not something a karykarta gets.
+    await assertSucceeds(getDocs(collection(alice(), 'users')));
+    await assertFails(getDocs(collection(bob(), 'users')));
+    await assertFails(getDocs(collection(cara(), 'users')));
+    await assertFails(getDocs(collection(anon(), 'users')));
   });
 
   it('requires onboarded === false on create', async () => {
+    // A fresh uid — `beforeEach` already created documents for ALICE..DAKSH,
+    // and a create against an existing document is a denied update.
+    const FRESH = 'uid-fresh';
+
     // Otherwise a client could sign up already onboarded and skip the flow.
     await assertFails(
-      setDoc(doc(bob(), 'users', BOB), {
-        email: 'bob@example.com',
+      setDoc(doc(bob(), 'users', FRESH), {
+        email: 'fresh@example.com',
         displayName: null,
         photoURL: null,
         onboarded: true,
@@ -183,11 +279,27 @@ describe('/users/{uid}', () => {
     );
 
     await assertSucceeds(
-      setDoc(doc(bob(), 'users', BOB), {
-        email: 'bob@example.com',
+      setDoc(doc(bob(), 'users', FRESH), {
+        email: 'fresh@example.com',
         displayName: null,
         photoURL: null,
         onboarded: false,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      })
+    );
+  });
+
+  it('will not let a client grant itself a role on create', async () => {
+    // `role` is not in the create allow-list, so sign-up cannot produce an
+    // admin. Roles are granted afterwards, through the superAdmin update rule.
+    await assertFails(
+      setDoc(doc(cara(), 'users', 'uid-selfpromoted'), {
+        email: 'sneaky@example.com',
+        displayName: null,
+        photoURL: null,
+        onboarded: false,
+        role: 'developer',
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       })
@@ -313,26 +425,135 @@ describe('/tasks', () => {
   });
 });
 
-describe('/voters', () => {
-  it('accepts a well-formed create', async () => {
-    await assertSucceeds(addDoc(collection(alice(), 'voters'), validVoter()));
+describe('/voters — the imported roll', () => {
+  it('is read-only: no create, update or delete, for any role', async () => {
+    // The roll is the reference copy of an official document. Every role is
+    // denied, including developer — there is no client path that edits it, so
+    // this asserts the guarantee rather than trusting the UI to never call one.
+    await assertFails(addDoc(collection(alice(), 'voters'), validVoter()));
+    await assertFails(updateDoc(ownWardVoter(alice()), { name: 'Tampered' }));
+    await assertFails(deleteDoc(ownWardVoter(alice())));
+    await assertFails(addDoc(collection(bob(), 'voters'), validVoter()));
+    await assertFails(updateDoc(ownWardVoter(bob()), { name: 'Tampered' }));
   });
 
-  it('rejects any attempt at political profiling', async () => {
-    // The blueprint's product boundary, enforced at the rules layer rather
-    // than in the form UI.
-    await assertFails(addDoc(collection(alice(), 'voters'), validVoter({ party: 'BJP' })));
+  it('rejects political fields on every writable collection', async () => {
+    // The roll itself denies writes, so the product boundary is asserted on the
+    // collections clients CAN write — this is the check that would catch a
+    // future change opening profiling up.
     await assertFails(
-      addDoc(collection(alice(), 'voters'), validVoter({ preference: 'undecided' }))
+      addDoc(collection(alice(), 'tasks'), validTask({ party: 'BJP' }))
     );
     await assertFails(
       addDoc(collection(alice(), 'voters'), validVoter({ votedFor: 'candidate-x' }))
     );
   });
 
-  it('rejects an under-age roll entry and a bad gender code', async () => {
-    await assertFails(addDoc(collection(alice(), 'voters'), validVoter({ age: 17 })));
-    await assertFails(addDoc(collection(alice(), 'voters'), validVoter({ gender: 'f' })));
+  it('lets a karykarta read their assigned ward', async () => {
+    await assertSucceeds(getDoc(ownWardVoter(bob())));
+    await assertSucceeds(votersInWard(bob(), ROLL_WARD));
+  });
+
+  it('denies a karykarta every other ward', async () => {
+    // Bob is assigned ward 3. Reading ward 7 fails per-document, which fails
+    // the whole query — the safe direction to fail in.
+    await assertFails(getDoc(doc(bob(), 'voters', 'w7-1')));
+    await assertFails(votersInWard(bob(), 7));
+  });
+
+  it('denies a karykarta the unfiltered collection', async () => {
+    // The `where` clause is not optional for a scoped role. This is the query
+    // `firestore-source.ts` would build for `wardNo === null`, so the guard
+    // that stops it belongs here rather than only in the client.
+    await assertFails(getDocs(collection(bob(), 'voters')));
+  });
+
+  it('denies a user with no role', async () => {
+    // Cara is signed in and onboarded but has no role. Inert, not privileged.
+    await assertFails(getDoc(ownWardVoter(cara())));
+    await assertFails(getDocs(collection(cara(), 'voters')));
+    await assertFails(getDocs(collection(cara(), 'tasks')));
+    await assertFails(getDocs(collection(cara(), 'wards')));
+    await assertFails(addDoc(collection(cara(), 'tasks'), validTask()));
+  });
+
+  it('lets admin and superAdmin read every ward', async () => {
+    await assertSucceeds(getDoc(ownWardVoter(daksh())));
+    await assertSucceeds(getDoc(doc(daksh(), 'voters', 'w7-1')));
+    await assertSucceeds(getDocs(collection(daksh(), 'voters')));
+    await assertSucceeds(getDocs(collection(alice(), 'voters')));
+  });
+
+  it('denies the roll to a signed-out client', async () => {
+    await assertFails(getDocs(collection(anon(), 'voters')));
+    await assertFails(getDoc(doc(anon(), 'voters', `w${ROLL_WARD}-1`)));
+  });
+});
+
+describe('/wards — seeded data', () => {
+  it('is read-only from the client for every role', async () => {
+    // Ward documents being un-writable is what makes `wardNo` trustworthy: a
+    // client cannot invent a ward, so it cannot widen its own scope.
+    await assertFails(setDoc(doc(alice(), 'wards', '99'), { name: 'Invented', constituencyId: CONS_ID }));
+    await assertFails(updateDoc(doc(daksh(), 'wards', WARD_ID), { name: 'Renamed' }));
+    await assertFails(deleteDoc(doc(alice(), 'wards', WARD_ID)));
+  });
+
+  it('is readable by any role that can read voters', async () => {
+    // The ward selector has to work for a karykarta, or they cannot tell which
+    // ward is theirs.
+    await assertSucceeds(getDoc(doc(bob(), 'wards', WARD_ID)));
+    await assertSucceeds(getDocs(collection(bob(), 'wards')));
+  });
+});
+
+describe('role assignment', () => {
+  it('lets a superAdmin set a role and a ward', async () => {
+    await assertSucceeds(
+      updateDoc(doc(alice(), 'users', CARA), { role: 'karykarta', wardNo: ROLL_WARD })
+    );
+
+    // …and the grant takes effect immediately: Cara can now read that ward and
+    // nothing else. This is why roles live in a document rather than in a
+    // custom claim — a claim would not apply until the token refreshed.
+    await assertSucceeds(getDoc(ownWardVoter(cara())));
+    await assertFails(getDoc(doc(cara(), 'voters', 'w7-1')));
+  });
+
+  it('denies a karykarta the ability to promote anyone', async () => {
+    await assertFails(updateDoc(doc(bob(), 'users', CARA), { role: 'superAdmin' }));
+  });
+
+  it('denies a self-promotion through the role rule', async () => {
+    // The grant rule excludes `userId == request.auth.uid`. Without it, a super
+    // admin editing their own profile could hand themselves a role they do not
+    // already hold — and an admin could edit their own ward assignment to
+    // escape the scoping they were given.
+    await assertFails(updateDoc(doc(alice(), 'users', ALICE), { role: 'developer' }));
+    await assertFails(updateDoc(doc(daksh(), 'users', DAKSH), { wardNo: 1 }));
+  });
+
+  it('rejects a role outside the vocabulary', async () => {
+    await assertFails(updateDoc(doc(alice(), 'users', CARA), { role: 'root' }));
+  });
+
+  it('rejects a ward that is not a positive integer', async () => {
+    await assertFails(updateDoc(doc(alice(), 'users', CARA), { wardNo: '3' }));
+    await assertFails(updateDoc(doc(alice(), 'users', CARA), { wardNo: 0 }));
+    await assertFails(updateDoc(doc(alice(), 'users', CARA), { wardNo: -3 }));
+  });
+
+  it('will not let a role change ride along with a displayName change', async () => {
+    // The two update rules are separate on purpose. If they were merged, "update
+    // your name" and "promote yourself" would be one rule and the only thing
+    // between them would be remembering which fields you sent.
+    await assertFails(
+      updateDoc(doc(alice(), 'users', CARA), {
+        displayName: 'Also promoted',
+        role: 'admin',
+      })
+    );
+    await assertSucceeds(updateDoc(doc(alice(), 'users', CARA), { displayName: 'Renamed' }));
   });
 });
 

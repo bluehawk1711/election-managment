@@ -1,5 +1,4 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { getLocales } from 'expo-localization';
 import i18next from 'i18next';
 import { initReactI18next } from 'react-i18next';
 
@@ -25,13 +24,13 @@ export function isLanguage(value: unknown): value is Language {
   );
 }
 
-function detectDeviceLanguage(): Language {
-  const code = getLocales()[0]?.languageCode?.toLowerCase();
-  return code?.startsWith('hi') ? 'hi' : 'en';
-}
-
-/** Initial language: device locale, overridden by the stored choice below. */
-const initialLanguage = detectDeviceLanguage();
+/**
+ * Hindi first. The stored choice (below) always wins; this is only what a
+ * fresh install gets — the roll, the reports and every fieldworker-facing
+ * string are written Hindi-first, so a device in English still opens the app
+ * in Hindi until the user picks otherwise in Settings.
+ */
+const initialLanguage: Language = 'hi';
 
 i18next.use(initReactI18next);
 i18next.init({
@@ -40,7 +39,7 @@ i18next.init({
     hi: { translation: hi },
   },
   lng: initialLanguage,
-  fallbackLng: 'en',
+  fallbackLng: 'hi',
   interpolation: { escapeValue: false },
   returnNull: false,
 });

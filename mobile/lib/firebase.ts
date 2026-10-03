@@ -44,6 +44,31 @@ import { LargeSecureStore } from '@/lib/large-secure-store';
  * same `Auth` instance. Nothing to wire up.
  */
 
+/**
+ * The database id is `default`, NOT `(default)`.
+ *
+ * `getFirestore(app)` with no second argument resolves to the literal string
+ * `'(default)'`, which is right for the Firebase console's own projects and
+ * wrong for this one. This project was provisioned as ENTERPRISE with an
+ * explicitly named database — `firebase.json` records it as
+ * `{"database": "default", "edition": "ENTERPRISE"}` — and every read against
+ * `(default)` comes back `5 NOT_FOUND: no such database` while the console
+ * shows empty collections.
+ *
+ * Passing the id explicitly is the only thing that works here:
+ *
+ *     admin.getFirestore(app, 'default')          → 200
+ *     admin.getFirestore(app, '(default)')        → 404 NOT_FOUND
+ *     GET /v1/projects/P/databases/default/documents/voters          → 200
+ *     GET /v1/projects/P/databases/(default)/documents/voters        → 404
+ *
+ * Kept as a named constant rather than an inline literal because the same id
+ * appears in `scripts/seed.mjs`, `scripts/seed-roll.mjs` and the REST calls in
+ * `verification.md`, and the parentheses are exactly the detail that is easy to
+ * "fix" in the wrong direction later.
+ */
+export const FIRESTORE_DATABASE_ID = 'default';
+
 const firebaseConfig: FirebaseOptions = {
   apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
   authDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN,
@@ -138,7 +163,7 @@ function createAuth(instance: FirebaseApp): Auth {
 export const auth = existing ? getAuth(app) : createAuth(app);
 
 export const db = existing
-  ? getFirestore(app)
+  ? getFirestore(app, FIRESTORE_DATABASE_ID)
   : initializeFirestore(app, {
       // The default since v9.22.0, written out so the knob is discoverable. If
       // you see "Could not reach Cloud Firestore backend" behind a corporate
@@ -149,8 +174,9 @@ export const db = existing
       // Deliberately not set: `localCache: persistentLocalCache()` is backed by
       // IndexedDB, which React Native does not have. The offline cache here is
       // per-session memory only. That is the main thing you give up by using
-      // the JS SDK rather than @react-native-firebase.
-    });
+      // the JS SDK rather than @react-native-firebase. The durable offline
+      // copy of the roll lives in AsyncStorage instead — see lib/roll/cache.ts.
+    }, FIRESTORE_DATABASE_ID);
 
 // Idempotent per bucket, so unlike the two above it needs no guard.
 export const storage = getStorage(app);

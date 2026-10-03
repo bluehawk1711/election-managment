@@ -206,9 +206,9 @@ export default function HomeScreen() {
           meta: `${overdueBy} · ${reference.areaContext(task?.areaId ?? '')}`,
           actionLabel: t('dash.nudge'),
           onPress: () =>
-            router.push({ pathname: '/(tabs)/tasks/[id]', params: { id: item.refId } }),
+            router.push({ pathname: '/(tabs)/more/tasks/[id]', params: { id: item.refId } }),
           onAction: () =>
-            router.push({ pathname: '/(tabs)/tasks/[id]', params: { id: item.refId } }),
+            router.push({ pathname: '/(tabs)/more/tasks/[id]', params: { id: item.refId } }),
         };
       }
       const issue = issues.find((candidate) => candidate.id === item.refId);
@@ -343,9 +343,9 @@ export default function HomeScreen() {
             />
 
             <QuickActionsRow
-              onNewTask={() => router.push('/(tabs)/tasks/new')}
+              onNewTask={() => router.push('/(tabs)/more/tasks/new')}
               onReportIssue={() => router.push('/(tabs)/more')}
-              onAddEvent={() => router.push('/(tabs)/calendar')}
+              onAddEvent={() => router.push('/(tabs)/more/calendar')}
               onBoothIn={() => router.push('/(tabs)/booths')}
             />
 
@@ -421,7 +421,7 @@ export default function HomeScreen() {
                 title={t('dash.attention')}
                 countLabel={t('dash.attentionCount', { count: attentionRows.length })}
                 actionLabel={t('common.viewAll')}
-                onAction={() => router.push('/(tabs)/tasks')}
+                onAction={() => router.push('/(tabs)/more/tasks')}
               />
             </Card>
 
@@ -433,8 +433,8 @@ export default function HomeScreen() {
                   reference.connected ? t('dash.calendarSync') : t('dash.calendarLocal')
                 }
                 locationLabel={t('common.location')}
-                onSelect={() => router.push('/(tabs)/calendar')}
-                onAll={() => router.push('/(tabs)/calendar')}
+                onSelect={() => router.push('/(tabs)/more/calendar')}
+                onAll={() => router.push('/(tabs)/more/calendar')}
                 allLabel={t('common.viewAll')}
               />
             </Card>

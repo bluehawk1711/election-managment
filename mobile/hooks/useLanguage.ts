@@ -16,7 +16,7 @@ export function useLanguage(): {
   setLanguage: (language: Language) => Promise<void>;
 } {
   const { i18n } = useTranslation();
-  const current = isLanguage(i18n.language) ? i18n.language : 'en';
+  const current = isLanguage(i18n.language) ? i18n.language : 'hi';
 
   return {
     language: current,

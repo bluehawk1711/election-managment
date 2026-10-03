@@ -9,7 +9,6 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true,
-      "usesAppleSignIn": true,
       "bundleIdentifier": "com.campaignos.app"
     },
     "android": {
@@ -32,7 +31,12 @@
       "expo-router",
       "expo-web-browser",
       "expo-secure-store",
-      "expo-apple-authentication",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Allow $(PRODUCT_NAME) to tag voters and booths with the place you are standing at."
+        }
+      ],
       [
         "expo-splash-screen",
         {

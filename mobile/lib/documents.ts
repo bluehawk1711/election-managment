@@ -12,7 +12,11 @@
  * ordered result set on every change, so folding `docChanges()` into a local
  * array by hand would redo work the SDK just did. `docChanges()` is for
  * animating a diff, not for staying correct.
+ *
+ * The one runtime import is `lib/roles.ts`, which is itself pure — no
+ * Firebase, no React — so the no-mock property of the tests here is kept.
  */
+import { toAppRole, type AppRole } from '@/lib/roles';
 import type {
   DocumentData,
   DocumentSnapshot,
@@ -41,6 +45,14 @@ export interface Profile {
   /** `photoURL`, matching the Firebase `User` field it is kept in step with. */
   photoURL: string | null;
   onboarded: boolean;
+  /**
+   * Account role (plan-voters.md §5). `null` when the document predates the
+   * role field or a super admin has not assigned one yet — which means *no*
+   * capabilities, never a default.
+   */
+  role: AppRole | null;
+  /** Ward a karykarta is assigned to; `null` for unrestricted roles. */
+  wardNo: number | null;
   createdAt: number | null;
   updatedAt: number | null;
 }
@@ -133,6 +145,8 @@ export function profileFromDoc(
     displayName: typeof data.displayName === 'string' ? data.displayName : null,
     photoURL: typeof data.photoURL === 'string' ? data.photoURL : null,
     onboarded: data.onboarded === true,
+    role: toAppRole(data.role),
+    wardNo: typeof data.wardNo === 'number' ? data.wardNo : null,
     createdAt: millisOf(data.createdAt),
     updatedAt: millisOf(data.updatedAt),
   };

@@ -11,3 +11,12 @@ process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET =
   'test-project.firebasestorage.app';
 process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID = '000000000000';
 process.env.EXPO_PUBLIC_FIREBASE_APP_ID = '1:000000000000:web:testappid';
+
+// `lib/roll/overlay.ts` imports AsyncStorage at module scope. Its native side
+// is null under Jest (no autolinking in a Node process), which would throw
+// before a single assertion runs — the package ships a JS mock for exactly
+// this. Tests still pass their own in-memory storage, so this only keeps the
+// import alive.
+jest.mock('@react-native-async-storage/async-storage', () =>
+  require('@react-native-async-storage/async-storage/jest/async-storage-mock')
+);
