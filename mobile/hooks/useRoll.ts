@@ -38,6 +38,7 @@
  * roll does not change because someone edited a phone number.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { bundledVoters, bundledWards } from '@/lib/roll/bundled';
 import {
   cacheStorage,
   peekWard,
@@ -164,6 +165,16 @@ export function useRoll(
   const requestRef = useRef(0);
 
   /**
+   * The rows as of the last commit, for the effect below.
+   *
+   * Read through a ref rather than a dependency because the effect both
+   * *reads* "is anything already on screen" and *writes* rows — putting
+   * `rows` in its dependency array would re-run it on its own writes.
+   */
+  const rowsRef = useRef(rows);
+  rowsRef.current = rows;
+
+  /**
    * Synchronous cache seed.
    *
    * The skeleton this replaces was not a slow network: it was one `await` on
@@ -184,22 +195,41 @@ export function useRoll(
   if (rows.length === 0 && !error && seeded !== seedKey) {
     const resident: RollVoter[] = [];
     let newest: number | null = null;
+    let fromCache = false;
 
     if (wardNo != null) {
       const entry = peekWard(wardNo);
       if (entry) {
         resident.push(...entry.voters);
         newest = entry.savedAt;
+        fromCache = true;
+      } else {
+        // First-ever launch: the ward's copy ships inside the APK
+        // (`assets/roll/*.json`). Reading it here, during render, is what
+        // makes the very first frame real rows — no skeleton, no fetch.
+        const bundled = bundledVoters(wardNo);
+        if (bundled) resident.push(...bundled);
       }
     } else {
       // The "all wards" selection seeds from the wards already resident —
-      // whichever they are, in ward order, up to the visible slice.
-      const meta = wards?.wards ?? peekWards()?.wards ?? [];
+      // whichever they are, in ward order, up to the visible slice. The
+      // bundle's metadata is the fallback so a cold start can seed wards
+      // that have never been fetched.
+      const meta =
+        wards?.wards ??
+        peekWards()?.wards ??
+        bundledWards()?.wards ??
+        [];
       for (const ward of meta.slice(0, eager ? meta.length : visibleWards)) {
         const entry = peekWard(ward.wardNo);
-        if (!entry) continue;
-        resident.push(...entry.voters);
-        newest = newest === null ? entry.savedAt : Math.max(newest, entry.savedAt);
+        if (entry) {
+          resident.push(...entry.voters);
+          newest = newest === null ? entry.savedAt : Math.max(newest, entry.savedAt);
+          fromCache = true;
+          continue;
+        }
+        const bundled = bundledVoters(ward.wardNo);
+        if (bundled) resident.push(...bundled);
       }
     }
 
@@ -207,8 +237,12 @@ export function useRoll(
       setRows(resident);
       setSeeded(seedKey);
       setLoading(false);
-      setStale(true);
-      setRefreshedAt(newest);
+      // Only cache rows are "stale": the bundled copy is the shipped source
+      // of truth, exactly as fresh as a fetch would have been.
+      if (fromCache) {
+        setStale(true);
+        setRefreshedAt(newest);
+      }
     }
   }
 
@@ -307,11 +341,20 @@ export function useRoll(
       commit(setPendingIds, new Set(queue.map((entry) => entry.voterId)));
 
       // --- Cache pass: render what the device already has, immediately.
-      let haveRows = false;
+      //
+      // `haveRows` starts from what is *already on screen* (the bundled
+      // seed above), not only from what this pass reads: a cache miss must
+      // not flip `loading` on over rows the render just painted.
+      let haveRows = rowsRef.current.length > 0;
       if (inScope.length === 1) {
         const cached = await readWard(cacheStorage, inScope[0]);
         if (cancelled || token !== requestRef.current) return;
-        if (cached) {
+        // `cached.voters.length` matters, not just `cached`: a cache entry
+        // written empty (a failed fetch that still persisted its result) used
+        // to pass `if (cached)` and commit an empty array — which replaced the
+        // rows the bundled seed had just painted, with `loading` already false.
+        // That is the "renders a few rows then empty" report exactly.
+        if (cached && cached.voters.length > 0) {
           haveRows = commit(setRows, cached.voters);
           if (haveRows) {
             commit(setStale, true);
@@ -329,7 +372,7 @@ export function useRoll(
         );
         if (cancelled || token !== requestRef.current) return;
         const stitched = [...cachedByWard.values()].flatMap((entry) => entry.voters);
-        if (stitched.length) {
+        if (stitched.length > 0) {
           haveRows = commit(setRows, stitched);
           if (haveRows) {
             commit(setStale, true);
@@ -356,19 +399,30 @@ export function useRoll(
           }))
         );
         const voters = byWard.flatMap((entry) => entry.voters);
-        if (!commit(setRows, voters)) return;
-        commit(setStale, false);
-        commit(setConnected, true);
-        commit(setError, null);
-        const now = Date.now();
-        commit(setRefreshedAt, now);
+        if (inScope.length === 0 || voters.length === 0) {
+          // Two ways a pass can come back with nothing: ward metadata has not
+          // arrived yet (empty scope), or every scoped fetch returned empty
+          // (bad ward number, rules regression). Committing that would blank
+          // rows the seed or a previous fetch already painted — an empty
+          // *result* must never replace non-empty *state*. The effect re-runs
+          // the moment `wards` lands and loads the real scope.
+        } else {
+          if (!commit(setRows, voters)) return;
+          commit(setStale, false);
+          commit(setConnected, true);
+          commit(setError, null);
+          const now = Date.now();
+          commit(setRefreshedAt, now);
+        }
 
         // Persist per ward so the *next* cold start is a cache hit. Each ward
         // gets its own key rather than one giant blob rewritten on every fetch.
+        // Empty results are skipped: overwriting a good cache entry with an
+        // empty one would manufacture the blank-list bug on the next launch.
         await Promise.all(
-          byWard.map((entry) =>
-            writeWard(cacheStorage, entry.wardNo, entry.voters)
-          )
+          byWard
+            .filter((entry) => entry.voters.length > 0)
+            .map((entry) => writeWard(cacheStorage, entry.wardNo, entry.voters))
         );
       } catch (caught) {
         if (cancelled || token !== requestRef.current) return;

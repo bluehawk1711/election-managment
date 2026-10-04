@@ -17,8 +17,8 @@ import {
   uploadPhoto,
 } from '@/lib/cloudinary';
 import {
-  mapsUrl,
   openExternal,
+  openMaps,
   smsUrl,
   telUrl,
   whatsappUrl,
@@ -31,6 +31,7 @@ import {
 } from '@/lib/roll/overlay';
 import type {
   Leaning,
+  SupportCategory,
   VotedStatus,
   VoterLocation,
   VoterOverlay,
@@ -85,6 +86,12 @@ const LEANING: Leaning[] = ['right', 'centerRight', 'center', 'centerLeft', 'lef
 
 /** i18n key for one leaning value (`voters.leaning.right`, …). */
 const leaningKey = (value: Leaning) => `voters.leaning.${value}` as const;
+
+/** Support options — the field-side with-us/against-us tap. */
+const SUPPORTS: SupportCategory[] = ['unknown', 'supporter', 'opponent'];
+
+/** i18n key for one support value (`voters.support.supporter`, …). */
+const supportKey = (value: SupportCategory) => `voters.support.${value}` as const;
 
 /**
  * Voter detail (plan-voters.md §6.2).
@@ -226,6 +233,7 @@ export default function VoterDetailScreen() {
 
   const setVoted = (voted: VotedStatus) => save({ voted }, 'voted');
   const setLeaning = (leaning: Leaning) => save({ leaning }, 'leaning');
+  const setSupport = (support: SupportCategory) => save({ support }, 'support');
 
   const openLink = async (url: string | null, failed: string) => {
     if (!url) return;
@@ -306,9 +314,12 @@ export default function VoterDetailScreen() {
               {voter.location ? (
                 <Pressable
                   onPress={() =>
-                    void openExternal(
-                      mapsUrl(voter.location!.lat, voter.location!.lng)
-                    )
+                    void openMaps(
+                      voter.location!.lat,
+                      voter.location!.lng
+                    ).then((ok) => {
+                      if (!ok) toast.error(t('voters.openMapsFailed'));
+                    })
                   }
                   hitSlop={8}
                   style={styles.inlineAction}
@@ -394,6 +405,36 @@ export default function VoterDetailScreen() {
                 );
               })}
             </View>
+          </View>
+
+          {/* Support — with us or against us, one tap */}
+          <View style={styles.divider} />
+          <View style={styles.block}>
+            <Text>{t('voters.support')}</Text>
+            <View style={styles.segment}>
+              {SUPPORTS.map((value) => {
+                const active = voter.support === value;
+                return (
+                  <Pressable
+                    key={value}
+                    onPress={() => void setSupport(value)}
+                    style={[styles.segmentItem, active && styles.segmentActive]}
+                    accessibilityRole='button'
+                    accessibilityState={{ selected: active }}
+                  >
+                    <Text
+                      variant='caption'
+                      style={{ color: active ? '#FFFFFF' : outline }}
+                    >
+                      {t(supportKey(value))}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+            {e.jati ? (
+              <DetailRow label={t('voters.jati')} value={e.jati} />
+            ) : null}
           </View>
 
           {/* Leaning */}

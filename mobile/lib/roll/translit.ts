@@ -450,6 +450,19 @@ export function clearKeyCache(): void {
 }
 
 /**
+ * Separates *fields* inside a haystack (`search.ts`'s `haystackOf`).
+ *
+ * Not a space: a Latin field legitimately contains spaces (`Ramesh Singh`),
+ * so splitting a space-joined haystack would shred it into words and a query
+ * of `ramesh` would call the whole field "exact". U+0001 cannot occur in
+ * roll text or in a query token (tokens are whitespace-split and tidied
+ * first), so it marks the real field boundary — which is what makes
+ * `rankKey` below able to tell `Ramesh` (the field *is* the query) from
+ * `Rameshvar` (the query is merely inside it).
+ */
+export const HAYSTACK_SEP = '\u0001';
+
+/**
  * A token matches if **either** of its forms appears in the corresponding form
  * of the key. Symmetric on purpose: a Hindi query matches the native side, a
  * Latin query matches the phonetic side, and either keyboard can find either.
@@ -468,10 +481,36 @@ export function keyContains(key: SearchKey, token: SearchKey): boolean {
  * above one that merely reduces to the same consonants. Without it, dropping
  * vowels makes every phonetic hit look equally good — which for a karykarta is
  * the difference between the right person and a plausible-looking stranger.
+ *
+ * "Exact" means *a whole indexed field* equals the token, not the whole
+ * haystack: a row's haystack joins ~20 fields, so `key.native === token.native`
+ * could essentially never fire on real data — every hit tied at 2 and the list
+ * silently degraded to roll order, i.e. typing `ramesh` put `Rameshvar` above
+ * the person actually named `Ramesh`. Field boundaries are carried in the
+ * haystack itself (`HAYSTACK_SEP`), so a single-field key from `keyOf` still
+ * hits the plain-equality path and the exported contract is unchanged.
  */
 export function rankKey(key: SearchKey, token: SearchKey): number {
   if (token.native.length === 0 && token.phonetic.length === 0) return 3;
-  if (key.native === token.native || key.phonetic === token.phonetic) return 3;
+  if (fieldEquals(key.native, token.native)) return 3;
+  if (fieldEquals(key.phonetic, token.phonetic)) return 3;
   if (keyContains(key, token)) return 2;
   return 1;
+}
+
+/**
+ * True when `token` equals one whole field of `haystack` (or the whole key,
+ * for a field key with no separator in it).
+ */
+function fieldEquals(haystack: string, token: string): boolean {
+  if (token.length === 0) return false;
+  if (haystack === token) return true;
+  if (!haystack.includes(HAYSTACK_SEP)) return false;
+  let start = 0;
+  for (;;) {
+    const at = haystack.indexOf(HAYSTACK_SEP, start);
+    if (at === -1) return haystack.slice(start) === token;
+    if (haystack.slice(start, at) === token) return true;
+    start = at + 1;
+  }
 }

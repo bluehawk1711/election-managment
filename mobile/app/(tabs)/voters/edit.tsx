@@ -1,12 +1,13 @@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { SelectField } from '@/components/campaign/select-field';
 import { ScrollView } from '@/components/ui/scroll-view';
 import { Text } from '@/components/ui/text';
 import { useToast } from '@/components/ui/toast';
 import { View } from '@/components/ui/view';
 import { useRoll } from '@/hooks/useRoll';
 import { overlayStorage, patchVoter } from '@/lib/roll/overlay';
-import type { Gender } from '@/lib/roll/types';
+import type { Gender, SupportCategory } from '@/lib/roll/types';
 import { useAuth } from '@/providers/auth-provider';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
@@ -14,6 +15,10 @@ import { useTranslation } from 'react-i18next';
 import { StyleSheet } from 'react-native';
 
 const GENDERS: Gender[] = ['male', 'female', 'other'];
+const SUPPORTS: SupportCategory[] = ['unknown', 'supporter', 'opponent'];
+
+/** i18n key for one support value (`voters.support.supporter`, …). */
+const supportKey = (value: SupportCategory) => `voters.support.${value}` as const;
 
 /**
  * Local-edit sheet (plan-voters.md §6.3).
@@ -47,6 +52,10 @@ export default function EditVoterScreen() {
   const [gender, setGender] = useState<Gender>(voter?.effective.gender ?? 'male');
   const [locality, setLocality] = useState(voter?.effective.locality ?? '');
   const [phone, setPhone] = useState(voter?.effective.phone ?? '');
+  const [jati, setJati] = useState(voter?.effective.jati ?? '');
+  const [support, setSupport] = useState<SupportCategory>(
+    voter?.support ?? 'unknown'
+  );
   const [note, setNote] = useState(voter?.overlay.note ?? '');
   const [showErrors, setShowErrors] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -74,6 +83,8 @@ export default function EditVoterScreen() {
     gender !== (base?.gender ?? 'male') ||
     locality !== (base?.locality ?? '') ||
     phone !== (base?.phone ?? '') ||
+    jati !== (base?.jati ?? '') ||
+    support !== (voter?.support ?? 'unknown') ||
     (voter?.overlay.note ?? '') !== note;
 
   const submit = async () => {
@@ -108,6 +119,8 @@ export default function EditVoterScreen() {
           ...(gender !== current.gender ? { gender } : {}),
           ...(locality !== current.locality ? { locality: locality.trim() } : {}),
           ...(phone !== current.phone ? { phone: phone.trim() } : {}),
+          ...(jati !== current.jati ? { jati: jati.trim() } : {}),
+          ...(support !== (voter.support ?? 'unknown') ? { support } : {}),
           ...((voter.overlay.note ?? '') !== note ? { note } : {}),
         },
       });
@@ -194,6 +207,22 @@ export default function EditVoterScreen() {
         onChangeText={setPhone}
         keyboardType='phone-pad'
         placeholder={t('voters.phoneHint')}
+      />
+      <Input
+        label={t('voters.jati')}
+        value={jati}
+        onChangeText={setJati}
+        placeholder={t('voters.jatiPlaceholder')}
+      />
+      <SelectField
+        label={t('voters.support')}
+        value={support}
+        placeholder={t('voters.support.unknown')}
+        options={SUPPORTS.map((value) => ({
+          value,
+          label: t(supportKey(value)),
+        }))}
+        onChange={(value) => setSupport(value as SupportCategory)}
       />
       <Input
         label={t('voters.notes')}

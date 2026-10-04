@@ -15,6 +15,7 @@ import {
   Gesture,
   GestureDetector,
   GestureHandlerRootView,
+  type GestureType,
 } from 'react-native-gesture-handler';
 import Animated, { runOnJS, useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
 import { withSpring, withTiming } from '@/lib/anim-off';
@@ -29,6 +30,20 @@ type BottomSheetContentProps = {
   mutedColor: string;
   screenHeight: number;
   onHandlePress?: () => void;
+  /**
+   * Drag gesture, applied to the handle + title header ONLY.
+   *
+   * It used to wrap the whole sheet — handle, title *and* the content
+   * ScrollView — and a `Gesture.Pan` always wins over the native scroll
+   * responder underneath it. Every vertical drag in the ward list therefore
+   * moved the entire sheet a few pixels and sprang it back instead of
+   * scrolling the list: the ward picker looked frozen with 14 options and no
+   * way to reach ward 5. Restricting the pan to the header leaves the
+   * ScrollView owning every touch that starts on the content, which is also
+   * the interaction people expect from a sheet (drag the bar, scroll the
+   * body).
+   */
+  gesture?: GestureType;
 };
 
 // Component for the bottom sheet content
@@ -42,25 +57,12 @@ const BottomSheetContent = ({
   mutedColor,
   screenHeight,
   onHandlePress,
+  gesture,
 }: BottomSheetContentProps) => {
   const insets = useSafeAreaInsets();
 
-  return (
-    <Animated.View
-      style={[
-        {
-          height: screenHeight,
-          width: '100%',
-          position: 'absolute',
-          top: screenHeight,
-          backgroundColor: cardColor,
-          borderTopLeftRadius: BORDER_RADIUS,
-          borderTopRightRadius: BORDER_RADIUS,
-        },
-        rBottomSheetStyle,
-        style,
-      ]}
-    >
+  const header = (
+    <>
       {/* Handle */}
       <TouchableWithoutFeedback onPress={onHandlePress}>
         <View
@@ -94,6 +96,34 @@ const BottomSheetContent = ({
             {title}
           </Text>
         </View>
+      )}
+    </>
+  );
+
+  return (
+    <Animated.View
+      style={[
+        {
+          height: screenHeight,
+          width: '100%',
+          position: 'absolute',
+          top: screenHeight,
+          backgroundColor: cardColor,
+          borderTopLeftRadius: BORDER_RADIUS,
+          borderTopRightRadius: BORDER_RADIUS,
+        },
+        rBottomSheetStyle,
+        style,
+      ]}
+    >
+      {/* Drag region = header only; see the `gesture` prop doc. A plain View
+          when there is no gesture — GestureDetector needs one native child. */}
+      {gesture ? (
+        <GestureDetector gesture={gesture}>
+          <View style={{ width: '100%' }}>{header}</View>
+        </GestureDetector>
+      ) : (
+        header
       )}
 
       {/* Content now wrapped in a ScrollView */}
@@ -252,7 +282,18 @@ export function BottomSheet({
       const currentY = translateY.value;
       const velocity = event.velocityY;
 
-      if (velocity > 500 && currentY > -screenHeight * 0.2) {
+      // Close on a downward drag *relative to the sheet's own snap point*.
+      // The old check compared against `-screenHeight * 0.2`, i.e. it only
+      // fired when the sheet was already near the top of the screen — from a
+      // 0.92 snap you had to drag down 72% of the display to close, so the
+      // handle felt broken. 15% of the screen below where the sheet sits is
+      // the gesture people actually make.
+      const snapY =
+        snapPointsHeights[currentSnapIndex.value] - keyboardHeightSV.value;
+      if (
+        currentY - snapY > screenHeight * 0.15 ||
+        (velocity > 500 && currentY > snapY + screenHeight * 0.05)
+      ) {
         animateClose();
         return;
       }
@@ -301,31 +342,17 @@ export function BottomSheet({
             <Animated.View style={{ flex: 1 }} />
           </TouchableWithoutFeedback>
 
-          {disablePanGesture ? (
-            <BottomSheetContent
-              children={children}
-              title={title}
-              style={style}
-              rBottomSheetStyle={rBottomSheetStyle}
-              cardColor={cardColor}
-              mutedColor={mutedColor}
-              screenHeight={screenHeight}
-              onHandlePress={() => runOnJS(handlePress)()}
-            />
-          ) : (
-            <GestureDetector gesture={gesture}>
-              <BottomSheetContent
-                children={children}
-                title={title}
-                style={style}
-                rBottomSheetStyle={rBottomSheetStyle}
-                cardColor={cardColor}
-                mutedColor={mutedColor}
-                screenHeight={screenHeight}
-                onHandlePress={() => runOnJS(handlePress)()}
-              />
-            </GestureDetector>
-          )}
+          <BottomSheetContent
+            children={children}
+            title={title}
+            style={style}
+            rBottomSheetStyle={rBottomSheetStyle}
+            cardColor={cardColor}
+            mutedColor={mutedColor}
+            screenHeight={screenHeight}
+            onHandlePress={() => runOnJS(handlePress)()}
+            gesture={disablePanGesture ? undefined : gesture}
+          />
         </Animated.View>
       </GestureHandlerRootView>
     </Modal>

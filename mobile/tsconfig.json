@@ -12,6 +12,7 @@
   "include": ["**/*.ts", "**/*.tsx", ".expo/types/**/*.ts", "expo-env.d.ts"],
   // `rules-tests/` runs under Node against the emulator, not under Metro — it
   // imports `@firebase/rules-unit-testing`, which pulls in Node globals this
-  // project does not have.
-  "exclude": ["node_modules", "rules-tests"]
+  // project does not have. `scripts/` is the same story: Node-built tooling
+  // (the roll bundler imports `node:fs`), never bundled by Metro.
+  "exclude": ["node_modules", "rules-tests", "scripts"]
 }

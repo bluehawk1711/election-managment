@@ -15,6 +15,7 @@
     "seed:roll": "node scripts/seed-roll.mjs",
     "verify:roll": "node scripts/verify-roll.mjs",
     "brand:assets": "node scripts/generate-brand-assets.mjs",
+    "roll:bundle": "node scripts/generate-ward-bundles.ts",
     "create:user": "node scripts/create-user.mjs",
     "emulators": "firebase emulators:start",
     "emulators:seed": "firebase emulators:exec --only firestore \"node scripts/seed.mjs\"",

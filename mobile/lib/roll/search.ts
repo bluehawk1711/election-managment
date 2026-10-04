@@ -13,9 +13,14 @@
  * ## Scripts
  *
  * Keys are built through `lib/roll/translit.ts`, so a row is findable from a
- * Devanagari keyboard *and* from a Latin one. See that module for why there is
- * no stored English copy of the data — the short version is that
- * transliteration is not translation, and derived data in the database rots.
+ * Devanagari keyboard *and* from a Latin one. On top of that, the bundled
+ * roll carries a generated English copy of the Hindi fields (`nameEn` and
+ * friends, from `lib/roll/romanize.ts`) which is indexed as ordinary text:
+ * `ramesh` then matches `Ramesh Kumar` by plain substring — exact and
+ * stable — while the phonetic skeleton stays the fuzzy fallback that makes
+ * `रामेश` and `ramesh` meet in the middle. The copy is regenerated from the
+ * CSVs by `scripts/generate-ward-bundles.ts`, beside its source, so it
+ * cannot drift.
  *
  * ## Why each field is keyed separately
  *
@@ -36,7 +41,13 @@
  * `searchVoters` sorts by it, stable, so equal ranks keep roll order (ward,
  * then serial) and the list does not reshuffle between keystrokes.
  */
-import { keyContains, keyOf, rankKey, type SearchKey } from '@/lib/roll/translit';
+import {
+  HAYSTACK_SEP,
+  keyContains,
+  keyOf,
+  rankKey,
+  type SearchKey,
+} from '@/lib/roll/translit';
 import type { VoterView } from '@/lib/roll/types';
 
 /**
@@ -85,6 +96,8 @@ export function searchableFieldsOf(voter: VoterView): string[] {
     String(voter.pdfPage),
     voter.relationLabel,
     e.phone,
+    e.jati,
+    voter.overlay.support ?? '',
     voter.overlay.leaning ?? '',
     voter.overlay.leaningNote ?? '',
     voter.overlay.note ?? '',
@@ -92,14 +105,16 @@ export function searchableFieldsOf(voter: VoterView): string[] {
 }
 
 /**
- * The full searchable key of one voter: both scripts, one space-joined string
- * per script.
+ * The full searchable key of one voter: both scripts, one separator-joined
+ * string per script. Fields are joined with `HAYSTACK_SEP` (not a space) so
+ * `rankKey` can tell a whole-field exact hit from a substring of a longer
+ * field — see the note there.
  */
 export function haystackOf(voter: VoterView): SearchKey {
   const fields = searchableFieldsOf(voter);
   return {
-    native: fields.map((field) => keyOf(field).native).join(' '),
-    phonetic: fields.map((field) => keyOf(field).phonetic).join(' '),
+    native: fields.map((field) => keyOf(field).native).join(HAYSTACK_SEP),
+    phonetic: fields.map((field) => keyOf(field).phonetic).join(HAYSTACK_SEP),
   };
 }
 
@@ -225,6 +240,11 @@ export function searchVoters(
     hits.push({ voter, rank });
   }
 
-  hits.sort((a, b) => a.rank - b.rank);
+  // Descending: rank 3 (exact field) is *best*, so it must lead. Ascending
+  // here put every exact match below every loose one — invisible while
+  // whole-haystack equality never fired and everything tied at 2, but a
+  // real inversion the moment `rankKey` started recognising field-level
+  // exacts. Stable either way, so equal ranks keep roll order.
+  hits.sort((a, b) => b.rank - a.rank);
   return hits.map((hit) => hit.voter);
 }

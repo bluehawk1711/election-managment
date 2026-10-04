@@ -26,6 +26,8 @@ describe('mergeVoter', () => {
     expect(view.effective.age).toBe(54);
     expect(view.voted).toBe('unknown');
     expect(view.leaning).toBe('unknown');
+    expect(view.support).toBe('unknown');
+    expect(view.effective.jati).toBe('');
     expect(view.photoUrl).toBeNull();
     expect(view.location).toBeNull();
     expect(view.pending).toBe(false);
@@ -53,6 +55,18 @@ describe('mergeVoter', () => {
   it('falls back to the base age when the overlay age is nonsense', () => {
     const view = mergeVoter(base, { age: Number.NaN, updatedAt: 1, updatedBy: 'u1' });
     expect(view.effective.age).toBe(54);
+  });
+
+  it('carries jati and support from the overlay', () => {
+    const view = mergeVoter(base, {
+      jati: 'राजपूत',
+      support: 'supporter',
+      updatedAt: 1,
+      updatedBy: 'u1',
+    });
+
+    expect(view.effective.jati).toBe('राजपूत');
+    expect(view.support).toBe('supporter');
   });
 
   it('never mutates the base row', () => {
@@ -89,7 +103,7 @@ describe('search', () => {
         gender: 'female',
         locality: 'सिविल लाइंस',
       },
-      { phone: '9876543210', leaning: 'right', updatedAt: 1, updatedBy: 'u1' }
+      { phone: '9876543210', leaning: 'right', jati: 'जाट', support: 'opponent', updatedAt: 1, updatedBy: 'u1' }
     ),
   ];
   const index = buildIndex(voters);
@@ -121,6 +135,9 @@ describe('search', () => {
   it('matches on fields the CSV does not index directly', () => {
     expect(searchVoters(voters, index, '9876543210')).toHaveLength(1);
     expect(searchVoters(voters, index, 'right')).toHaveLength(1);
+    // The two fields the edit sheet added: caste text and support side.
+    expect(searchVoters(voters, index, 'जाट')).toHaveLength(1);
+    expect(searchVoters(voters, index, 'opponent')).toHaveLength(1);
   });
 
   it('finds a voter from either keyboard', () => {

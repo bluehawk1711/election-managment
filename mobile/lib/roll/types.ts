@@ -95,6 +95,15 @@ export type Leaning =
   | 'centerLeft'
   | 'left';
 
+/**
+ * Whether the team counts this voter as with us or against us.
+ *
+ * Coarser than `Leaning` on purpose: a karykarta records a side in the field
+ * in one tap, while the 5-point spectrum is an editorial judgement made
+ * later. `unknown` is the default — the roll says nothing about it.
+ */
+export type SupportCategory = 'unknown' | 'supporter' | 'opponent';
+
 export interface VoterLocation {
   lat: number;
   lng: number;
@@ -114,6 +123,10 @@ export interface VoterOverlay {
   locality?: string;
   /** The roll carries no phone numbers; this is user-entered. */
   phone?: string;
+  /** Caste — free text, because the roll's spellings are not controlled. */
+  jati?: string;
+  /** With us / against us — see `SupportCategory`. */
+  support?: SupportCategory;
 
   location?: VoterLocation;
   photoUrl?: string;
@@ -147,9 +160,11 @@ export interface VoterView extends RollVoter {
     gender: Gender;
     locality: string;
     phone: string;
+    jati: string;
   };
   voted: VotedStatus;
   leaning: Leaning;
+  support: SupportCategory;
   photoUrl: string | null;
   location: VoterLocation | null;
   /** True when the overlay is newer than the last sync (queue non-empty). */

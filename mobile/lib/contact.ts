@@ -64,6 +64,29 @@ export function mapsUrl(lat: number, lng: number): string {
     : `geo:${lat},${lng}?q=${query}`;
 }
 
+/**
+ * The always-works web URL for the same fix.
+ *
+ * `maps:`/`geo:` need `canOpenURL` to say yes, and on Android 11+ the package
+ * visibility rules make that depend on a `<queries>` declaration the manifest
+ * does not carry — so `openExternal(mapsUrl(...))` can silently return false
+ * and the button does nothing. This URL needs no declaration at all: the
+ * browser (or the Maps app itself, once installed as the handler) takes it.
+ */
+export function mapsWebUrl(lat: number, lng: number): string {
+  return `https://www.google.com/maps?q=${lat},${lng}`;
+}
+
+/**
+ * Opens the native maps scheme, falling back to the web URL when the platform
+ * refuses it. Returns `false` only when *both* fail, so a caller can still
+ * surface an error rather than swallow it.
+ */
+export async function openMaps(lat: number, lng: number): Promise<boolean> {
+  if (await openExternal(mapsUrl(lat, lng))) return true;
+  return openExternal(mapsWebUrl(lat, lng));
+}
+
 /** Opens a URL, returning `false` when no app can handle it. */
 export async function openExternal(url: string): Promise<boolean> {
   try {

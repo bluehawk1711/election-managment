@@ -10,6 +10,7 @@ import type {
   Gender,
   Leaning,
   RollVoter,
+  SupportCategory,
   VotedStatus,
   VoterOverlay,
   VoterView,
@@ -38,6 +39,7 @@ export function mergeVoter(
 
   const gender: Gender = o.gender ?? base.gender;
   const leaning: Leaning = o.leaning ?? 'unknown';
+  const support: SupportCategory = o.support ?? 'unknown';
   const voted: VotedStatus = o.voted ?? 'unknown';
 
   return {
@@ -51,9 +53,11 @@ export function mergeVoter(
       gender,
       locality: override(base.locality, o.locality),
       phone: o.phone ?? '',
+      jati: o.jati ?? '',
     },
     voted,
     leaning,
+    support,
     photoUrl: o.photoUrl ?? null,
     location: o.location ?? null,
     pending,
