@@ -332,6 +332,12 @@ export const en = {
   'voters.notes': 'Notes',
   'voters.notesPlaceholder': 'Anything the team should know…',
   'voters.photoPermission': 'Photo library permission is needed to attach a photo.',
+  // Card placeholder — the box drawn in place of a photo that has not been
+  // taken yet, so an unphotographed voter reads as "not yet captured" rather
+  // than as a broken image.
+  'voters.noPhoto': 'No photo',
+  // Label for the distance row on the card, shown only in nearest-voter mode.
+  'voters.distance': 'Distance',
 
   // Roll freshness / offline. `useRoll` serves the device cache first and
   // refetches in the background, so the list is readable before the network

@@ -1,31 +1,127 @@
-import { Button } from '@/components/ui/button';
+import { DetailRow } from '@/components/roll/detail-row';
 import { SelectField } from '@/components/campaign/select-field';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Icon } from '@/components/ui/icon';
+import { Image } from '@/components/ui/image';
 import { Input } from '@/components/ui/input';
 import { ScrollView } from '@/components/ui/scroll-view';
+import { Spinner } from '@/components/ui/spinner';
 import { Text } from '@/components/ui/text';
 import { useToast } from '@/components/ui/toast';
 import { View } from '@/components/ui/view';
+import { useColor } from '@/hooks/useColor';
 import { useRoll } from '@/hooks/useRoll';
-import { overlayStorage, patchVoter } from '@/lib/roll/overlay';
-import type { Gender, SupportCategory, VoterView } from '@/lib/roll/types';
+import {
+  compressForUpload,
+  isCloudinaryConfigured,
+  savePhotoLocally,
+  uploadPhoto,
+} from '@/lib/cloudinary';
+import {
+  openExternal,
+  openMaps,
+  smsUrl,
+  telUrl,
+  whatsappUrl,
+} from '@/lib/contact';
+import { formatDateTime } from '@/lib/format';
+import {
+  loadQueue,
+  overlayStorage,
+  patchVoter,
+  putOverlay,
+} from '@/lib/roll/overlay';
+import type {
+  Gender,
+  Leaning,
+  SupportCategory,
+  VotedStatus,
+  VoterLocation,
+  VoterOverlay,
+  VoterView,
+} from '@/lib/roll/types';
+import { CONTROL_RADIUS } from '@/theme/globals';
 import { useAuth } from '@/providers/auth-provider';
+import * as ImagePicker from 'expo-image-picker';
+import * as Location from 'expo-location';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useState } from 'react';
+import {
+  CheckCircle2,
+  Circle,
+  Crosshair,
+  MapPin,
+  MessageCircle,
+  Phone,
+  UserX,
+  XCircle,
+} from 'lucide-react-native';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { StyleSheet } from 'react-native';
+import { Alert, Pressable, StyleSheet } from 'react-native';
 
 const GENDERS: Gender[] = ['male', 'female', 'other'];
 const SUPPORTS: SupportCategory[] = ['unknown', 'supporter', 'opponent'];
 
+/** The leaning options, in the order plan-voters.md §2 fixes them. */
+const LEANING: Leaning[] = ['unknown', 'right', 'centerRight', 'center', 'centerLeft', 'left'];
+
 /** i18n key for one support value (`voters.support.supporter`, …). */
 const supportKey = (value: SupportCategory) => `voters.support.${value}` as const;
 
+/** i18n key for one leaning value (`voters.leaning.right`, …). */
+const leaningKey = (value: Leaning) => `voters.leaning.${value}` as const;
+
+/** Photo box edge length in the identity header. */
+const PHOTO_SIZE = 72;
+
 /**
- * Local-edit sheet (plan-voters.md §6.3).
+ * Reads a one-off GPS fix and returns it in `VoterLocation` shape.
  *
- * Writes only to the overlay — the "base roll is read-only" rule. Nothing
- * here calls Firestore, so the save works offline by construction and the
- * queued entry is what a later sync will push.
+ * Module-level on purpose: the React Compiler treats any function declared in
+ * the component body as part of render, so calling `Date.now()` in there is a
+ * purity violation (`react-hooks/purity`) even though it only ever runs from an
+ * on-press. Keeping the impure work out here keeps the component pure.
+ *
+ * Returns `null` when permission is denied; throws when the fix cannot be read.
+ */
+async function captureCurrentLocation(): Promise<VoterLocation | null> {
+  const permission = await Location.requestForegroundPermissionsAsync();
+  if (permission.status !== 'granted') return null;
+
+  const position = await Location.getCurrentPositionAsync({
+    accuracy: Location.Accuracy.Balanced,
+  });
+  return {
+    lat: position.coords.latitude,
+    lng: position.coords.longitude,
+    accuracy: position.coords.accuracy ?? null,
+    updatedAt: Date.now(),
+  };
+}
+
+/**
+ * Voter edit sheet (plan-voters.md §6.2–6.3).
+ *
+ * One screen does everything the app does to a single voter: correct the roll
+ * fields, attach a photo, capture a location, mark whether they have voted,
+ * record their leaning and support, and call/message them. It absorbed the
+ * read-only detail screen, which sat between the list and this form and made
+ * every edit two taps and a push/pop away.
+ *
+ * Writes go to the **overlay** only — the "base roll is read-only" rule.
+ * Nothing here calls Firestore, so the save works offline by construction and
+ * the queued entry is what a later sync will push.
+ *
+ * ## Two kinds of write on one screen
+ *
+ * The text fields are *staged*: they seed `useState`, and one Save button
+ * writes them together, so a half-typed name never lands on the roll. The
+ * fieldwork controls — photo, location, voted, leaning — *commit immediately*,
+ * because each is a single deliberate tap that is already unambiguous, and
+ * because a photo picker or a GPS fix cannot be "drafted" in a text field.
+ * `dirty` therefore tracks only the staged fields; tapping Voted does not
+ * enable Save, and that is correct rather than a missed update.
  *
  * ## Why the form is its own component
  *
@@ -41,6 +137,11 @@ const supportKey = (value: SupportCategory) => `voters.support.${value}` as cons
  * real data, and remounting it per voter id (the `key` below) means switching
  * voters re-seeds rather than carrying the previous voter's values across.
  * Anything that seeds state from an async value has to be structured this way.
+ *
+ * The `key` deliberately does **not** include anything that changes when a
+ * fieldwork control commits. Those call `roll.refresh()`, which hands down a new
+ * `voter` object; if that remounted the form, every keystroke in progress would
+ * be thrown away by tapping a chip.
  */
 export default function EditVoterScreen() {
   const { t } = useTranslation();
@@ -53,7 +154,7 @@ export default function EditVoterScreen() {
   // ("all wards", paged in batches of three). Without it `roll.find` only
   // searched the first three wards, so opening Edit for a voter in ward 4+
   // rendered "No matching voters" — the form for a voter who was right there
-  // in the detail screen we came from.
+  // in the list we came from.
   const roll = useRoll(
     Number.isFinite(wardParam) && wardParam > 0 ? wardParam : null
   );
@@ -68,7 +169,7 @@ export default function EditVoterScreen() {
     return (
       <View style={styles.center}>
         {roll.loading ? (
-          <Text variant='caption'>{t('common.loading')}</Text>
+          <Spinner size='lg' variant='circle' />
         ) : (
           <Text variant='caption'>{t('voters.noMatches')}</Text>
         )}
@@ -109,6 +210,10 @@ function EditForm({
   const router = useRouter();
   const toast = useToast();
   const { user } = useAuth();
+  const outline = useColor('outline');
+  const muted = useColor('muted');
+  const border = useColor('border');
+  const primary = useColor('primary');
 
   const base = voter.effective;
 
@@ -130,6 +235,17 @@ function EditForm({
   const [showErrors, setShowErrors] = useState(false);
   const [saving, setSaving] = useState(false);
 
+  /**
+   * Which fieldwork control is mid-flight, e.g. `'photo'`.
+   *
+   * One string rather than a boolean per control so the buttons can all
+   * disable each other: capturing a location and picking a photo at the same
+   * time would interleave two writes to the same overlay.
+   */
+  const [busy, setBusy] = useState<string | null>(null);
+
+  const uid = user?.uid ?? 'local';
+
   const parsedAge = Number(age.trim());
   const ageValid =
     age.trim() !== '' &&
@@ -138,10 +254,10 @@ function EditForm({
     parsedAge <= 100;
 
   /**
-   * Whether anything has actually changed.
+   * Whether any *staged* field has actually changed.
    *
-   * `base` is now the resolved voter, not an optional lookup, so this cannot
-   * be permanently `false` while the row loads — the version that compared
+   * `base` is the resolved voter, not an optional lookup, so this cannot be
+   * permanently `false` while the row loads — the version that compared
    * against `voter?.effective.X ?? ''` left Save disabled for every keystroke
    * typed before the row arrived.
    */
@@ -157,6 +273,42 @@ function EditForm({
     support !== (voter.support ?? 'unknown') ||
     (voter.overlay.note ?? '') !== note;
 
+  /**
+   * Writes one immediate field and refreshes the merged view.
+   *
+   * Separate from the Save button on purpose — see "Two kinds of write" above.
+   */
+  const saveNow = async (overlay: Partial<VoterOverlay>, label: string) => {
+    setBusy(label);
+    try {
+      await putOverlay(overlayStorage, { voterId: voter.id, wardNo, overlay, uid });
+      onSaved();
+    } catch {
+      toast.error(t('common.errorTitle'));
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  /**
+   * Pending-sync queue depth, for the line above Save.
+   *
+   * Depends on the `pending` boolean rather than the `voter` object: the object
+   * is new on every render of the list, and depending on it both re-runs this
+   * on every pass and defeats the React Compiler's memoisation.
+   */
+  const pending = voter.pending;
+  const [queueSize, setQueueSize] = useState(0);
+  useEffect(() => {
+    let cancelled = false;
+    loadQueue(overlayStorage)
+      .then((queue) => !cancelled && setQueueSize(queue.length))
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [pending]);
+
   const submit = async () => {
     if (!ageValid) {
       setShowErrors(true);
@@ -169,7 +321,7 @@ function EditForm({
       await patchVoter(overlayStorage, {
         voterId: voter.id,
         wardNo,
-        uid: user?.uid ?? 'local',
+        uid,
         patch: {
           // Only send what actually moved — `patchVoter` no-ops otherwise, so
           // opening the sheet and saving does not queue a phantom change.
@@ -197,132 +349,476 @@ function EditForm({
     }
   };
 
+  /**
+   * Picks a photo, then either uploads it or keeps it on the device.
+   *
+   * The local fallback matters: `uploadPhoto` throws by contract when the
+   * Cloudinary env vars are missing, so a build without them used to discard
+   * the pick entirely and leave an empty frame plus an error toast. Saving the
+   * compressed file locally is strictly better than losing it — it shows
+   * immediately, and a later sync can upload it.
+   */
+  const pickPhoto = async () => {
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
+      Alert.alert(t('voters.photoPermission'));
+      return;
+    }
+    const picked = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      quality: 1,
+      allowsEditing: true,
+      aspect: [1, 1],
+    });
+    const asset = picked.assets?.[0];
+    if (picked.canceled || !asset) return;
+
+    setBusy('photo');
+    try {
+      const compressed = await compressForUpload(asset.uri);
+
+      if (isCloudinaryConfigured()) {
+        const uploaded = await uploadPhoto(compressed.base64);
+        await putOverlay(overlayStorage, {
+          voterId: voter.id,
+          wardNo,
+          overlay: { photoUrl: uploaded.secureUrl, photoPublicId: uploaded.publicId },
+          uid,
+        });
+        onSaved();
+      } else {
+        const localUri = await savePhotoLocally(compressed.base64, voter.id);
+        // No `photoPublicId`: that field means "this lives on Cloudinary", and
+        // a later sync reads its absence as "still needs uploading".
+        await putOverlay(overlayStorage, {
+          voterId: voter.id,
+          wardNo,
+          overlay: { photoUrl: localUri },
+          uid,
+        });
+        onSaved();
+        toast.success(t('voters.photoSavedLocally'));
+      }
+    } catch (caught) {
+      toast.error(
+        t('voters.photoFailed'),
+        caught instanceof Error ? caught.message : undefined
+      );
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const captureLocation = async () => {
+    setBusy('location');
+    try {
+      const location = await captureCurrentLocation();
+      if (!location) {
+        Alert.alert(t('voters.locationFailed'));
+        return;
+      }
+      await putOverlay(overlayStorage, {
+        voterId: voter.id,
+        wardNo,
+        overlay: { location },
+        uid,
+      });
+      onSaved();
+    } catch {
+      toast.error(t('voters.locationFailed'));
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const openLink = async (url: string | null, failed: string) => {
+    if (!url) return;
+    const ok = await openExternal(url);
+    if (!ok) toast.error(failed);
+  };
+
+  const showMaps = async () => {
+    const location = voter.location;
+    if (!location) return;
+    const ok = await openMaps(location.lat, location.lng);
+    if (!ok) toast.error(t('voters.openMapsFailed'));
+  };
+
   return (
-    // The bounded `View` is the actual fix, not decoration on the ScrollView.
-    // As the bare root of a screen inside a `presentation: 'modal'` stack,
-    // the ScrollView relied on the scene stretching it to a bounded height —
-    // which it does not do reliably on Android — so it laid out at its full
-    // content height and never became scrollable. Every screen in this app
-    // that scrolls wraps one (see `booths/index.tsx`), and this is the only
-    // one that did not.
+    // The bounded `View` is load-bearing, not decoration on the ScrollView.
+    // As the bare root of a screen the ScrollView relied on the scene
+    // stretching it to a bounded height, which it does not do reliably on
+    // Android — so it laid out at its full content height and never became
+    // scrollable. Every scrolling screen in this app wraps one.
     <View style={styles.fill}>
       <ScrollView
         style={styles.fill}
-        // `flexGrow: 1` lets a *short* form still fill the viewport, so the
-        // Save button sits at the bottom edge rather than floating mid-screen
-        // on a tall device. `gap` stays on the content style.
         contentContainerStyle={styles.body}
         keyboardShouldPersistTaps='handled'
       >
-      <Text variant='caption'>{t('voters.editHint')}</Text>
+        <Text variant='caption'>{t('voters.editHint')}</Text>
 
-      <Input
-        label={t('common.name')}
-        value={name}
-        onChangeText={setName}
-        placeholder={t('common.name')}
-      />
-      <Input
-        label={t('voters.father')}
-        value={father}
-        onChangeText={setFather}
-        placeholder={t('voters.father')}
-      />
-      <Input
-        label={t('voters.house')}
-        value={houseNo}
-        onChangeText={setHouseNo}
-        placeholder={t('voters.house')}
-      />
-      <Input
-        label={t('voters.age')}
-        value={age}
-        onChangeText={setAge}
-        keyboardType='number-pad'
-        error={showErrors && !ageValid ? t('voters.ageInvalid') : undefined}
-      />
+        {/* Identity + photo. The box doubles as the add/replace control, which
+            is why there is no separate "Add photo" button repeating it. */}
+        <View style={styles.identity}>
+          <Pressable
+            onPress={() => void pickPhoto()}
+            accessibilityRole='button'
+            accessibilityLabel={t('voters.addPhoto')}
+            style={[
+              styles.photoBox,
+              { backgroundColor: muted, borderColor: border },
+            ]}
+          >
+            {voter.photoUrl ? (
+              <Image
+                source={{ uri: voter.photoUrl }}
+                width={PHOTO_SIZE}
+                height={PHOTO_SIZE}
+                variant='default'
+                showLoadingIndicator={false}
+                containerStyle={styles.photoFill}
+              />
+            ) : (
+              <>
+                <Icon name={UserX} size={20} color={outline} />
+                <Text variant='caption' style={[styles.placeholderText, { color: outline }]}>
+                  {t('voters.noPhoto')}
+                </Text>
+              </>
+            )}
+            {busy === 'photo' ? (
+              <View style={styles.photoBusy}>
+                <Spinner size='sm' variant='circle' />
+              </View>
+            ) : null}
+          </Pressable>
 
-      <View style={styles.genderRow}>
-        {GENDERS.map((value) => {
-          const active = gender === value;
-          return (
-            <Button
-              key={value}
-              size='sm'
-              variant={active ? 'default' : 'outline'}
-              style={styles.genderButton}
-              onPress={() => setGender(value)}
-            >
-              {value}
-            </Button>
-          );
-        })}
-      </View>
+          <View style={styles.identityText}>
+            <Text variant='heading' numberOfLines={2}>
+              {base.name}
+            </Text>
+            <Text variant='caption' style={{ color: outline }}>
+              {t('voters.serial', { no: voter.serialNo })} · {voter.epicId}
+            </Text>
+            <Text variant='caption' style={{ color: outline }}>
+              {busy === 'photo'
+                ? t('voters.photoUploading')
+                : voter.photoUrl
+                  ? t('voters.replacePhoto')
+                  : t('voters.addPhoto')}
+            </Text>
+            {voter.pending ? (
+              <Text variant='caption' style={{ color: outline }}>
+                {t('voters.pendingSync')}
+              </Text>
+            ) : null}
+          </View>
+        </View>
 
-      <Input
-        label={t('voters.locality')}
-        value={locality}
-        onChangeText={setLocality}
-        placeholder={t('voters.locality')}
-      />
-      <Input
-        label={t('common.phone')}
-        value={phone}
-        onChangeText={setPhone}
-        keyboardType='phone-pad'
-        placeholder={t('voters.phoneHint')}
-      />
-      <Input
-        label={t('voters.jati')}
-        value={jati}
-        onChangeText={setJati}
-        placeholder={t('voters.jatiPlaceholder')}
-      />
-      <SelectField
-        label={t('voters.support')}
-        value={support}
-        placeholder={t('voters.support.unknown')}
-        options={SUPPORTS.map((value) => ({
-          value,
-          label: t(supportKey(value)),
-        }))}
-        onChange={(value) => setSupport(value as SupportCategory)}
-      />
-      <Input
-        label={t('voters.notes')}
-        value={note}
-        onChangeText={setNote}
-        // `type='textarea'`, not a raw `multiline` prop: `Input` switches its
-        // whole layout (stacked label, `rows` line-height, top-aligned text)
-        // off that prop. Passing `multiline` alone left it rendered as a
-        // single-line row with the text vertically centred, which is not a
-        // notes field.
-        type='textarea'
-        rows={4}
-        placeholder={t('voters.notesPlaceholder')}
-      />
+        <Input
+          label={t('common.name')}
+          value={name}
+          onChangeText={setName}
+          placeholder={t('common.name')}
+        />
+        <Input
+          label={t('voters.father')}
+          value={father}
+          onChangeText={setFather}
+          placeholder={t('voters.father')}
+        />
+        <Input
+          label={t('voters.house')}
+          value={houseNo}
+          onChangeText={setHouseNo}
+          placeholder={t('voters.house')}
+        />
+        <Input
+          label={t('voters.age')}
+          value={age}
+          onChangeText={setAge}
+          keyboardType='number-pad'
+          error={showErrors && !ageValid ? t('voters.ageInvalid') : undefined}
+        />
 
-      <Button
-        onPress={() => void submit()}
-        loading={saving}
-        disabled={saving || !dirty}
-      >
-        {t('common.save')}
-      </Button>
-      {!dirty ? (
-        <Text variant='caption' style={styles.hint}>
-          {t('voters.noChanges')}
-        </Text>
-      ) : null}
+        <View style={styles.genderRow}>
+          {GENDERS.map((value) => {
+            const active = gender === value;
+            return (
+              <Button
+                key={value}
+                size='sm'
+                variant={active ? 'default' : 'outline'}
+                style={styles.genderButton}
+                onPress={() => setGender(value)}
+              >
+                {value}
+              </Button>
+            );
+          })}
+        </View>
+
+        <Input
+          label={t('voters.locality')}
+          value={locality}
+          onChangeText={setLocality}
+          placeholder={t('voters.locality')}
+        />
+        <Input
+          label={t('common.phone')}
+          value={phone}
+          onChangeText={setPhone}
+          keyboardType='phone-pad'
+          placeholder={t('voters.phoneHint')}
+        />
+
+        {/* Call / message, next to the number they act on rather than in a
+            separate card further down. Disabled until there is a number — the
+            roll carries none, so on first open all three would be dead. */}
+        <View style={styles.actions}>
+          <Button
+            size='sm'
+            variant='outline'
+            icon={Phone}
+            disabled={!phone}
+            onPress={() => void openLink(telUrl(phone), t('voters.noPhone'))}
+          >
+            {t('voters.call')}
+          </Button>
+          <Button
+            size='sm'
+            variant='outline'
+            icon={MessageCircle}
+            disabled={!phone}
+            onPress={() => void openLink(smsUrl(phone), t('voters.noPhone'))}
+          >
+            {t('voters.message')}
+          </Button>
+          <Button
+            size='sm'
+            variant='outline'
+            icon={MessageCircle}
+            disabled={!phone}
+            onPress={() => void openLink(whatsappUrl(phone), t('voters.noPhone'))}
+          >
+            {t('voters.whatsapp')}
+          </Button>
+        </View>
+
+        <Input
+          label={t('voters.jati')}
+          value={jati}
+          onChangeText={setJati}
+          placeholder={t('voters.jatiPlaceholder')}
+        />
+
+        {/* --- Fieldwork: committed one tap at a time, not via Save --- */}
+        <Card style={styles.card}>
+          <Text variant='subtitle'>{t('voters.voted')}</Text>
+          <View style={styles.segment}>
+            {(
+              [
+                ['voted', t('voters.votedYes'), CheckCircle2],
+                ['notVoted', t('voters.votedNo'), XCircle],
+                ['unknown', t('voters.votedUnknown'), Circle],
+              ] as [VotedStatus, string, typeof Circle][]
+            ).map(([value, label, glyph]) => {
+              const active = voter.voted === value;
+              return (
+                <Pressable
+                  key={value}
+                  onPress={() => void saveNow({ voted: value }, 'voted')}
+                  style={[
+                    styles.segmentItem,
+                    active ? { backgroundColor: primary, borderColor: primary } : null,
+                  ]}
+                  accessibilityRole='button'
+                  accessibilityState={{ selected: active }}
+                >
+                  <Icon name={glyph} size={16} color={active ? '#FFFFFF' : outline} />
+                  <Text variant='caption' style={{ color: active ? '#FFFFFF' : outline }}>
+                    {label}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+
+          <View style={styles.divider} />
+
+          <Text variant='subtitle'>{t('voters.support')}</Text>
+          <SelectField
+            label={t('voters.support')}
+            value={support}
+            placeholder={t('voters.support.unknown')}
+            options={SUPPORTS.map((value) => ({
+              value,
+              label: t(supportKey(value)),
+            }))}
+            onChange={(value) => setSupport(value as SupportCategory)}
+          />
+
+          <View style={styles.divider} />
+
+          <Text variant='subtitle'>{t('voters.leaning')}</Text>
+          <View style={styles.segment}>
+            {LEANING.map((value) => {
+              const active = voter.leaning === value;
+              return (
+                <Pressable
+                  key={value}
+                  onPress={() => void saveNow({ leaning: value }, 'leaning')}
+                  style={[
+                    styles.segmentItem,
+                    active ? { backgroundColor: primary, borderColor: primary } : null,
+                  ]}
+                  accessibilityRole='button'
+                  accessibilityState={{ selected: active }}
+                >
+                  <Text variant='caption' style={{ color: active ? '#FFFFFF' : outline }}>
+                    {t(leaningKey(value))}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        </Card>
+
+        <Card style={styles.card}>
+          <View style={styles.headRow}>
+            <Text variant='subtitle'>{t('voters.location')}</Text>
+            {voter.location ? (
+              <Pressable
+                onPress={() => void showMaps()}
+                hitSlop={8}
+                style={styles.inlineAction}
+              >
+                <Icon name={MapPin} size={16} color={outline} />
+                <Text variant='caption'>{t('voters.openMaps')}</Text>
+              </Pressable>
+            ) : null}
+          </View>
+
+          {voter.location ? (
+            // Coordinates alone do not tell a karykarta whether the fix is any
+            // good, so the card leads with accuracy and *when* it was taken —
+            // a reading from this morning and one from last week are not the
+            // same evidence, and only the timestamp distinguishes them.
+            <View style={{ gap: 2 }}>
+              <Text variant='caption' style={{ color: outline }}>
+                {voter.location.accuracy != null
+                  ? t('voters.locationAccuracy', {
+                      m: Math.round(voter.location.accuracy),
+                    })
+                  : t('voters.locationNoAccuracy')}
+              </Text>
+              <Text variant='caption' style={{ color: outline }}>
+                {`${voter.location.lat.toFixed(5)}, ${voter.location.lng.toFixed(5)}`}
+              </Text>
+              <Text variant='caption' style={{ color: outline }}>
+                {t('voters.locationTaken', {
+                  when: formatDateTime(voter.location.updatedAt),
+                })}
+              </Text>
+            </View>
+          ) : (
+            <Text variant='caption' style={{ color: outline }}>
+              {t('voters.locationNone')}
+            </Text>
+          )}
+
+          <Button
+            size='sm'
+            variant='outline'
+            icon={Crosshair}
+            loading={busy === 'location'}
+            disabled={busy !== null}
+            onPress={() => void captureLocation()}
+          >
+            {t('voters.addLocation')}
+          </Button>
+        </Card>
+
+        <Input
+          label={t('voters.notes')}
+          value={note}
+          onChangeText={setNote}
+          // `type='textarea'`, not a raw `multiline` prop: `Input` switches its
+          // whole layout (stacked label, `rows` line-height, top-aligned text)
+          // off that prop. Passing `multiline` alone left it rendered as a
+          // single-line row with the text vertically centred.
+          type='textarea'
+          rows={4}
+          placeholder={t('voters.notesPlaceholder')}
+        />
+
+        {/* Roll provenance — the four identifiers that are *not* editable,
+            because correcting them would desync this row from the CSV it came
+            from. Kept visible rather than folded into the header so a
+            karykarta can confirm they are looking at the right person. */}
+        <Card style={styles.card}>
+          <Text variant='subtitle'>{t('voters.rollInfo')}</Text>
+          <DetailRow
+            label={t('common.ward')}
+            value={t('voters.ward', { no: voter.wardNo })}
+          />
+          <DetailRow label={t('voters.epic')} value={voter.epicId} />
+          <DetailRow
+            label={t('voters.relation')}
+            value={voter.relationLabel}
+            hint={String(voter.serialNo)}
+          />
+          <DetailRow
+            label={t('voters.pdfPage', { no: voter.pdfPage })}
+            value={`#${voter.pdfPage}`}
+          />
+        </Card>
       </ScrollView>
+
+      {/* Save lives OUTSIDE the ScrollView.
+          Padding alone cannot guarantee it is visible: the form is taller than
+          any phone, so the button sits below the fold and the user has to
+          discover that it scrolls to reach it. As a pinned footer it is always
+          on screen, which also means it stays put while the keyboard is up.
+          The bottom padding clears the floating tab bar, which is an absolute
+          overlay and contributes no height of its own — see
+          `components/nav/floating-tab-bar.tsx`. */}
+      <View style={styles.footer}>
+        <Button
+          onPress={() => void submit()}
+          loading={saving}
+          disabled={saving || !dirty}
+        >
+          {t('common.save')}
+        </Button>
+        {!dirty ? (
+          <Text variant='caption' style={styles.hint}>
+            {t('voters.noChanges')}
+          </Text>
+        ) : null}
+        <Text variant='caption' style={[styles.hint, { color: outline }]}>
+          {queueSize > 0
+            ? `${t('voters.pendingSync')} · ${queueSize}`
+            : t('voters.savedLocally')}
+        </Text>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   fill: { flex: 1 },
-  // `flexGrow: 1` on the content container — see the note at the ScrollView.
-  body: { flexGrow: 1, padding: 20, paddingBottom: 48, gap: 14 },
+  // No large bottom padding here any more: the Save footer is a sibling of the
+  // ScrollView, so the content only needs to clear its own last card.
+  body: { flexGrow: 1, padding: 20, paddingTop: 12, paddingBottom: 24, gap: 14 },
+  footer: {
+    gap: 6,
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    // Clears the floating tab bar (pill + its 12px lift + the bottom inset).
+    paddingBottom: 112,
+  },
   center: {
     flex: 1,
     alignItems: 'center',
@@ -333,4 +829,50 @@ const styles = StyleSheet.create({
   genderRow: { flexDirection: 'row', gap: 8 },
   genderButton: { flex: 1, textTransform: 'capitalize' },
   hint: { textAlign: 'center' },
+  card: { gap: 12 },
+  identity: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+  identityText: { flex: 1, gap: 3, minWidth: 0 },
+  photoBox: {
+    width: PHOTO_SIZE,
+    height: PHOTO_SIZE,
+    borderRadius: CONTROL_RADIUS,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 2,
+    overflow: 'hidden',
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  photoFill: { borderRadius: 0 },
+  placeholderText: { fontSize: 10 },
+  photoBusy: {
+    // Spelled out rather than `...StyleSheet.absoluteFillObject`: that is a
+    // registered style ID in this RN version's typings, not a spreadable
+    // object, so spreading it silently dropped the overlay entirely.
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  actions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  headRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  segment: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  segmentItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    borderRadius: 999,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  inlineAction: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  divider: { height: StyleSheet.hairlineWidth, backgroundColor: '#E4E7F0' },
 });

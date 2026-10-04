@@ -1,8 +1,7 @@
-import { Chip } from '@/components/campaign/chip';
 import { EmptyState } from '@/components/campaign/empty-state';
 import { FilterBar, type FilterItem } from '@/components/campaign/filter-bar';
-import { ListRow } from '@/components/campaign/list-row';
 import { SearchInput } from '@/components/campaign/search-input';
+import { VoterCard } from '@/components/roll/voter-card';
 import { SectionHeader } from '@/components/campaign/section-header';
 import {
   SelectField,
@@ -23,7 +22,7 @@ import {
   searchVoters,
   type SearchScope,
 } from '@/lib/roll/search';
-import { formatDistance, haversineMeters, type LatLng } from '@/lib/geo';
+import { haversineMeters, type LatLng } from '@/lib/geo';
 import type { VoterView } from '@/lib/roll/types';
 import { FlashList } from '@shopify/flash-list';
 import * as Location from 'expo-location';
@@ -407,37 +406,27 @@ export default function VotersScreen() {
     setQuery('');
   };
 
-  const renderRow = ({ item }: { item: VoterView }) => {
-    const meters = located?.get(item.id);
-    return (
-      <ListRow
-        title={item.effective.name}
-        subtitle={[
-          item.effective.houseNo,
-          item.effective.locality,
-          // Distance replaces the age in the trailing meta slot when nearest
-          // mode is on — it is the number the user asked for, and the age is
-          // still on the detail screen.
-          meters === undefined ? null : formatDistance(meters),
-          item.epicId,
-        ]
-          .filter(Boolean)
-          .join(' · ')}
-        meta={`${item.effective.age}`}
-        onPress={() =>
-          router.push({
-            pathname: '/(tabs)/voters/[id]',
-            params: { id: item.id, ward: String(item.wardNo) },
-          })
-        }
-        trailing={
-          item.voted === 'voted' ? (
-            <Chip label={t('voters.votedYes')} tone='success' />
-          ) : null
-        }
-      />
-    );
-  };
+  /**
+   * A tap opens the edit sheet directly.
+   *
+   * There used to be a read-only detail screen between the list and the form,
+   * which meant two taps and a push/pop to change one field. The detail screen
+   * has since been folded into the edit sheet — photo, location, call/WhatsApp
+   * and the roll read-only rows all live there now — so routing to it as well
+   * would only have been a second copy of the same screen.
+   */
+  const renderRow = ({ item }: { item: VoterView }) => (
+    <VoterCard
+      voter={item}
+      meters={located?.get(item.id)}
+      onPress={() =>
+        router.push({
+          pathname: '/(tabs)/voters/edit',
+          params: { id: item.id, ward: String(item.wardNo) },
+        })
+      }
+    />
+  );
 
   return (
     <View style={styles.root}>
