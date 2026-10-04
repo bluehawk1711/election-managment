@@ -13,20 +13,54 @@ import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Spinner } from '@/components/ui/spinner';
 import { Text } from '@/components/ui/text';
+import { useToast } from '@/components/ui/toast';
 import { useColor } from '@/hooks/useColor';
 import { useRoll } from '@/hooks/useRoll';
 import { useAuth } from '@/providers/auth-provider';
 import { can, canReadWard } from '@/lib/roles';
-import { searchVoters } from '@/lib/roll/search';
+import {
+  SEARCH_SCOPES,
+  searchVoters,
+  type SearchScope,
+} from '@/lib/roll/search';
+import { formatDistance, haversineMeters, type LatLng } from '@/lib/geo';
 import type { VoterView } from '@/lib/roll/types';
 import { FlashList } from '@shopify/flash-list';
+import * as Location from 'expo-location';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { ShieldAlert, Users } from 'lucide-react-native';
+import { LocateFixed, ShieldAlert, Users } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 
 type StatusFilter = 'all' | 'voted' | 'unvoted' | 'edited';
+
+/** Age bands offered in the filter sheet. `any` is the default. */
+type AgeBand = 'any' | '18-25' | '26-40' | '41-60' | '60+';
+
+const AGE_BANDS: readonly AgeBand[] = ['any', '18-25', '26-40', '41-60', '60+'];
+
+/**
+ * Whether `age` falls inside a band.
+ *
+ * Bounds are inclusive at both ends and the bands are contiguous, so a voter
+ * at exactly 60 sits in `41-60` *and* `60+` — which is fine: each band is an
+ * independent "show me people in this range" toggle, not a partition.
+ */
+function ageInBand(age: number, band: AgeBand): boolean {
+  switch (band) {
+    case '18-25':
+      return age >= 18 && age <= 25;
+    case '26-40':
+      return age >= 26 && age <= 40;
+    case '41-60':
+      return age >= 41 && age <= 60;
+    case '60+':
+      return age >= 60;
+    default:
+      return true;
+  }
+}
 
 /**
  * Sentinel for the ward select's "every ward" option.
@@ -94,6 +128,7 @@ const RESULT_LIMIT = 300;
 export default function VotersScreen() {
   const { t } = useTranslation();
   const router = useRouter();
+  const toast = useToast();
   const { profile } = useAuth();
   const outline = useColor('outline');
   const params = useLocalSearchParams<{ ward?: string }>();
@@ -106,6 +141,19 @@ export default function VotersScreen() {
   const roll = useRoll(initialWard);
   const [query, setQuery] = useState('');
   const [status, setStatus] = useState<StatusFilter>('all');
+  /**
+   * Which fields the query is matched against.
+   *
+   * Starts as `name` alone: that is what a karykarta is told to say first, and
+   * a broad search across ~20 fields returns the wrong Mukesh far more often
+   * than it fails to return the right one. The badge row widens it deliberately
+   * — father's name when asking "whose son…", locality to find a lane.
+   */
+  const [scopes, setScopes] = useState<SearchScope[]>(['name']);
+  const [ageBand, setAgeBand] = useState<AgeBand>('any');
+  /** Origin for nearest-voter mode; `null` means the feature is off. */
+  const [origin, setOrigin] = useState<LatLng | null>(null);
+  const [locating, setLocating] = useState(false);
 
   const allWardNumbers = useMemo(
     () => (roll.wards?.wards ?? []).map((ward) => ward.wardNo),
@@ -133,43 +181,81 @@ export default function VotersScreen() {
   }, [roll.voters, restricted, allowedWards]);
 
   const searched = useMemo(
-    () => searchVoters(scoped, roll.index, query),
-    [scoped, roll.index, query]
+    () => searchVoters(scoped, roll.index, query, scopes),
+    [scoped, roll.index, query, scopes]
   );
 
-  const filtered = useMemo(() => {
-    const base =
-      status === 'all'
+  /**
+   * Age band, applied to the searched set before any status filtering, so the
+   * counts shown on the chips and the list itself always describe the same
+   * population.
+   */
+  const aged = useMemo(
+    () =>
+      ageBand === 'any'
         ? searched
+        : searched.filter((voter) => ageInBand(voter.effective.age, ageBand)),
+    [searched, ageBand]
+  );
+
+  /**
+   * Nearest-voter ordering.
+   *
+   * Only voters with a recorded fix can be ordered by distance — the roll
+   * itself carries no coordinates, so there is nothing to sort the rest by.
+   * Rather than silently listing everyone and pretending to be ranked, mode
+   * filters to the located ones and the empty state says why the list is
+   * empty when there are none.
+   *
+   * The distance map is keyed by voter id so the render loop stays O(n) over
+   * rows actually mounted, rather than recomputing per row.
+   */
+  const located = useMemo(() => {
+    if (!origin) return null;
+    const entries = scoped
+      .filter((voter) => voter.location)
+      .map((voter) => ({
+        voter,
+        meters: haversineMeters(origin, voter.location as { lat: number; lng: number }),
+      }))
+      .sort((a, b) => a.meters - b.meters);
+    return new Map(entries.map((entry) => [entry.voter.id, entry.meters]));
+  }, [scoped, origin]);
+
+  const filtered = useMemo(() => {
+    let base =
+      status === 'all'
+        ? aged
         : status === 'voted'
-          ? searched.filter((voter) => voter.voted === 'voted')
+          ? aged.filter((voter) => voter.voted === 'voted')
           : status === 'unvoted'
-            ? searched.filter((voter) => voter.voted !== 'voted')
-            : searched.filter((voter) => voter.pending);
+            ? aged.filter((voter) => voter.voted !== 'voted')
+            : aged.filter((voter) => voter.pending);
+    if (located) base = base.filter((voter) => located.has(voter.id));
     return base.slice(0, RESULT_LIMIT);
-  }, [searched, status]);
+  }, [aged, status, located]);
 
   /** How many matched before the render cap, for the footer line. */
   const withheld = useMemo(() => {
     const base =
       status === 'all'
-        ? searched.length
+        ? aged.length
         : status === 'voted'
-          ? searched.filter((voter) => voter.voted === 'voted').length
+          ? aged.filter((voter) => voter.voted === 'voted').length
           : status === 'unvoted'
-            ? searched.filter((voter) => voter.voted !== 'voted').length
-            : searched.filter((voter) => voter.pending).length;
+            ? aged.filter((voter) => voter.voted !== 'voted').length
+            : aged.filter((voter) => voter.pending).length;
     return Math.max(0, base - filtered.length);
-  }, [searched, status, filtered.length]);
+  }, [aged, status, filtered.length]);
 
   const counts = useMemo(
     () => ({
-      all: searched.length,
-      voted: searched.filter((voter) => voter.voted === 'voted').length,
-      unvoted: searched.filter((voter) => voter.voted !== 'voted').length,
-      edited: searched.filter((voter) => voter.pending).length,
+      all: aged.length,
+      voted: aged.filter((voter) => voter.voted === 'voted').length,
+      unvoted: aged.filter((voter) => voter.voted !== 'voted').length,
+      edited: aged.filter((voter) => voter.pending).length,
     }),
-    [searched]
+    [aged]
   );
 
   // The ward filter is a select rather than a row of chips. Thirteen wards plus
@@ -222,6 +308,75 @@ export default function VotersScreen() {
   const loading = roll.loading;
   const emptyAll = !loading && !roll.error && scoped.length === 0;
   const emptyFiltered = !loading && scoped.length > 0 && filtered.length === 0;
+  /** Nearest mode is on and nothing in the current scope has a fix. */
+  const emptyNearby = Boolean(located) && emptyFiltered;
+
+  /**
+   * Scope badges — which fields the query searches.
+   *
+   * Tapping a badge *toggles* it in or out, so "same name, in this lane" is one
+   * extra tap rather than a choice between two fixed queries. Turning the last
+   * one off would leave a search box that silently matches everything, which
+   * looks like the search is broken; the last active scope is kept instead.
+   */
+  const scopeItems = useMemo<FilterItem[]>(
+    () =>
+      SEARCH_SCOPES.map((scope) => ({
+        key: scope,
+        label: t(`voters.searchScope.${scope}` as const),
+        active: scopes.includes(scope),
+      })),
+    [scopes, t]
+  );
+
+  const toggleScope = (key: string) => {
+    const scope = key as SearchScope;
+    setScopes((current) => {
+      if (!current.includes(scope)) return [...current, scope];
+      return current.length > 1 ? current.filter((item) => item !== scope) : current;
+    });
+  };
+
+  const ageOptions = useMemo<SelectOption[]>(
+    () =>
+      AGE_BANDS.map((band) => ({
+        value: band,
+        label:
+          band === 'any'
+            ? t('voters.ageAny')
+            : `${t(`voters.age${band === '18-25' ? 'Young' : band === '26-40' ? 'Adult' : band === '41-60' ? 'Mid' : 'Senior'}` as const)}`,
+      })),
+    [t]
+  );
+
+  /**
+   * Turn nearest mode on with a fresh fix, or off if it is already on.
+   *
+   * A denial is reported and nothing else happens — no silent no-op, which is
+   * what `captureCurrentLocation` returning null would otherwise produce.
+   */
+  const toggleNearby = async () => {
+    if (origin) {
+      setOrigin(null);
+      return;
+    }
+    setLocating(true);
+    try {
+      const permission = await Location.requestForegroundPermissionsAsync();
+      if (permission.status !== 'granted') {
+        toast.error(t('voters.nearbyDenied'));
+        return;
+      }
+      const position = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced,
+      });
+      setOrigin({ lat: position.coords.latitude, lng: position.coords.longitude });
+    } catch {
+      toast.error(t('voters.locationFailed'));
+    } finally {
+      setLocating(false);
+    }
+  };
 
   // No role is a real state, not an error: every signed-in account starts with
   // no capabilities (`lib/roles.ts`), and `firestore.rules` denies every read.
@@ -235,30 +390,37 @@ export default function VotersScreen() {
     setQuery('');
   };
 
-  const renderRow = ({ item }: { item: VoterView }) => (
-    <ListRow
-      title={item.effective.name}
-      subtitle={[
-        item.effective.houseNo,
-        item.effective.locality,
-        item.epicId,
-      ]
-        .filter(Boolean)
-        .join(' · ')}
-      meta={`${item.effective.age}`}
-      onPress={() =>
-        router.push({
-          pathname: '/(tabs)/voters/[id]',
-          params: { id: item.id, ward: String(item.wardNo) },
-        })
-      }
-      trailing={
-        item.voted === 'voted' ? (
-          <Chip label={t('voters.votedYes')} tone='success' />
-        ) : null
-      }
-    />
-  );
+  const renderRow = ({ item }: { item: VoterView }) => {
+    const meters = located?.get(item.id);
+    return (
+      <ListRow
+        title={item.effective.name}
+        subtitle={[
+          item.effective.houseNo,
+          item.effective.locality,
+          // Distance replaces the age in the trailing meta slot when nearest
+          // mode is on — it is the number the user asked for, and the age is
+          // still on the detail screen.
+          meters === undefined ? null : formatDistance(meters),
+          item.epicId,
+        ]
+          .filter(Boolean)
+          .join(' · ')}
+        meta={`${item.effective.age}`}
+        onPress={() =>
+          router.push({
+            pathname: '/(tabs)/voters/[id]',
+            params: { id: item.id, ward: String(item.wardNo) },
+          })
+        }
+        trailing={
+          item.voted === 'voted' ? (
+            <Chip label={t('voters.votedYes')} tone='success' />
+          ) : null
+        }
+      />
+    );
+  };
 
   return (
     <View style={styles.root}>
@@ -293,6 +455,15 @@ export default function VotersScreen() {
               onChangeText={setQuery}
               placeholder={t('voters.searchPlaceholder')}
             />
+            {/* Which fields the search covers. Small badges under the input
+                rather than buried in settings: the default is name-only, so
+                this is how a user discovers why a father's name found nothing. */}
+            <View style={styles.gap}>
+              <Text variant='caption' style={{ color: outline }}>
+                {t('voters.searchIn')}
+              </Text>
+              <FilterBar items={scopeItems} onToggle={toggleScope} />
+            </View>
             <SelectField
               label={t('common.ward')}
               value={selectedWard}
@@ -305,6 +476,42 @@ export default function VotersScreen() {
               items={statusItems}
               onToggle={(key) => setStatus(key as StatusFilter)}
             />
+
+            {/* Age band, as a bottom sheet like the ward picker — the same
+                "current value is always visible" reason applies. */}
+            <SelectField
+              label={t('voters.ageFilter')}
+              value={ageBand}
+              placeholder={t('voters.ageAny')}
+              options={ageOptions}
+              onChange={(value) => setAgeBand(value as AgeBand)}
+              disabled={noRole}
+            />
+
+            <Button
+              size='sm'
+              variant={origin ? 'default' : 'outline'}
+              icon={LocateFixed}
+              loading={locating}
+              disabled={locating || noRole}
+              onPress={() => void toggleNearby()}
+            >
+              {origin ? t('voters.nearby') : t('voters.nearby')}
+            </Button>
+
+            {/* Nearest mode is deliberately loud when it yields nothing: the
+                usual cause is that no fix has been captured yet, which the
+                status-filter empty state ("clear your filters") would misread
+                as a broken search. */}
+            {emptyNearby ? (
+              <Card style={styles.gap}>
+                <Text variant='caption'>
+                  {scoped.some((voter) => voter.location)
+                    ? t('voters.nearbyNoneScoped')
+                    : t('voters.nearbyNone')}
+                </Text>
+              </Card>
+            ) : null}
 
             {restricted ? (
               <Text variant='caption' style={{ color: outline }}>

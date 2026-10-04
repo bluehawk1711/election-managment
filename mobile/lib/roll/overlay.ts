@@ -150,9 +150,26 @@ export async function putOverlay(
   const now = args.now ?? Date.now();
 
   const ward = { ...(await loadWardOverlay(storage, wardNo)) };
+  const previous = ward[voterId];
+  const incoming = stripUndefined(overlay);
+
+  // "Nothing changed" must be a no-op, exactly as in `patchVoter` above.
+  // Without this, tapping the already-selected Voted/Leaning/Support chip on
+  // the detail screen re-wrote the overlay and pushed a queue entry for keys
+  // that had not moved — which is why the "pending sync" badge could appear
+  // on a voter the user believed they had never edited. Shallow compare is
+  // deliberate: primitives (`voted`, `leaning`, photo URLs) are caught by
+  // value; a freshly-captured `location`/`photo` object is a new reference and
+  // counts as a change, which is also what the user intended by tapping it.
+  const changedKeys = Object.keys(incoming).filter((key) => {
+    const before = previous as unknown as Record<string, unknown> | undefined;
+    return before?.[key] !== (incoming as Record<string, unknown>)[key];
+  });
+  if (!changedKeys.length) return previous ?? null;
+
   const next: VoterOverlay = {
-    ...ward[voterId],
-    ...stripUndefined(overlay),
+    ...previous,
+    ...incoming,
     updatedAt: now,
     updatedBy: uid,
   };
@@ -163,7 +180,7 @@ export async function putOverlay(
   await enqueue(storage, {
     voterId,
     wardNo,
-    keys: Object.keys(overlay),
+    keys: changedKeys,
     updatedAt: now,
     updatedBy: uid,
   });

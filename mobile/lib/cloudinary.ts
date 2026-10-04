@@ -11,11 +11,12 @@
  * i.e. tens of KB, not megabytes.
  */
 import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
+import { Directory, File, Paths } from 'expo-file-system';
 
 /** Longest edge of an uploaded photo, in pixels. */
 const TARGET_WIDTH = 512;
-/** JPEG quality — deliberately aggressive; these are ID photos. */
-const QUALITY = 0.35;
+/** JPEG quality — aggressive, but 0.40 keeps faces legible for ID photos. */
+const QUALITY = 0.4;
 
 const CLOUD_NAME = process.env.EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME;
 const UPLOAD_PRESET = process.env.EXPO_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
@@ -31,6 +32,43 @@ export interface UploadedPhoto {
 /** `true` when the two Cloudinary env vars are present. */
 export function isCloudinaryConfigured(): boolean {
   return Boolean(CLOUD_NAME && UPLOAD_PRESET);
+}
+
+/** Subdirectory of the document dir that holds locally-saved voter photos. */
+const LOCAL_PHOTO_DIR = 'voter-photos';
+
+/**
+ * Writes an already-compressed JPEG (base64) into the app's document
+ * directory and returns its `file://` URI.
+ *
+ * The no-Cloudinary path: without this, a build with no upload env vars could
+ * not store a photo *at all* — `uploadPhoto` throws by contract and the pick
+ * was silently discarded, so the detail screen showed a spinner and then no
+ * photo. Document dir, not cache dir, because the cache is fair game for the
+ * OS to purge; a photo the karykarta took yesterday has to still be there.
+ *
+ * `key` is the voter id — stable, so re-taking a photo for the same voter
+ * overwrites in place instead of leaking one file per attempt. Sanitised to a
+ * filename-safe form first: voter ids are already `w{ward}-{serial}` and need
+ * no changes, but a stray separator would escape the subdirectory.
+ */
+export async function savePhotoLocally(base64: string, key: string): Promise<string> {
+  const safe = key.replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 80) || 'photo';
+  const dir = new Directory(Paths.document, LOCAL_PHOTO_DIR);
+  if (!dir.exists) dir.create({ intermediates: true });
+
+  const file = new File(dir, `${safe}.jpg`);
+  file.write(base64, { encoding: 'base64' });
+  return file.uri;
+}
+
+/**
+ * `true` when `photoUrl` points at a locally-stored file rather than a
+ * Cloudinary URL. The future sync must upload these instead of pushing a
+ * `file://` string to Firestore, and the distinction is this prefix.
+ */
+export function isLocalPhotoUrl(url: string | null | undefined): boolean {
+  return Boolean(url && url.startsWith('file://'));
 }
 
 /**

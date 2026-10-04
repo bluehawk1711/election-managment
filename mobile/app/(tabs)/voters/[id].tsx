@@ -14,6 +14,7 @@ import { useRoll } from '@/hooks/useRoll';
 import {
   compressForUpload,
   isCloudinaryConfigured,
+  savePhotoLocally,
   uploadPhoto,
 } from '@/lib/cloudinary';
 import {
@@ -202,12 +203,27 @@ export default function VoterDetailScreen() {
 
     setBusy('photo');
     try {
+      // Compress once, then either upload or keep it on the device. The
+      // previous version uploaded unconditionally, so a build with no
+      // Cloudinary env vars could not store a photo *at all* — `uploadPhoto`
+      // throws by contract and the pick was discarded, leaving an empty frame
+      // and an error toast. A local save is strictly better than losing the
+      // photo: it shows immediately, and a future sync can upload it later.
       const compressed = await compressForUpload(asset.uri);
-      const uploaded = await uploadPhoto(compressed.base64);
-      await save(
-        { photoUrl: uploaded.secureUrl, photoPublicId: uploaded.publicId },
-        'photo'
-      );
+
+      if (isCloudinaryConfigured()) {
+        const uploaded = await uploadPhoto(compressed.base64);
+        await save(
+          { photoUrl: uploaded.secureUrl, photoPublicId: uploaded.publicId },
+          'photo'
+        );
+      } else {
+        const localUri = await savePhotoLocally(compressed.base64, voterId);
+        // No `photoPublicId`: that field means "this lives on Cloudinary", and
+        // a later sync reads its absence as "still needs uploading".
+        await save({ photoUrl: localUri }, 'photo');
+        toast.success(t('voters.photoSavedLocally'));
+      }
     } catch (caught) {
       toast.error(t('voters.photoFailed'), caught instanceof Error ? caught.message : undefined);
     } finally {
@@ -298,9 +314,14 @@ export default function VoterDetailScreen() {
               <Text variant='caption' style={{ color: outline }}>
                 {busy === 'photo'
                   ? t('voters.photoUploading')
-                  : isCloudinaryConfigured()
-                    ? t('voters.addPhoto')
-                    : t('voters.photoFailed')}
+                  : // Was: `isCloudinaryConfigured() ? addPhoto : photoFailed`.
+                    // A photo is now saved locally when Cloudinary is absent,
+                    // so "upload failed" was a lie shown *before* the user
+                    // had even picked anything — every caption on every voter
+                    // read as an error.
+                    voter.photoUrl
+                    ? t('voters.replacePhoto')
+                    : t('voters.addPhoto')}
               </Text>
             </View>
             {busy === 'photo' ? <Spinner size='sm' variant='circle' /> : null}

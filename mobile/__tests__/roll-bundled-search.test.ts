@@ -108,7 +108,7 @@ describe('Hindi → English search (Latin query, Devanagari roll)', () => {
     const token = keyOf('ramesh');
 
     // Ranking is monotone: exact-field hits lead, then substrings.
-    const ranks = hits.map((voter) => rankKey(INDEX.get(voter.id)!, token));
+    const ranks = hits.map((voter) => rankKey(INDEX.get(voter.id)!.all, token));
     expect(ranks[0]).toBe(3);
     for (let i = 1; i < ranks.length; i += 1) {
       expect(ranks[i]).toBeLessThanOrEqual(ranks[i - 1]);
@@ -172,7 +172,7 @@ describe('English → Hindi search (Devanagari query, romanised copy)', () => {
     expect(hits.length).toBeGreaterThan(0);
 
     const token = keyOf('रमेश');
-    const ranks = hits.map((voter) => rankKey(INDEX.get(voter.id)!, token));
+    const ranks = hits.map((voter) => rankKey(INDEX.get(voter.id)!.all, token));
     expect(ranks[0]).toBe(3);
     for (let i = 1; i < ranks.length; i += 1) {
       expect(ranks[i]).toBeLessThanOrEqual(ranks[i - 1]);

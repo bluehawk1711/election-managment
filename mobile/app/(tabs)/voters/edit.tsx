@@ -36,11 +36,16 @@ export default function EditVoterScreen() {
   const router = useRouter();
   const toast = useToast();
   const { user } = useAuth();
-  const roll = useRoll();
-
   const params = useLocalSearchParams<{ id: string; ward?: string }>();
   const voterId = String(params.id ?? '');
   const wardParam = Number(params.ward);
+
+  // The ward MUST be passed to `useRoll` here, not left at the default
+  // ("all wards", paged in batches of three). Without it `roll.find` only
+  // searched the first three wards, so opening Edit for a voter in ward 4+
+  // rendered "No matching voters" — the form for a voter who was right there
+  // in the detail screen we came from.
+  const roll = useRoll(Number.isFinite(wardParam) && wardParam > 0 ? wardParam : null);
 
   const voter = roll.find(voterId);
   const wardNo = voter?.wardNo ?? (Number.isFinite(wardParam) ? wardParam : null);

@@ -29,6 +29,19 @@ type BottomSheetContentProps = {
   cardColor: string;
   mutedColor: string;
   screenHeight: number;
+  /**
+   * The sheet's own height, i.e. `screenHeight * largestSnapPoint`.
+   *
+   * The container used to be `height: screenHeight` while resting only
+   * `snapPoint` up the screen — so at a 0.92 snap its bottom edge sat 8% of
+   * the display *below* the screen, and the ScrollView inside it ended there
+   * too. Scrolling to the end of the list therefore parked the last option
+   * off-screen where no finger could reach it: exactly the "last ward item
+   * isn't visible" report. Sizing the container to the visible region makes
+   * the ScrollView's end coincide with the screen's, so the last row lands
+   * above the bottom edge like every other row.
+   */
+  sheetHeight: number;
   onHandlePress?: () => void;
   /**
    * Drag gesture, applied to the handle + title header ONLY.
@@ -56,6 +69,7 @@ const BottomSheetContent = ({
   cardColor,
   mutedColor,
   screenHeight,
+  sheetHeight,
   onHandlePress,
   gesture,
 }: BottomSheetContentProps) => {
@@ -104,7 +118,7 @@ const BottomSheetContent = ({
     <Animated.View
       style={[
         {
-          height: screenHeight,
+          height: sheetHeight,
           width: '100%',
           position: 'absolute',
           top: screenHeight,
@@ -178,6 +192,8 @@ export function BottomSheet({
 
   const snapPointsHeights = snapPoints.map((point) => -screenHeight * point);
   const defaultHeight = snapPointsHeights[0];
+  /** Visible height at the tallest snap — see `sheetHeight` on the content. */
+  const sheetHeight = screenHeight * Math.max(...snapPoints);
 
   const [modalVisible, setModalVisible] = React.useState(false);
 
@@ -350,6 +366,7 @@ export function BottomSheet({
             cardColor={cardColor}
             mutedColor={mutedColor}
             screenHeight={screenHeight}
+            sheetHeight={sheetHeight}
             onHandlePress={() => runOnJS(handlePress)()}
             gesture={disablePanGesture ? undefined : gesture}
           />

@@ -51,6 +51,25 @@ import {
 import type { VoterView } from '@/lib/roll/types';
 
 /**
+ * Which group of fields a query is matched against.
+ *
+ * The list screen defaults to `name` — the thing people actually say out
+ * loud — and the badge row lets the karykarta widen the search to a father's
+ * name, the locality, or everything else (EPIC, house, phone, age, note).
+ * The index keeps one key per group so widening is a union of pre-built keys,
+ * not a re-key of every field per keystroke.
+ */
+export type SearchScope = 'name' | 'father' | 'locality' | 'other';
+
+/** Fixed order — this is what makes `all` a stable join of the four. */
+export const SEARCH_SCOPES = ['name', 'father', 'locality', 'other'] as const;
+
+/** One voter's index entry: a key per scope, plus the union of all four. */
+export type IndexEntry = {
+  readonly all: SearchKey;
+} & Readonly<Record<SearchScope, SearchKey>>;
+
+/**
  * Lowercase, strip ASCII punctuation, collapse whitespace.
  *
  * Deliberately ASCII-only. An earlier version of this function also stripped
@@ -68,40 +87,58 @@ export function normalizeToken(value: string): string {
 }
 
 /**
- * Every searchable field of one voter.
+ * Every searchable field of one voter, grouped by scope.
  *
- * Kept as a list of separate values rather than a joined string, so each field
+ * Kept as lists of separate values rather than a joined string, so each field
  * keeps its own boundaries once keyed — see the note at the top of the file.
- * Order is stable, which is what makes the built index comparable between runs.
+ * The groups partition the old flat list exactly: concatenated in
+ * `SEARCH_SCOPES` order they produce the same fields in the same order, so
+ * the `all` key stays byte-identical to what the flat version built.
  */
-export function searchableFieldsOf(voter: VoterView): string[] {
+export function scopeFieldsOf(voter: VoterView): Record<SearchScope, string[]> {
   const e = voter.effective;
-  return [
-    e.name,
-    voter.nameEn ?? '',
-    voter.fatherOrHusbandName,
-    e.fatherOrHusbandName,
-    voter.fatherOrHusbandNameEn ?? '',
-    e.locality,
-    voter.locality,
-    voter.localityEn ?? '',
-    e.houseNo,
-    voter.houseNo,
-    voter.epicId,
-    voter.gender,
-    e.gender,
-    String(voter.age),
-    String(voter.serialNo),
-    String(voter.wardNo),
-    String(voter.pdfPage),
-    voter.relationLabel,
-    e.phone,
-    e.jati,
-    voter.overlay.support ?? '',
-    voter.overlay.leaning ?? '',
-    voter.overlay.leaningNote ?? '',
-    voter.overlay.note ?? '',
-  ].filter(Boolean);
+  return {
+    name: [e.name, voter.nameEn ?? ''],
+    father: [
+      voter.fatherOrHusbandName,
+      e.fatherOrHusbandName,
+      voter.fatherOrHusbandNameEn ?? '',
+    ],
+    locality: [e.locality, voter.locality, voter.localityEn ?? ''],
+    other: [
+      e.houseNo,
+      voter.houseNo,
+      voter.epicId,
+      voter.gender,
+      e.gender,
+      String(voter.age),
+      String(voter.serialNo),
+      String(voter.wardNo),
+      String(voter.pdfPage),
+      voter.relationLabel,
+      e.phone,
+      e.jati,
+      voter.overlay.support ?? '',
+      voter.overlay.leaning ?? '',
+      voter.overlay.leaningNote ?? '',
+      voter.overlay.note ?? '',
+    ],
+  };
+}
+
+/** Every searchable field of one voter, in the legacy flat order. */
+export function searchableFieldsOf(voter: VoterView): string[] {
+  const groups = scopeFieldsOf(voter);
+  return SEARCH_SCOPES.flatMap((scope) => groups[scope]);
+}
+
+/** Keys one field list the way the flat haystack used to be built. */
+function joinFields(fields: string[]): SearchKey {
+  const kept = fields.filter(Boolean);
+  return {
+    native: kept.map((field) => keyOf(field).native).join(HAYSTACK_SEP),
+    phonetic: kept.map((field) => keyOf(field).phonetic).join(HAYSTACK_SEP),
+  };
 }
 
 /**
@@ -111,15 +148,44 @@ export function searchableFieldsOf(voter: VoterView): string[] {
  * field — see the note there.
  */
 export function haystackOf(voter: VoterView): SearchKey {
-  const fields = searchableFieldsOf(voter);
+  return entryFor(voter).all;
+}
+
+/** Builds one voter's per-scope index entry (and the `all` union). */
+function entryFor(voter: VoterView): IndexEntry {
+  const groups = scopeFieldsOf(voter);
+  const scoped = {} as Record<SearchScope, SearchKey>;
+  for (const scope of SEARCH_SCOPES) scoped[scope] = joinFields(groups[scope]);
   return {
-    native: fields.map((field) => keyOf(field).native).join(HAYSTACK_SEP),
-    phonetic: fields.map((field) => keyOf(field).phonetic).join(HAYSTACK_SEP),
+    ...scoped,
+    all: {
+      native: SEARCH_SCOPES.map((scope) => scoped[scope].native).join(HAYSTACK_SEP),
+      phonetic: SEARCH_SCOPES.map((scope) => scoped[scope].phonetic).join(HAYSTACK_SEP),
+    },
   };
 }
 
-/** `voterId → key`, built once per loaded set. */
-export type SearchIndex = ReadonlyMap<string, SearchKey>;
+/**
+ * The key a query should be matched against.
+ *
+ * No scopes (or all of them) → the pre-joined `all` key, so the default
+ * path costs one map lookup. One scope → its key directly. Two or three →
+ * a join of pre-built keys, which is string concatenation over already-keyed
+ * text: no transliteration, no per-field work.
+ */
+function resolveKey(entry: IndexEntry, scopes?: readonly SearchScope[]): SearchKey {
+  if (!scopes || scopes.length === 0 || scopes.length >= SEARCH_SCOPES.length) {
+    return entry.all;
+  }
+  if (scopes.length === 1) return entry[scopes[0]];
+  return {
+    native: scopes.map((scope) => entry[scope].native).join(HAYSTACK_SEP),
+    phonetic: scopes.map((scope) => entry[scope].phonetic).join(HAYSTACK_SEP),
+  };
+}
+
+/** `voterId → IndexEntry`, built once per loaded set. */
+export type SearchIndex = ReadonlyMap<string, IndexEntry>;
 
 /**
  * `voterId → key` for rows whose key is a pure function of the base row.
@@ -139,13 +205,13 @@ export type SearchIndex = ReadonlyMap<string, SearchKey>;
  * that changes a row under the same id cannot outlive the session that knew
  * the old value.
  */
-const baseKeyCache = new Map<string, SearchKey>();
+const baseKeyCache = new Map<string, IndexEntry>();
 
 /** Bounds the cache — same reasoning as `KEY_CACHE_MAX` in `translit.ts`. */
 const BASE_KEY_CACHE_MAX = 30_000;
 const BASE_KEY_CACHE_EVICT = 4_096;
 
-function rememberBaseKey(voterId: string, key: SearchKey): SearchKey {
+function rememberBaseKey(voterId: string, key: IndexEntry): IndexEntry {
   if (baseKeyCache.size >= BASE_KEY_CACHE_MAX) {
     let toEvict = BASE_KEY_CACHE_EVICT;
     for (const existing of baseKeyCache.keys()) {
@@ -158,7 +224,7 @@ function rememberBaseKey(voterId: string, key: SearchKey): SearchKey {
 }
 
 export function buildIndex(voters: VoterView[]): SearchIndex {
-  const index = new Map<string, SearchKey>();
+  const index = new Map<string, IndexEntry>();
   for (const voter of voters) {
     // `updatedAt` is required on every overlay the app writes, so its absence
     // is exactly "nothing has ever been written for this voter".
@@ -168,12 +234,12 @@ export function buildIndex(voters: VoterView[]): SearchIndex {
         index.set(voter.id, cached);
         continue;
       }
-      const key = haystackOf(voter);
+      const key = entryFor(voter);
       index.set(voter.id, key);
       rememberBaseKey(voter.id, key);
       continue;
     }
-    index.set(voter.id, haystackOf(voter));
+    index.set(voter.id, entryFor(voter));
   }
   return index;
 }
@@ -198,13 +264,19 @@ function queryTokens(query: string): SearchKey[] {
  * everything, and a query that is only separators matches everything too — the
  * caller should not have to care that "  " normalises to nothing.
  */
-export function matches(index: SearchIndex, voter: VoterView, query: string): boolean {
+export function matches(
+  index: SearchIndex,
+  voter: VoterView,
+  query: string,
+  scopes?: readonly SearchScope[]
+): boolean {
   const tokens = queryTokens(query);
   if (!tokens.length) return true;
 
-  const haystack = index.get(voter.id);
-  if (haystack === undefined) return false;
+  const entry = index.get(voter.id);
+  if (entry === undefined) return false;
 
+  const haystack = resolveKey(entry, scopes);
   return tokens.every((token) => keyContains(haystack, token));
 }
 
@@ -218,11 +290,16 @@ export function matches(index: SearchIndex, voter: VoterView, query: string): bo
  * and that is precisely the kind of thing a user feels as lag between
  * keystrokes. `Array.prototype.sort` is stable, so equal ranks stay in roll
  * order and the list does not shuffle as more characters arrive.
+ *
+ * `scopes` narrows *which* fields are matched — see `SearchScope`. Omitted,
+ * every field is searched, which is the behaviour every existing caller and
+ * test gets unchanged.
  */
 export function searchVoters(
   voters: VoterView[],
   index: SearchIndex,
-  query: string
+  query: string,
+  scopes?: readonly SearchScope[]
 ): VoterView[] {
   const trimmed = query.trim();
   if (!trimmed) return voters;
@@ -231,8 +308,9 @@ export function searchVoters(
 
   const hits: { voter: VoterView; rank: number }[] = [];
   for (const voter of voters) {
-    const haystack = index.get(voter.id);
-    if (haystack === undefined) continue;
+    const entry = index.get(voter.id);
+    if (entry === undefined) continue;
+    const haystack = resolveKey(entry, scopes);
     if (!tokens.every((token) => keyContains(haystack, token))) continue;
 
     let rank = 3;

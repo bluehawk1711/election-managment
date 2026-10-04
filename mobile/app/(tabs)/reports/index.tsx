@@ -3,6 +3,7 @@ import { EmptyState } from '@/components/campaign/empty-state';
 import { ProgressRail } from '@/components/campaign/progress-rail';
 import { SectionHeader } from '@/components/campaign/section-header';
 import { Card } from '@/components/ui/card';
+import { ScrollView } from '@/components/ui/scroll-view';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Text } from '@/components/ui/text';
 import { useColor } from '@/hooks/useColor';
@@ -19,7 +20,13 @@ import { Pressable, StyleSheet, View } from 'react-native';
 interface WardReport {
   wardNo: number;
   boothNo: number;
+  roomNo: number;
+  boothAddress: string;
+  delimitation: string;
   total: number;
+  male: number;
+  female: number;
+  third: number;
   voted: number;
   photos: number;
   edited: number;
@@ -32,6 +39,12 @@ interface WardReport {
  * voted/photo/edit counts from this device's overlay. That is the honest
  * number while sync is off — the screen shows this device's progress rather
  * than implying a campaign-wide tally it cannot compute.
+ *
+ * The screen is scrollable and leads with data that exists before anyone has
+ * marked a single voter — gender split, booth address and room, the area the
+ * ward covers. The field counters (turnout, photos, pending) sit on top of
+ * that rather than being the whole page, so the report is never a wall of
+ * zeros on a fresh install.
  *
  * A karykarta sees only their assigned booth; admin and above see all 13.
  */
@@ -72,7 +85,13 @@ export default function ReportsScreen() {
       byWard.set(ward.wardNo, {
         wardNo: ward.wardNo,
         boothNo: ward.boothNo,
+        roomNo: ward.roomNo,
+        boothAddress: ward.boothAddress,
+        delimitation: ward.delimitation,
         total: ward.voterCount,
+        male: ward.male,
+        female: ward.female,
+        third: ward.thirdGender,
         voted: 0,
         photos: 0,
         edited: 0,
@@ -97,11 +116,13 @@ export default function ReportsScreen() {
       reports.reduce(
         (acc, ward) => ({
           total: acc.total + ward.total,
+          male: acc.male + ward.male,
+          female: acc.female + ward.female,
           voted: acc.voted + ward.voted,
           photos: acc.photos + ward.photos,
           edited: acc.edited + ward.edited,
         }),
-        { total: 0, voted: 0, photos: 0, edited: 0 }
+        { total: 0, male: 0, female: 0, voted: 0, photos: 0, edited: 0 }
       ),
     [reports]
   );
@@ -148,7 +169,7 @@ export default function ReportsScreen() {
 
   return (
     <View style={styles.root}>
-      <View style={styles.pad}>
+      <ScrollView contentContainerStyle={styles.pad}>
         <Card style={styles.card}>
           <Text variant='caption' style={{ color: outline }}>
             {t('reports.turnout')}
@@ -168,6 +189,16 @@ export default function ReportsScreen() {
             </Text>
             <Text variant='caption' style={{ color: outline }}>
               {t('reports.pending')}: {totals.edited}
+            </Text>
+          </View>
+          {/* The roll's own census — present from the first launch, before any
+              field work, so the summary is never just zeros. */}
+          <View style={styles.statRow}>
+            <Text variant='caption' style={{ color: outline }}>
+              {t('reports.male')}: {totals.male}
+            </Text>
+            <Text variant='caption' style={{ color: outline }}>
+              {t('reports.female')}: {totals.female}
             </Text>
           </View>
         </Card>
@@ -227,11 +258,32 @@ export default function ReportsScreen() {
                     {t('reports.pending')}: {ward.edited}
                   </Text>
                 </View>
+                {/* Ward census — from `wards-summary.csv`, always populated. */}
+                <View style={styles.statRow}>
+                  <Text variant='caption' style={{ color: outline }}>
+                    {t('reports.male')}: {ward.male}
+                  </Text>
+                  <Text variant='caption' style={{ color: outline }}>
+                    {t('reports.female')}: {ward.female}
+                  </Text>
+                  {ward.third > 0 ? (
+                    <Text variant='caption' style={{ color: outline }}>
+                      {t('reports.third')}: {ward.third}
+                    </Text>
+                  ) : null}
+                </View>
+                {/* Booth logistics: where to actually go on polling day. */}
+                <Text variant='caption' style={{ color: outline }}>
+                  {t('reports.room')}: {ward.roomNo} · {ward.boothAddress}
+                </Text>
+                <Text variant='caption' numberOfLines={2} style={{ color: outline }}>
+                  {ward.delimitation}
+                </Text>
               </Card>
             </Pressable>
           );
         })}
-      </View>
+      </ScrollView>
     </View>
   );
 }
