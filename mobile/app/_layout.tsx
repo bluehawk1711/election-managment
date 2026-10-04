@@ -44,12 +44,21 @@ SplashScreen.setOptions({
  * scoped to the signed-in uid fails there regardless of what this file does.
  */
 function RootNavigator() {
-  const { user, profile, loading } = useAuth();
+  const { user, profile, loading, profileLoading } = useAuth();
 
   // `onAuthStateChanged` fires once after the SDK has finished reading
   // LargeSecureStore, which takes a beat. Rendering the navigator before it
   // resolves flashes the sign-in screen at a user who is already signed in.
-  if (loading) {
+  //
+  // The second wait is `profileLoading`: the signed-in user arrives from one
+  // source and their profile document from another (a Firestore snapshot), and
+  // nothing routes correctly until both are known. Rendering early meant the
+  // guard below read `profile === null` as "no role" and the first screen a
+  // user saw was the "no role assigned yet" empty state, which then vanished a
+  // second later when the snapshot landed — reported as a flicker on every cold
+  // start. Both waits share one spinner because they are one thing to a user:
+  // "the app is opening".
+  if (loading || profileLoading) {
     return (
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
         <Spinner size='lg' variant='circle' />
@@ -62,7 +71,8 @@ function RootNavigator() {
   // There is no trigger doing it — the provider writes it from its snapshot
   // listener — so this window is real. Treating null as "not onboarded" would
   // flash the onboarding screen at a returning user, so hold them in the app
-  // until it arrives.
+  // until it arrives. (`profileLoading` above already covers the window in
+  // which this is true.)
   const needsOnboarding = signedIn && profile?.onboarded === false;
 
   const stack = (

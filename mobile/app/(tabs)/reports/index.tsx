@@ -169,7 +169,7 @@ export default function ReportsScreen() {
 
   return (
     <View style={styles.root}>
-      <ScrollView contentContainerStyle={styles.pad}>
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.pad}>
         <Card style={styles.card}>
           <Text variant='caption' style={{ color: outline }}>
             {t('reports.turnout')}

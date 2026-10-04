@@ -51,6 +51,7 @@ import {
   MessageCircle,
   Pencil,
   Phone,
+  Plus,
   XCircle,
 } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
@@ -251,6 +252,20 @@ export default function VoterDetailScreen() {
   const setLeaning = (leaning: Leaning) => save({ leaning }, 'leaning');
   const setSupport = (support: SupportCategory) => save({ support }, 'support');
 
+  /**
+   * Opens the edit sheet for this voter.
+   *
+   * Extracted because the Edit button in the header and the add/edit-number
+   * button in the contact card must send the same route params — a copy of
+   * this navigation was the kind of thing that drifts, and a missing `ward`
+   * is exactly what made Edit show "no voter found" for ward 4+.
+   */
+  const openEdit = () =>
+    router.push({
+      pathname: '/(tabs)/voters/edit',
+      params: { id: voterId, ward: String(wardNo) },
+    });
+
   const openLink = async (url: string | null, failed: string) => {
     if (!url) return;
     const ok = await openExternal(url);
@@ -272,12 +287,7 @@ export default function VoterDetailScreen() {
               size='sm'
               variant='outline'
               icon={Pencil}
-              onPress={() =>
-                router.push({
-                  pathname: '/(tabs)/voters/edit',
-                  params: { id: voter.id, ward: String(voter.wardNo) },
-                })
-              }
+              onPress={openEdit}
             >
               {t('common.edit')}
             </Button>
@@ -490,6 +500,21 @@ export default function VoterDetailScreen() {
         <Text variant='subtitle'>{t('voters.contact')}</Text>
         <Card style={styles.card}>
           <DetailRow label={t('common.phone')} value={e.phone} hint={t('voters.phoneHint')} />
+          {/* The roll carries no phone numbers, so on first open every dial
+              button below is disabled. That left the card as three dead
+              controls and no way to add one from here — the only edit was the
+              Edit button at the top of the screen, so a user who wanted to
+              record a number had to know that. This is that control, in the
+              place the number lives, and it switches to "edit" wording once
+              there is something to change. */}
+          <Button
+            size='sm'
+            variant={e.phone ? 'outline' : 'default'}
+            icon={e.phone ? Pencil : Plus}
+            onPress={openEdit}
+          >
+            {e.phone ? t('voters.changePhone') : t('voters.addPhone')}
+          </Button>
           <View style={styles.actions}>
             <Button
               size='sm'
@@ -556,6 +581,10 @@ export default function VoterDetailScreen() {
 function ScrollViewish({ children }: { children: React.ReactNode }) {
   return (
     <ScrollView
+      // `flex: 1` is what makes this scrollable at all — without it the
+      // ScrollView sizes to its content and the long detail body runs off the
+      // bottom of the screen. See the same note in `edit.tsx`.
+      style={{ flex: 1 }}
       contentContainerStyle={{
         padding: 20,
         paddingTop: 8,

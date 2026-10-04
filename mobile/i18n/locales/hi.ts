@@ -323,6 +323,8 @@ export const hi: Record<TranslationKey, string> = {
   'voters.pendingSync': 'सिंक बाकी',
   'voters.savedLocally': 'इस डिवाइस पर सहेजा गया',
   'voters.phoneHint': 'सूची में फ़ोन नंबर नहीं हैं — यहाँ जोड़ें।',
+  'voters.addPhone': 'फ़ोन नंबर जोड़ें',
+  'voters.changePhone': 'फ़ोन नंबर बदलें',
   'voters.notes': 'टिप्पणियाँ',
   'voters.notesPlaceholder': 'टीम को जो जानना चाहिए…',
   'voters.photoPermission': 'फ़ोटो जोड़ने के लिए फ़ोटो लाइब्रेरी अनुमति चाहिए।',

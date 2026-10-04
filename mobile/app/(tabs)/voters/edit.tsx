@@ -1,13 +1,13 @@
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { SelectField } from '@/components/campaign/select-field';
+import { Input } from '@/components/ui/input';
 import { ScrollView } from '@/components/ui/scroll-view';
 import { Text } from '@/components/ui/text';
 import { useToast } from '@/components/ui/toast';
 import { View } from '@/components/ui/view';
 import { useRoll } from '@/hooks/useRoll';
 import { overlayStorage, patchVoter } from '@/lib/roll/overlay';
-import type { Gender, SupportCategory } from '@/lib/roll/types';
+import type { Gender, SupportCategory, VoterView } from '@/lib/roll/types';
 import { useAuth } from '@/providers/auth-provider';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
@@ -27,16 +27,25 @@ const supportKey = (value: SupportCategory) => `voters.support.${value}` as cons
  * here calls Firestore, so the save works offline by construction and the
  * queued entry is what a later sync will push.
  *
- * `undefined` for an untouched field is what keeps a partial form from
- * erasing values it did not render; an empty string still clears, because the
- * user typed it.
+ * ## Why the form is its own component
+ *
+ * `useState` initialisers run **once, at mount** — they are not re-evaluated
+ * when a value later arrives. The roll loads asynchronously, so on first mount
+ * `roll.find(voterId)` is still `undefined` and every field would seed to
+ * `''`. The screen then rendered its "no matching voters" placeholder, but
+ * React kept the component (and its state) alive; when the row landed, the
+ * form appeared **empty**, with `dirty` true — so saving would have written a
+ * row of blanks over a real voter's name, father, house and age.
+ *
+ * Mounting the form only once the voter exists makes the initialisers read
+ * real data, and remounting it per voter id (the `key` below) means switching
+ * voters re-seeds rather than carrying the previous voter's values across.
+ * Anything that seeds state from an async value has to be structured this way.
  */
 export default function EditVoterScreen() {
   const { t } = useTranslation();
   const router = useRouter();
-  const toast = useToast();
-  const { user } = useAuth();
-  const params = useLocalSearchParams<{ id: string; ward?: string }>();
+  const params = useLocalSearchParams<{ id?: string; ward?: string }>();
   const voterId = String(params.id ?? '');
   const wardParam = Number(params.ward);
 
@@ -45,63 +54,112 @@ export default function EditVoterScreen() {
   // searched the first three wards, so opening Edit for a voter in ward 4+
   // rendered "No matching voters" — the form for a voter who was right there
   // in the detail screen we came from.
-  const roll = useRoll(Number.isFinite(wardParam) && wardParam > 0 ? wardParam : null);
+  const roll = useRoll(
+    Number.isFinite(wardParam) && wardParam > 0 ? wardParam : null
+  );
 
   const voter = roll.find(voterId);
   const wardNo = voter?.wardNo ?? (Number.isFinite(wardParam) ? wardParam : null);
 
-  const [name, setName] = useState(voter?.effective.name ?? '');
-  const [father, setFather] = useState(voter?.effective.fatherOrHusbandName ?? '');
-  const [houseNo, setHouseNo] = useState(voter?.effective.houseNo ?? '');
-  const [age, setAge] = useState(String(voter?.effective.age ?? ''));
-  const [gender, setGender] = useState<Gender>(voter?.effective.gender ?? 'male');
-  const [locality, setLocality] = useState(voter?.effective.locality ?? '');
-  const [phone, setPhone] = useState(voter?.effective.phone ?? '');
-  const [jati, setJati] = useState(voter?.effective.jati ?? '');
-  const [support, setSupport] = useState<SupportCategory>(
-    voter?.support ?? 'unknown'
+  if (!voter || wardNo == null) {
+    // Still a loading state while the roll has nothing, a genuine miss
+    // otherwise. The two are told apart by `loading` so a slow read does not
+    // read as "this voter does not exist".
+    return (
+      <View style={styles.center}>
+        {roll.loading ? (
+          <Text variant='caption'>{t('common.loading')}</Text>
+        ) : (
+          <Text variant='caption'>{t('voters.noMatches')}</Text>
+        )}
+        <Button size='sm' variant='outline' onPress={() => router.back()}>
+          {t('common.close')}
+        </Button>
+      </View>
+    );
+  }
+
+  return (
+    <EditForm
+      key={voter.id}
+      voter={voter}
+      wardNo={wardNo}
+      onSaved={roll.refresh}
+    />
   );
-  const [note, setNote] = useState(voter?.overlay.note ?? '');
+}
+
+/**
+ * The editable form, mounted only once the voter is known.
+ *
+ * Takes the resolved `VoterView` rather than looking it up, so every field
+ * below is initialised from real data on the first render and never has to
+ * be re-synced afterwards.
+ */
+function EditForm({
+  voter,
+  wardNo,
+  onSaved,
+}: {
+  voter: VoterView;
+  wardNo: number;
+  onSaved: () => void;
+}) {
+  const { t } = useTranslation();
+  const router = useRouter();
+  const toast = useToast();
+  const { user } = useAuth();
+
+  const base = voter.effective;
+
+  // `?? ''` rather than `base.X`: an overlay-cleared field is legitimately
+  // empty, and the form must show what is stored, not fall back to a base
+  // value the user deliberately removed.
+  const [name, setName] = useState(base.name ?? '');
+  const [father, setFather] = useState(base.fatherOrHusbandName ?? '');
+  const [houseNo, setHouseNo] = useState(base.houseNo ?? '');
+  const [age, setAge] = useState(String(base.age ?? ''));
+  const [gender, setGender] = useState<Gender>(base.gender ?? 'male');
+  const [locality, setLocality] = useState(base.locality ?? '');
+  const [phone, setPhone] = useState(base.phone ?? '');
+  const [jati, setJati] = useState(base.jati ?? '');
+  const [support, setSupport] = useState<SupportCategory>(
+    voter.support ?? 'unknown'
+  );
+  const [note, setNote] = useState(voter.overlay.note ?? '');
   const [showErrors, setShowErrors] = useState(false);
   const [saving, setSaving] = useState(false);
 
   const parsedAge = Number(age.trim());
   const ageValid =
-    age.trim() !== '' && Number.isInteger(parsedAge) && parsedAge >= 18 && parsedAge <= 100;
+    age.trim() !== '' &&
+    Number.isInteger(parsedAge) &&
+    parsedAge >= 18 &&
+    parsedAge <= 100;
 
   /**
    * Whether anything has actually changed.
    *
-   * Every field is compared against `voter?.effective.X ?? ''` rather than
-   * behind a `voter ? … : false` guard. The guard made `dirty` permanently
-   * `false` while the row was still loading, which left the Save button
-   * disabled no matter what was typed — the form looked editable and silently
-   * refused to save. That is the "I can't add a number" report: the phone
-   * field was fine, the button was not.
+   * `base` is now the resolved voter, not an optional lookup, so this cannot
+   * be permanently `false` while the row loads — the version that compared
+   * against `voter?.effective.X ?? ''` left Save disabled for every keystroke
+   * typed before the row arrived.
    */
-  const base = voter?.effective;
   const dirty =
-    name !== (base?.name ?? '') ||
-    father !== (base?.fatherOrHusbandName ?? '') ||
-    houseNo !== (base?.houseNo ?? '') ||
-    String(base?.age ?? '') !== age.trim() ||
-    gender !== (base?.gender ?? 'male') ||
-    locality !== (base?.locality ?? '') ||
-    phone !== (base?.phone ?? '') ||
-    jati !== (base?.jati ?? '') ||
-    support !== (voter?.support ?? 'unknown') ||
-    (voter?.overlay.note ?? '') !== note;
+    name !== (base.name ?? '') ||
+    father !== (base.fatherOrHusbandName ?? '') ||
+    houseNo !== (base.houseNo ?? '') ||
+    String(base.age ?? '') !== age.trim() ||
+    gender !== (base.gender ?? 'male') ||
+    locality !== (base.locality ?? '') ||
+    phone !== (base.phone ?? '') ||
+    jati !== (base.jati ?? '') ||
+    support !== (voter.support ?? 'unknown') ||
+    (voter.overlay.note ?? '') !== note;
 
   const submit = async () => {
     if (!ageValid) {
       setShowErrors(true);
-      return;
-    }
-    if (!voter || wardNo == null) {
-      // Used to return in silence, so tapping Save with the row still loading
-      // did nothing at all — no write, no message, no way to tell it apart
-      // from a broken button.
-      toast.error(t('voters.errorBody'));
       return;
     }
 
@@ -109,7 +167,7 @@ export default function EditVoterScreen() {
     try {
       const current = voter.effective;
       await patchVoter(overlayStorage, {
-        voterId,
+        voterId: voter.id,
         wardNo,
         uid: user?.uid ?? 'local',
         patch: {
@@ -129,7 +187,7 @@ export default function EditVoterScreen() {
           ...((voter.overlay.note ?? '') !== note ? { note } : {}),
         },
       });
-      roll.refresh();
+      onSaved();
       toast.success(t('voters.savedLocally'));
       router.back();
     } catch {
@@ -139,22 +197,23 @@ export default function EditVoterScreen() {
     }
   };
 
-  if (!voter) {
-    return (
-      <View style={styles.center}>
-        <Text variant='caption'>{t('voters.noMatches')}</Text>
-        <Button size='sm' variant='outline' onPress={() => router.back()}>
-          {t('common.close')}
-        </Button>
-      </View>
-    );
-  }
-
   return (
-    <ScrollView
-      contentContainerStyle={styles.body}
-      keyboardShouldPersistTaps='handled'
-    >
+    // The bounded `View` is the actual fix, not decoration on the ScrollView.
+    // As the bare root of a screen inside a `presentation: 'modal'` stack,
+    // the ScrollView relied on the scene stretching it to a bounded height —
+    // which it does not do reliably on Android — so it laid out at its full
+    // content height and never became scrollable. Every screen in this app
+    // that scrolls wraps one (see `booths/index.tsx`), and this is the only
+    // one that did not.
+    <View style={styles.fill}>
+      <ScrollView
+        style={styles.fill}
+        // `flexGrow: 1` lets a *short* form still fill the viewport, so the
+        // Save button sits at the bottom edge rather than floating mid-screen
+        // on a tall device. `gap` stays on the content style.
+        contentContainerStyle={styles.body}
+        keyboardShouldPersistTaps='handled'
+      >
       <Text variant='caption'>{t('voters.editHint')}</Text>
 
       <Input
@@ -233,7 +292,13 @@ export default function EditVoterScreen() {
         label={t('voters.notes')}
         value={note}
         onChangeText={setNote}
-        multiline
+        // `type='textarea'`, not a raw `multiline` prop: `Input` switches its
+        // whole layout (stacked label, `rows` line-height, top-aligned text)
+        // off that prop. Passing `multiline` alone left it rendered as a
+        // single-line row with the text vertically centred, which is not a
+        // notes field.
+        type='textarea'
+        rows={4}
         placeholder={t('voters.notesPlaceholder')}
       />
 
@@ -249,12 +314,15 @@ export default function EditVoterScreen() {
           {t('voters.noChanges')}
         </Text>
       ) : null}
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  body: { padding: 20, paddingBottom: 48, gap: 14 },
+  fill: { flex: 1 },
+  // `flexGrow: 1` on the content container — see the note at the ScrollView.
+  body: { flexGrow: 1, padding: 20, paddingBottom: 48, gap: 14 },
   center: {
     flex: 1,
     alignItems: 'center',

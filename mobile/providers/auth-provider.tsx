@@ -42,6 +42,20 @@ interface AuthContextType {
   profile: Profile | null;
   /** True until the persisted user has been read off disk. */
   loading: boolean;
+  /**
+   * True once signed in, until this user's profile document has resolved.
+   *
+   * Distinct from `profile === null`, which is genuinely ambiguous on its own:
+   * a null profile means either "the snapshot has not landed yet" or "this
+   * account really has no role". `loading` only covers the *first* source
+   * (the persisted user), so between the two there was a ~1s window where the
+   * app was fully interactive, `profile` was null, and every screen that
+   * gates on a role showed its "no role assigned yet" empty state — which then
+   * vanished when the snapshot arrived. Reading that as "no role" is what
+   * flashed "अभी कोई भूमिका नहीं दी गई" at a signed-in user on every cold
+   * start. Screens must show a loading state while this is true.
+   */
+  profileLoading: boolean;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
 }
@@ -58,10 +72,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     profile: Profile | null;
   } | null>(null);
   const [loading, setLoading] = useState(true);
+  /**
+   * The uid whose profile has *resolved* — either delivered or terminally
+   * failed. A separate field rather than a flag on `profileEntry`, because the
+   * failure path sets the entry to null, which is indistinguishable from
+   * "still loading" without it. Without this the app would spin forever on a
+   * rules rejection.
+   */
+  const [resolvedProfileUid, setResolvedProfileUid] = useState<string | null>(null);
 
   const userId = user?.uid ?? null;
   const profile =
     user && profileEntry?.uid === user.uid ? profileEntry.profile : null;
+  const profileLoading = userId !== null && resolvedProfileUid !== userId;
 
   useEffect(() => {
     // Fires once after the SDK has finished reading LargeSecureStore, with
@@ -100,11 +123,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
 
         setProfileEntry({ uid: userId, profile: profileFromDoc(snapshot) });
+        setResolvedProfileUid(userId);
       },
       () => {
         // A rules rejection here is terminal. Leave the profile null rather
         // than stale; the guards treat that as "not loaded", not "onboarded".
+        // Marked resolved anyway — this *is* the answer, and waiting on a
+        // snapshot that will never fire would hang the app.
         setProfileEntry(null);
+        setResolvedProfileUid(userId);
       }
     );
   }, [userId]);
@@ -183,8 +210,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const refreshProfile = useCallback(async () => {
     if (!userId) return;
     const snapshot = await getDoc(doc(db, 'users', userId));
-    if (!snapshot.exists()) return;
+    if (!snapshot.exists()) {
+      setResolvedProfileUid(userId);
+      return;
+    }
     setProfileEntry({ uid: userId, profile: profileFromDoc(snapshot) });
+    setResolvedProfileUid(userId);
   }, [userId]);
 
   return (
@@ -196,6 +227,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // can never briefly expose the previous user's profile.
         profile,
         loading,
+        profileLoading,
         signOut,
         refreshProfile,
       }}

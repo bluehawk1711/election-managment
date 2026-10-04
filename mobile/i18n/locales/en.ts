@@ -327,6 +327,8 @@ export const en = {
   'voters.pendingSync': 'Pending sync',
   'voters.savedLocally': 'Saved on this device',
   'voters.phoneHint': 'The roll carries no phone numbers — add one here.',
+  'voters.addPhone': 'Add phone number',
+  'voters.changePhone': 'Change phone number',
   'voters.notes': 'Notes',
   'voters.notesPlaceholder': 'Anything the team should know…',
   'voters.photoPermission': 'Photo library permission is needed to attach a photo.',
