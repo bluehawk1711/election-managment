@@ -260,6 +260,7 @@ export const en = {
   'voters.ageMid': '41–60',
   'voters.ageSenior': '60+',
   'voters.nearby': 'Nearest to me',
+  'voters.nearbyOff': 'Turn off nearest mode',
   'voters.nearbyLocating': 'Finding your location…',
   'voters.nearbyDenied': 'Location permission is needed to find nearby voters.',
   'voters.nearbyNone':

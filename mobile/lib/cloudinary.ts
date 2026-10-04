@@ -58,17 +58,16 @@ export async function savePhotoLocally(base64: string, key: string): Promise<str
   if (!dir.exists) dir.create({ intermediates: true });
 
   const file = new File(dir, `${safe}.jpg`);
+  // `create()` is what actually makes the file — `write` alone writes into an
+  // existing one — and it *throws* if the path is already taken. Since the
+  // filename is the voter id, re-taking a photo for the same voter hits an
+  // existing file, so the create is guarded: first photo creates, later ones
+  // overwrite in place (`write` defaults to `append: false`). Unguarded, the
+  // second photo for any voter failed with "already exists" and surfaced as
+  // "Photo upload failed" — a bug that only appears on the *second* attempt.
+  if (!file.exists) file.create({ intermediates: true });
   file.write(base64, { encoding: 'base64' });
   return file.uri;
-}
-
-/**
- * `true` when `photoUrl` points at a locally-stored file rather than a
- * Cloudinary URL. The future sync must upload these instead of pushing a
- * `file://` string to Firestore, and the distinction is this prefix.
- */
-export function isLocalPhotoUrl(url: string | null | undefined): boolean {
-  return Boolean(url && url.startsWith('file://'));
 }
 
 /**

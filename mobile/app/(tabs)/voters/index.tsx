@@ -38,7 +38,26 @@ type StatusFilter = 'all' | 'voted' | 'unvoted' | 'edited';
 /** Age bands offered in the filter sheet. `any` is the default. */
 type AgeBand = 'any' | '18-25' | '26-40' | '41-60' | '60+';
 
-const AGE_BANDS: readonly AgeBand[] = ['any', '18-25', '26-40', '41-60', '60+'];
+/**
+ * Band → bounds and label key, in one place.
+ *
+ * The label keys were previously derived by a nested ternary inside a template
+ * literal (`t('voters.age' + cond ? 'Young' : ...)`), which is unreadable and
+ * silently mistranslates if a band is added. One row per band makes the option
+ * list and its bounds impossible to drift apart.
+ */
+const AGE_BANDS: readonly {
+  value: AgeBand;
+  min: number;
+  max: number;
+  labelKey: 'voters.ageAny' | 'voters.ageYoung' | 'voters.ageAdult' | 'voters.ageMid' | 'voters.ageSenior';
+}[] = [
+  { value: 'any', min: -Infinity, max: Infinity, labelKey: 'voters.ageAny' },
+  { value: '18-25', min: 18, max: 25, labelKey: 'voters.ageYoung' },
+  { value: '26-40', min: 26, max: 40, labelKey: 'voters.ageAdult' },
+  { value: '41-60', min: 41, max: 60, labelKey: 'voters.ageMid' },
+  { value: '60+', min: 60, max: Infinity, labelKey: 'voters.ageSenior' },
+];
 
 /**
  * Whether `age` falls inside a band.
@@ -48,18 +67,9 @@ const AGE_BANDS: readonly AgeBand[] = ['any', '18-25', '26-40', '41-60', '60+'];
  * independent "show me people in this range" toggle, not a partition.
  */
 function ageInBand(age: number, band: AgeBand): boolean {
-  switch (band) {
-    case '18-25':
-      return age >= 18 && age <= 25;
-    case '26-40':
-      return age >= 26 && age <= 40;
-    case '41-60':
-      return age >= 41 && age <= 60;
-    case '60+':
-      return age >= 60;
-    default:
-      return true;
-  }
+  const row = AGE_BANDS.find((candidate) => candidate.value === band);
+  if (!row) return true;
+  return age >= row.min && age <= row.max;
 }
 
 /**
@@ -310,6 +320,16 @@ export default function VotersScreen() {
   const emptyFiltered = !loading && scoped.length > 0 && filtered.length === 0;
   /** Nearest mode is on and nothing in the current scope has a fix. */
   const emptyNearby = Boolean(located) && emptyFiltered;
+  /**
+   * Which of the two "nothing nearby" messages applies.
+   *
+   * `located.size === 0` means no voter *in the selected wards* has a fix at
+   * all — the real answer is "capture locations first". A non-empty `located`
+   * with an empty result means the query/age/status filter excluded them all,
+   * which is a different thing to tell someone standing in a lane. Reading it
+   * off `located` also avoids re-scanning every loaded row on each render.
+   */
+  const nearbyReason = located && located.size === 0 ? 'none' : 'scoped';
 
   /**
    * Scope badges — which fields the query searches.
@@ -340,11 +360,8 @@ export default function VotersScreen() {
   const ageOptions = useMemo<SelectOption[]>(
     () =>
       AGE_BANDS.map((band) => ({
-        value: band,
-        label:
-          band === 'any'
-            ? t('voters.ageAny')
-            : `${t(`voters.age${band === '18-25' ? 'Young' : band === '26-40' ? 'Adult' : band === '41-60' ? 'Mid' : 'Senior'}` as const)}`,
+        value: band.value,
+        label: t(band.labelKey),
       })),
     [t]
   );
@@ -496,7 +513,14 @@ export default function VotersScreen() {
               disabled={locating || noRole}
               onPress={() => void toggleNearby()}
             >
-              {origin ? t('voters.nearby') : t('voters.nearby')}
+              {/* Label says what tapping does *next*: the control is a toggle,
+                  and a label that reads the same either way gives no sign the
+                  mode is on beyond the button's own styling. */}
+              {locating
+                ? t('voters.nearbyLocating')
+                : origin
+                  ? t('voters.nearbyOff')
+                  : t('voters.nearby')}
             </Button>
 
             {/* Nearest mode is deliberately loud when it yields nothing: the
@@ -506,9 +530,9 @@ export default function VotersScreen() {
             {emptyNearby ? (
               <Card style={styles.gap}>
                 <Text variant='caption'>
-                  {scoped.some((voter) => voter.location)
-                    ? t('voters.nearbyNoneScoped')
-                    : t('voters.nearbyNone')}
+                  {nearbyReason === 'none'
+                    ? t('voters.nearbyNone')
+                    : t('voters.nearbyNoneScoped')}
                 </Text>
               </Card>
             ) : null}
@@ -559,7 +583,7 @@ export default function VotersScreen() {
                 title={t('voters.title')}
                 body={t('voters.emptyBody')}
               />
-            ) : emptyFiltered && !noRole ? (
+            ) : emptyFiltered && !noRole && !emptyNearby ? (
               <EmptyState
                 icon={Users}
                 title={t('voters.noMatches')}

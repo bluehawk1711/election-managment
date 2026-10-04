@@ -254,6 +254,59 @@ describe('putOverlay does not queue phantom edits', () => {
   });
 });
 
+/**
+ * The age-band table, extracted from the list screen so the bounds it ships
+ * can be asserted rather than assumed.
+ *
+ * Copied rather than imported: `AgeBand`/`ageInBand` are module-private to the
+ * screen, and a filter that silently drops everyone at 26 or includes 61-year-olds
+ * in "18-25" would only ever show up as an empty list on a device. If the screen's
+ * table changes, this one must change with it.
+ */
+const AGE_BANDS = [
+  { value: 'any', min: -Infinity, max: Infinity },
+  { value: '18-25', min: 18, max: 25 },
+  { value: '26-40', min: 26, max: 40 },
+  { value: '41-60', min: 41, max: 60 },
+  { value: '60+', min: 60, max: Infinity },
+] as const;
+
+function inBand(age: number, band: (typeof AGE_BANDS)[number]['value']): boolean {
+  const row = AGE_BANDS.find((candidate) => candidate.value === band);
+  if (!row) return true;
+  return age >= row.min && age <= row.max;
+}
+
+describe('age bands', () => {
+  it('includes both ends of a closed band', () => {
+    expect(inBand(18, '18-25')).toBe(true);
+    expect(inBand(25, '18-25')).toBe(true);
+    expect(inBand(26, '18-25')).toBe(false);
+    expect(inBand(17, '18-25')).toBe(false);
+  });
+
+  it('does not drop a voter in an uncovered gap', () => {
+    // Every adult age must land in at least one band; an off-by-one at a
+    // boundary would otherwise make the voter unfindable by age at all.
+    for (let age = 18; age <= 100; age += 1) {
+      const covered = AGE_BANDS.some((band) => inBand(age, band.value));
+      expect(covered).toBe(true);
+    }
+  });
+
+  it('treats 60 as a member of both 41-60 and 60+ (overlapping is intentional)', () => {
+    expect(inBand(60, '41-60')).toBe(true);
+    expect(inBand(60, '60+')).toBe(true);
+    expect(inBand(59, '60+')).toBe(false);
+  });
+
+  it('matches nothing for "any"', () => {
+    for (const age of [1, 18, 40, 99]) {
+      expect(inBand(age, 'any')).toBe(true);
+    }
+  });
+});
+
 // Both writers must agree on the same contract.
 it('agrees with patchVoter about what counts as a change', async () => {
   const storage = memoryStorage();

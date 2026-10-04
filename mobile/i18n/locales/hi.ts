@@ -256,6 +256,7 @@ export const hi: Record<TranslationKey, string> = {
   'voters.ageMid': '41–60',
   'voters.ageSenior': '60+',
   'voters.nearby': 'मेरे पास के',
+  'voters.nearbyOff': 'पास के मोड बंद करें',
   'voters.nearbyLocating': 'आपका स्थान खोजा जा रहा है…',
   'voters.nearbyDenied': 'पास के मतदाता खोजने के लिए स्थान अनुमति चाहिए।',
   'voters.nearbyNone':
