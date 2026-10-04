@@ -66,7 +66,18 @@ function RootNavigator() {
   const needsOnboarding = signedIn && profile?.onboarded === false;
 
   const stack = (
-    <Stack screenOptions={{ headerShown: false }}>
+    <Stack
+      screenOptions={{
+        headerShown: false,
+        // No screen-transition animation anywhere in the app. Native-stack
+        // defaults to a slide on every push and modal presentation, and on a
+        // mid-range Android that transition is a full-scene re-render measured
+        // in hundreds of milliseconds — the most consistently "the app is
+        // slow" feeling thing in the build. See `lib/anim-off.ts` for the
+        // in-component half of the same policy.
+        animation: 'none',
+      }}
+    >
       <Stack.Protected guard={!signedIn}>
         <Stack.Screen name='(auth)' options={{ headerShown: false }} />
       </Stack.Protected>

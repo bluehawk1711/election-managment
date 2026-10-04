@@ -1,8 +1,5 @@
 import { StyleSheet } from 'react-native';
-import Animated, {
-  useAnimatedStyle,
-  type SharedValue,
-} from 'react-native-reanimated';
+import Animated, { useAnimatedStyle, type SharedValue } from 'react-native-reanimated';
 
 type Props = {
   /** Animated x offset within the tab row (pixels). */

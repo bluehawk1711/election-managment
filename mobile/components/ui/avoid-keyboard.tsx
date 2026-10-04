@@ -1,12 +1,7 @@
 import { useKeyboardHeight } from '@/hooks/useKeyboardHeight';
 import { useEffect } from 'react';
-import Animated, {
-  Easing,
-  useAnimatedStyle,
-  useReducedMotion,
-  useSharedValue,
-  withTiming,
-} from 'react-native-reanimated';
+import Animated, { Easing, useAnimatedStyle, useReducedMotion, useSharedValue } from 'react-native-reanimated';
+import { withTiming } from '@/lib/anim-off';
 
 type Props = { offset?: number; duration?: number };
 

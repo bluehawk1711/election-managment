@@ -4,12 +4,8 @@ import { HEIGHT } from '@/theme/globals';
 import React, { useEffect } from 'react';
 import { ViewStyle } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import Animated, {
-  runOnJS,
-  useAnimatedStyle,
-  useSharedValue,
-  withTiming,
-} from 'react-native-reanimated';
+import Animated, { runOnJS, useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
+import { withTiming } from '@/lib/anim-off';
 
 interface ProgressProps {
   value: number; // 0-100

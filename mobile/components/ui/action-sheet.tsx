@@ -15,14 +15,8 @@ import {
   TouchableOpacity,
   ViewStyle,
 } from 'react-native';
-import Animated, {
-  Easing,
-  interpolate,
-  runOnJS,
-  useAnimatedStyle,
-  useSharedValue,
-  withTiming,
-} from 'react-native-reanimated';
+import Animated, { Easing, interpolate, runOnJS, useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
+import { withTiming } from '@/lib/anim-off';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export interface ActionSheetOption {

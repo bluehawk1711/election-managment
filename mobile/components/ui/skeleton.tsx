@@ -2,13 +2,8 @@ import { useColor } from '@/hooks/useColor';
 import { BORDER_RADIUS, CORNERS } from '@/theme/globals';
 import React, { useEffect } from 'react';
 import { ViewStyle } from 'react-native';
-import Animated, {
-  Easing,
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-  withRepeat,
-} from 'react-native-reanimated';
+import Animated, { Easing, useSharedValue, useAnimatedStyle } from 'react-native-reanimated';
+import { withTiming, withRepeat } from '@/lib/anim-off';
 
 interface SkeletonProps {
   width?: number | string;

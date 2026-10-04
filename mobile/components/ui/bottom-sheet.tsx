@@ -16,13 +16,8 @@ import {
   GestureDetector,
   GestureHandlerRootView,
 } from 'react-native-gesture-handler';
-import Animated, {
-  runOnJS,
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring,
-  withTiming,
-} from 'react-native-reanimated';
+import Animated, { runOnJS, useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
+import { withSpring, withTiming } from '@/lib/anim-off';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type BottomSheetContentProps = {

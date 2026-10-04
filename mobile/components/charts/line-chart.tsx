@@ -2,15 +2,8 @@ import { useColor } from '@/hooks/useColor';
 import React, { useEffect, useState } from 'react';
 import { LayoutChangeEvent, View, ViewStyle } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import Animated, {
-  runOnJS,
-  SharedValue,
-  useAnimatedProps,
-  useSharedValue,
-  withDelay,
-  withSpring,
-  withTiming,
-} from 'react-native-reanimated';
+import Animated, { runOnJS, SharedValue, useAnimatedProps, useSharedValue } from 'react-native-reanimated';
+import { withDelay, withSpring, withTiming } from '@/lib/anim-off';
 import Svg, {
   Circle,
   Defs,

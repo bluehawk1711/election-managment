@@ -1,4 +1,4 @@
-import { withSequence, withSpring } from 'react-native-reanimated';
+import { withSequence, withSpring } from '@/lib/anim-off';
 
 /**
  * The one place animation curves live (plan §8). The floating tab bar is the

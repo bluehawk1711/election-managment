@@ -19,7 +19,8 @@ import {
 import { useCallback, useEffect, useState, type ComponentType } from 'react';
 import { StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useSharedValue, withSpring } from 'react-native-reanimated';
+import { useSharedValue } from 'react-native-reanimated';
+import { withSpring } from '@/lib/anim-off';
 
 /**
  * Route name → lucide icon; labels arrive from each screen's `title`.

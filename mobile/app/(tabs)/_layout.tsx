@@ -30,6 +30,10 @@ export default function TabsLayout() {
       screenOptions={{
         headerShown: false,
         sceneStyle: { backgroundColor: background },
+        // Tab switches swap scenes instantly rather than cross-fading them.
+        // Half the frames of a fade are two scenes mounted at once, which on a
+        // roll screen means two lists worth of rows — see `lib/anim-off.ts`.
+        animation: 'none',
       }}
     >
       <Tabs.Screen name='(home)' options={{ title: t('nav.home') }} />

@@ -1,12 +1,8 @@
 import { useColor } from '@/hooks/useColor';
 import React, { useEffect, useState } from 'react';
 import { LayoutChangeEvent, View, ViewStyle } from 'react-native';
-import Animated, {
-  SharedValue,
-  useAnimatedProps,
-  useSharedValue,
-  withTiming,
-} from 'react-native-reanimated';
+import Animated, { SharedValue, useAnimatedProps, useSharedValue } from 'react-native-reanimated';
+import { withTiming } from '@/lib/anim-off';
 import Svg, { G, Rect, Text as SvgText } from 'react-native-svg';
 
 // Animated SVG Components

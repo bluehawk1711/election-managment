@@ -8,11 +8,7 @@ import type { LucideProps } from 'lucide-react-native';
 import { useEffect, type ComponentType } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, type LayoutChangeEvent } from 'react-native';
-import Animated, {
-  FadeIn,
-  useAnimatedStyle,
-  useSharedValue,
-} from 'react-native-reanimated';
+import Animated, { useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
 
 export type TabFrame = { x: number; width: number };
 
@@ -92,8 +88,11 @@ export function TabItem({
         <Icon name={icon} size={20} color={focused ? color : inactiveColor} />
       </Animated.View>
 
+      {/* The label mounts with the tab instead of fading in: animations are
+          off app-wide (see `lib/anim-off.ts`), and a fade-in here also used to
+          delay the row's `onLayout` measurement by a frame. */}
       {focused && (
-        <Animated.View entering={FadeIn.duration(160)}>
+        <View>
           <Text
             variant='caption'
             numberOfLines={1}
@@ -101,7 +100,7 @@ export function TabItem({
           >
             {label}
           </Text>
-        </Animated.View>
+        </View>
       )}
 
       {badge != null && badge > 0 && (

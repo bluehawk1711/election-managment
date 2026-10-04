@@ -16,6 +16,8 @@ export default function OnboardingLayout() {
         // No swipe back out of onboarding — the only way forward is through,
         // and the route guard would bounce them here again anyway.
         gestureEnabled: false,
+        // Transitions off, like every other stack in the app (`lib/anim-off.ts`).
+        animation: 'none',
       }}
     >
       <Stack.Screen name='index' />

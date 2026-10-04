@@ -320,6 +320,43 @@ export function phoneticKey(text: string): string {
 }
 
 /**
+ * Compiles `table` into a longest-first alternation, once.
+ *
+ * Hoisted to module scope **on purpose, and load-bearing**: these used to be
+ * built inside `devanagariToLatin`, which meant every call re-sorted ~90 keys,
+ * re-escaped them and re-compiled three `RegExp`s. Indexing the roll makes
+ * ~130k calls — 390k regex compilations, ~3.2 s on V8 and far worse on Hermes,
+ * all of it inside a `useMemo` on the render path. That single design slip is
+ * what made the app feel unusable; the tables are immutable, so there is no
+ * reason to rebuild them per row.
+ */
+const escapeAlternation = (table: Record<string, string>): RegExp =>
+  new RegExp(
+    Object.keys(table)
+      .sort((a, b) => b.length - a.length)
+      .map((key) => key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+      .join('|'),
+    'g'
+  );
+
+const CONJUNCT_RE = escapeAlternation(CONJUNCT);
+// The nukta letters MUST be an alternation, not a `[...]` character class.
+// Each is two code points (base + U+093C), and a character class parses
+// those as two *independent* alternatives — so bare `क` would match the
+// class, look up `NUKTA_LETTERS['क']`, get `undefined`, and splice the
+// literal string "undefined" into the key. That is not hypothetical: it
+// turned `मुकेश कुमार` into `mundefinedsh undefinedmr` and quietly broke
+// every Hindi name starting with k/g/j/d/p/f/r.
+const NUKTA_RE = escapeAlternation(NUKTA_LETTERS);
+
+// Consonants genuinely are all single code points, so a class is correct
+// here — and the class form is what makes this pass fast over 6,855 rows.
+const CONSONANT_RE = new RegExp(
+  `[${Object.keys(CONSONANT).sort((a, b) => b.length - a.length).join('')}]`,
+  'g'
+);
+
+/**
  * Devanagari → its Latin consonants. An intermediate step, exported for tests.
  *
  * It does **not** produce romanised Hindi with vowels (that would be "mukes",
@@ -330,41 +367,15 @@ export function phoneticKey(text: string): string {
  * scripts are compared in the same alphabet.
  */
 export function devanagariToLatin(text: string): string {
-  const escapeAlternation = (table: Record<string, string>): RegExp =>
-    new RegExp(
-      Object.keys(table)
-        .sort((a, b) => b.length - a.length)
-        .map((key) => key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
-        .join('|'),
-      'g'
-    );
-
-  const conjunctRe = escapeAlternation(CONJUNCT);
-  // The nukta letters MUST be an alternation, not a `[...]` character class.
-  // Each is two code points (base + U+093C), and a character class parses
-  // those as two *independent* alternatives — so bare `क` would match the
-  // class, look up `NUKTA_LETTERS['क']`, get `undefined`, and splice the
-  // literal string "undefined" into the key. That is not hypothetical: it
-  // turned `मुकेश कुमार` into `mundefinedsh undefinedmr` and quietly broke
-  // every Hindi name starting with k/g/j/d/p/f/r.
-  const nuktaRe = escapeAlternation(NUKTA_LETTERS);
-
-  // Consonants genuinely are all single code points, so a class is correct
-  // here — and the class form is what makes this pass fast over 6,855 rows.
-  const consonantRe = new RegExp(
-    `[${Object.keys(CONSONANT).sort((a, b) => b.length - a.length).join('')}]`,
-    'g'
-  );
-
   return text
     .replace(DIGITS, (digit) => String(digit.charCodeAt(0) - 0x0966))
     // `?? matched` on both table lookups: a table miss should pass the
     // character through untouched, never emit "undefined" into an index.
-    .replace(nuktaRe, (matched) => NUKTA_LETTERS[matched] ?? matched)
+    .replace(NUKTA_RE, (matched) => NUKTA_LETTERS[matched] ?? matched)
     // Any nukta left over was a combining mark on an already-mapped letter.
     .replace(/़/g, '')
-    .replace(conjunctRe, (matched) => CONJUNCT[matched] ?? matched)
-    .replace(consonantRe, (matched) => CONSONANT[matched] ?? matched)
+    .replace(CONJUNCT_RE, (matched) => CONJUNCT[matched] ?? matched)
+    .replace(CONSONANT_RE, (matched) => CONSONANT[matched] ?? matched)
     .replace(INDEPENDENT_VOWELS, '')
     .replace(ANUSVARA, 'n')
     .replace(DROPPED_SIGNS, '')
@@ -392,8 +403,50 @@ export type SearchKey = {
   phonetic: string;
 };
 
+/**
+ * Memo for `keyOf`, because the roll repeats itself.
+ *
+ * Indexing 6,855 rows keys ~130k field values, but only ~22k of them are
+ * distinct: every ward reuses the same localities, house numbers, ages,
+ * genders and relation labels, and the same father's name recurs across a
+ * family. Measured on the real roll, three quarters of all key computations
+ * were recomputing a value already computed moments earlier — at ~20 regex
+ * passes each, that was the single biggest term in a multi-second index build.
+ *
+ * Entries are immutable (`SearchKey` is only ever read), so sharing the object
+ * is safe. Eviction is insertion-ordered — `Map` iteration order — and clears a
+ * chunk at a time rather than the whole cache, so hitting the cap costs one
+ * cheap loop instead of a cold rebuild of everything.
+ */
+const KEY_CACHE = new Map<string, SearchKey>();
+
+/**
+ * Sized for the whole roll (~22k distinct fields) with headroom, and small
+ * enough that the retained strings stay in the low tens of megabytes.
+ */
+const KEY_CACHE_MAX = 30_000;
+const KEY_CACHE_EVICT = 4_096;
+
 export function keyOf(text: string): SearchKey {
-  return { native: nativeKey(text), phonetic: phoneticKey(text) };
+  const cached = KEY_CACHE.get(text);
+  if (cached !== undefined) return cached;
+
+  const key: SearchKey = { native: nativeKey(text), phonetic: phoneticKey(text) };
+
+  if (KEY_CACHE.size >= KEY_CACHE_MAX) {
+    let toEvict = KEY_CACHE_EVICT;
+    for (const existing of KEY_CACHE.keys()) {
+      KEY_CACHE.delete(existing);
+      if (--toEvict <= 0) break;
+    }
+  }
+  KEY_CACHE.set(text, key);
+  return key;
+}
+
+/** Test hook: drops the memo so a case can be measured cold. */
+export function clearKeyCache(): void {
+  KEY_CACHE.clear();
 }
 
 /**

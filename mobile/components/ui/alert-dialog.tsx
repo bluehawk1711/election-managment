@@ -16,12 +16,8 @@ import {
   View,
   ViewStyle,
 } from 'react-native';
-import Animated, {
-  runOnJS,
-  useAnimatedStyle,
-  useSharedValue,
-  withTiming,
-} from 'react-native-reanimated';
+import Animated, { runOnJS, useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
+import { withTiming } from '@/lib/anim-off';
 
 export type AlertDialogProps = {
   isVisible: boolean;

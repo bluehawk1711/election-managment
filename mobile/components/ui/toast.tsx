@@ -21,15 +21,8 @@ import {
   GestureDetector,
   GestureHandlerRootView,
 } from 'react-native-gesture-handler';
-import Animated, {
-  Easing,
-  runOnJS,
-  useAnimatedStyle,
-  useSharedValue,
-  withDelay,
-  withSpring,
-  withTiming,
-} from 'react-native-reanimated';
+import Animated, { Easing, runOnJS, useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
+import { withDelay, withSpring, withTiming } from '@/lib/anim-off';
 
 export type ToastVariant = 'default' | 'success' | 'error' | 'warning' | 'info';
 

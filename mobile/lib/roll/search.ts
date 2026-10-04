@@ -103,9 +103,60 @@ export function haystackOf(voter: VoterView): SearchKey {
 /** `voterId → key`, built once per loaded set. */
 export type SearchIndex = ReadonlyMap<string, SearchKey>;
 
+/**
+ * `voterId → key` for rows whose key is a pure function of the base row.
+ *
+ * The base roll never changes for a given id, so its key never changes either
+ * — which makes re-indexing the same row pure waste. That waste was not
+ * theoretical: `useRoll` rebuilds the index whenever the row set changes (a
+ * new ward batch, an overlay write, a refetch), and a full build over 6,855
+ * rows used to cost *seconds* of blocked JS thread on every one of those.
+ *
+ * The guard is `overlay.updatedAt === undefined`, i.e. "this voter has never
+ * been edited": an edited row's `effective` fields (and phone / leaning / note)
+ * are overlay-derived, so it must be keyed fresh every time. An unedited row's
+ * key is derived only from base fields, which are immutable per id.
+ *
+ * Session-scoped deliberately: the cache dies with the process, so a reseed
+ * that changes a row under the same id cannot outlive the session that knew
+ * the old value.
+ */
+const baseKeyCache = new Map<string, SearchKey>();
+
+/** Bounds the cache — same reasoning as `KEY_CACHE_MAX` in `translit.ts`. */
+const BASE_KEY_CACHE_MAX = 30_000;
+const BASE_KEY_CACHE_EVICT = 4_096;
+
+function rememberBaseKey(voterId: string, key: SearchKey): SearchKey {
+  if (baseKeyCache.size >= BASE_KEY_CACHE_MAX) {
+    let toEvict = BASE_KEY_CACHE_EVICT;
+    for (const existing of baseKeyCache.keys()) {
+      baseKeyCache.delete(existing);
+      if (--toEvict <= 0) break;
+    }
+  }
+  baseKeyCache.set(voterId, key);
+  return key;
+}
+
 export function buildIndex(voters: VoterView[]): SearchIndex {
   const index = new Map<string, SearchKey>();
-  for (const voter of voters) index.set(voter.id, haystackOf(voter));
+  for (const voter of voters) {
+    // `updatedAt` is required on every overlay the app writes, so its absence
+    // is exactly "nothing has ever been written for this voter".
+    if (voter.overlay.updatedAt === undefined) {
+      const cached = baseKeyCache.get(voter.id);
+      if (cached !== undefined) {
+        index.set(voter.id, cached);
+        continue;
+      }
+      const key = haystackOf(voter);
+      index.set(voter.id, key);
+      rememberBaseKey(voter.id, key);
+      continue;
+    }
+    index.set(voter.id, haystackOf(voter));
+  }
   return index;
 }
 

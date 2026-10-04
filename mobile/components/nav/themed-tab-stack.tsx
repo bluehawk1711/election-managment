@@ -57,6 +57,10 @@ export function ThemedTabStack({ screens }: { screens: TabStackScreen[] }) {
   return (
     <Stack
       screenOptions={{
+        // Every stack in the app pushes and presents with no transition — the
+        // policy is stated once here (plus the root, auth and onboarding
+        // stacks) instead of per screen. See `lib/anim-off.ts`.
+        animation: 'none',
         headerLargeTitle: true,
         headerLargeTitleShadowVisible: false,
         // See the note above: a transparent header reserves no space, and the

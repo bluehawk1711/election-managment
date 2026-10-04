@@ -21,7 +21,9 @@ export default function AuthLayout() {
         headerShown: false,
         headerTintColor: text,
         contentStyle: { backgroundColor: background },
-        animation: 'slide_from_right',
+        // Transitions are off app-wide (see `lib/anim-off.ts`): a slide-in on
+        // every auth step made sign-in feel like it was waiting on something.
+        animation: 'none',
       }}
     >
       <Stack.Screen name='sign-in' />
