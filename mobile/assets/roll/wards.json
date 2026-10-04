@@ -1,0 +1,168 @@
+{
+  "generatedAt": "2026-10-04T08:33:12.466Z",
+  "source": "bundle",
+  "total": 6855,
+  "tally": {
+    "male": 3832,
+    "female": 3023,
+    "other": 0
+  },
+  "wards": [
+    {
+      "wardNo": 1,
+      "voterCount": 648,
+      "male": 371,
+      "female": 277,
+      "thirdGender": 0,
+      "delimitation": "पार्श्चनाथ सिटी, जेपीनगर, रामनगर (खसरा न 72) का क्षेत्र",
+      "boothNo": 91,
+      "roomNo": 1,
+      "boothAddress": "महात्मा गांधी राजकीय विद्यालय अंग्रेजी माध्यम, राम मोहल्ला",
+      "pdfPages": "3-28"
+    },
+    {
+      "wardNo": 2,
+      "voterCount": 778,
+      "male": 440,
+      "female": 338,
+      "thirdGender": 0,
+      "delimitation": "शंकरनगर, हिम्मतनगर, प्रेमनगर का क्षेत्र",
+      "boothNo": 92,
+      "roomNo": 2,
+      "boothAddress": "महात्मा गांधी राजकीय विद्यालय अंग्रेजी माध्यम, राम मोहल्ला",
+      "pdfPages": "31-61"
+    },
+    {
+      "wardNo": 3,
+      "voterCount": 808,
+      "male": 432,
+      "female": 376,
+      "thirdGender": 0,
+      "delimitation": "राधाकृष्ण विहार, विनायक विहार का क्षेत्र",
+      "boothNo": 93,
+      "roomNo": 3,
+      "boothAddress": "महात्मा गांधी राजकीय विद्यालय अंग्रेजी माध्यम, राम मोहल्ला",
+      "pdfPages": "64-95"
+    },
+    {
+      "wardNo": 4,
+      "voterCount": 826,
+      "male": 454,
+      "female": 372,
+      "thirdGender": 0,
+      "delimitation": "बाबा रामदेव कॉलोनी, खेतेश्वर नगर का क्षेत्र",
+      "boothNo": 94,
+      "roomNo": 4,
+      "boothAddress": "महात्मा गांधी राजकीय विद्यालय अंग्रेजी माध्यम, राम मोहल्ला",
+      "pdfPages": "98-130"
+    },
+    {
+      "wardNo": 5,
+      "voterCount": 763,
+      "male": 434,
+      "female": 329,
+      "thirdGender": 0,
+      "delimitation": "गणेश नगर, न्यू गणेश, नगर वीर तेजाजी मंदिर का क्षेत्र",
+      "boothNo": 95,
+      "roomNo": 5,
+      "boothAddress": "महात्मा गांधी राजकीय विद्यालय अंग्रेजी माध्यम, राम मोहल्ला",
+      "pdfPages": "133-162"
+    },
+    {
+      "wardNo": 6,
+      "voterCount": 275,
+      "male": 168,
+      "female": 107,
+      "thirdGender": 0,
+      "delimitation": "अमरावती नगर, बजरंग विहार/वाटिका, राजेश्वर नगर, जीएम सिटी का क्षेत्र",
+      "boothNo": 95,
+      "roomNo": 5,
+      "boothAddress": "महात्मा गांधी राजकीय विद्यालय अंग्रेजी माध्यम, राम मोहल्ला",
+      "pdfPages": "165-177"
+    },
+    {
+      "wardNo": 7,
+      "voterCount": 307,
+      "male": 177,
+      "female": 130,
+      "thirdGender": 0,
+      "delimitation": "हस्तिनापुर, रामनगर, सीपियों की प्याऊ सालावास रोड के पश्चिम में तनावड़ा सरहद से उतरी क्षेत्र",
+      "boothNo": 91,
+      "roomNo": 1,
+      "boothAddress": "महात्मा गांधी राजकीय विद्यालय अंग्रेजी माध्यम, राम मोहल्ला",
+      "pdfPages": "180-192"
+    },
+    {
+      "wardNo": 8,
+      "voterCount": 286,
+      "male": 161,
+      "female": 125,
+      "thirdGender": 0,
+      "delimitation": "दीसी नगर, मोतीनगर, हरिशनगर, तिरुपति बालाजी नगर से तनावड़ा सरहद तक का क्षेत्र",
+      "boothNo": 96,
+      "roomNo": 6,
+      "boothAddress": "महात्मा गांधी राजकीय विद्यालय अंग्रेजी माध्यम, राम मोहल्ला",
+      "pdfPages": "195-206"
+    },
+    {
+      "wardNo": 9,
+      "voterCount": 196,
+      "male": 105,
+      "female": 91,
+      "thirdGender": 0,
+      "delimitation": "बिजली घर, भोमियाजी नगर, गणपति नगर, शिव वाटिका का क्षेत्र",
+      "boothNo": 92,
+      "roomNo": 2,
+      "boothAddress": "महात्मा गांधी राजकीय विद्यालय अंग्रेजी माध्यम, राम मोहल्ला",
+      "pdfPages": "209-217"
+    },
+    {
+      "wardNo": 10,
+      "voterCount": 194,
+      "male": 101,
+      "female": 93,
+      "thirdGender": 0,
+      "delimitation": "सोनामुखी नगर, संतोष नगर का क्षेत्र",
+      "boothNo": 93,
+      "roomNo": 3,
+      "boothAddress": "महात्मा गांधी राजकीय विद्यालय अंग्रेजी माध्यम, राम मोहल्ला",
+      "pdfPages": "220-228"
+    },
+    {
+      "wardNo": 11,
+      "voterCount": 583,
+      "male": 330,
+      "female": 253,
+      "thirdGender": 0,
+      "delimitation": "इंद्रा नगर, बालाजी नगर रिको क्षेत्र",
+      "boothNo": 102,
+      "roomNo": 7,
+      "boothAddress": "महात्मा गांधी राजकीय विद्यालय अंग्रेजी माध्यम, राम मोहल्ला",
+      "pdfPages": "231-254"
+    },
+    {
+      "wardNo": 12,
+      "voterCount": 679,
+      "male": 375,
+      "female": 304,
+      "thirdGender": 0,
+      "delimitation": "महावीर नगर, रिको क्षेत्र",
+      "boothNo": 96,
+      "roomNo": 6,
+      "boothAddress": "महात्मा गांधी राजकीय विद्यालय अंग्रेजी माध्यम, राम मोहल्ला",
+      "pdfPages": "257-283"
+    },
+    {
+      "wardNo": 13,
+      "voterCount": 512,
+      "male": 284,
+      "female": 228,
+      "thirdGender": 0,
+      "delimitation": "विश्वकर्मा नगर, पूजा मेडिकल वाली गली से मंगलाराम सोऊ के घर तक उत्तरी भाग का क्षेत्र",
+      "boothNo": 102,
+      "roomNo": 7,
+      "boothAddress": "महात्मा गांधी राजकीय विद्यालय अंग्रेजी माध्यम, राम मोहल्ला",
+      "pdfPages": "286-306"
+    }
+  ]
+}

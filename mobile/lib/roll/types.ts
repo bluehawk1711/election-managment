@@ -34,6 +34,19 @@ export interface RollVoter {
   locality: string;
   /** The PDF page this row came from — lets anyone open the source. */
   pdfPage: number;
+  /**
+   * Romanised copies of the three Hindi fields, generated from the CSVs by
+   * `scripts/generate-ward-bundles.ts` (via `lib/roll/romanize.ts`).
+   *
+   * Bundled rows only — the Firestore source predates them and leaves them
+   * `undefined`, which every consumer treats as "absent", never "empty".
+   * They exist so a Latin query matches by plain substring (`ramesh` finds
+   * `Ramesh Kumar` exactly, ranked above phonetic hits) while `translit.ts`'s
+   * skeleton stays the fuzzy fallback for both scripts.
+   */
+  nameEn?: string;
+  fatherOrHusbandNameEn?: string;
+  localityEn?: string;
 }
 
 export type Gender = 'male' | 'female' | 'other';
@@ -150,12 +163,14 @@ export interface VoterView extends RollVoter {
 /**
  * What a screen needs from the roll, regardless of where it comes from.
  *
- * One implementation: Firestore (`wards` + `voters`, seeded by
- * `scripts/seed-roll.mjs`). Screens depend on this interface only, so the
- * storage behind it can change without touching a single screen.
+ * One implementation by default: the bundled JSONs `assets/roll/*.json`
+ * (`scripts/generate-ward-bundles.ts`), which ship inside the APK — the
+ * "0 latency" path, no network, no rules dependency for the base roll.
+ * The Firestore source remains for re-seeding and comparison, but the app
+ * never waits on it: edits are local overlays either way.
  */
 export interface RollSource {
-  readonly kind: 'firestore';
+  readonly kind: 'bundled' | 'firestore';
   /** Ward metadata, for the selector + report headers. */
   getWards(): Promise<WardsBundle>;
   /**

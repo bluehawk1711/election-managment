@@ -7,10 +7,8 @@ import { typeStyle } from '@/theme/typography';
 import type { LucideProps } from 'lucide-react-native';
 import { useEffect, type ComponentType } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pressable, StyleSheet, type LayoutChangeEvent } from 'react-native';
+import { Pressable, StyleSheet } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
-
-export type TabFrame = { x: number; width: number };
 
 type TabItemProps = {
   label: string;
@@ -22,19 +20,16 @@ type TabItemProps = {
   color: string;
   inactiveColor: string;
   onPress: () => void;
-  /** Reports this item's measured x/width inside the row, for the indicator. */
-  onFrame: (frame: TabFrame) => void;
 };
 
 /**
  * One tab in the floating bar (plan §8, `tab-item`).
  *
- * Inactive: icon only. Active: the label mounts next to it (entering fade)
- * and the indicator — driven by the frame this component reports from
- * `onLayout` — springs to cover the grown content. The mount is what makes
- * the measurement honest: the row lays out at full icon+label width in the
- * same frame the label first appears, so the indicator chases a single final
- * target rather than a stream of half-animated widths.
+ * Inactive: icon only. Active: the label mounts next to it. Every item is
+ * `flex: 1`, so the cell a label grows into has fixed bounds — the mount
+ * changes what is *inside* the cell, never the cell itself, which is what
+ * lets the bar place the indicator by arithmetic (see `floating-tab-bar`)
+ * instead of chasing per-item layout events.
  */
 export function TabItem({
   label,
@@ -44,7 +39,6 @@ export function TabItem({
   color,
   inactiveColor,
   onPress,
-  onFrame,
 }: TabItemProps) {
   const { i18n } = useTranslation();
   const lang = i18n.resolvedLanguage ?? i18n.language;
@@ -63,14 +57,8 @@ export function TabItem({
     transform: [{ scale: scale.value }],
   }));
 
-  const handleLayout = (event: LayoutChangeEvent) => {
-    const { x, width } = event.nativeEvent.layout;
-    onFrame({ x, width });
-  };
-
   return (
     <Pressable
-      onLayout={handleLayout}
       onPress={onPress}
       hitSlop={6}
       accessibilityRole='tab'
@@ -92,7 +80,7 @@ export function TabItem({
           off app-wide (see `lib/anim-off.ts`), and a fade-in here also used to
           delay the row's `onLayout` measurement by a frame. */}
       {focused && (
-        <View>
+        <View style={styles.labelWrap}>
           <Text
             variant='caption'
             numberOfLines={1}
@@ -128,9 +116,16 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 6,
     minHeight: 44,
-    minWidth: 44,
-    paddingHorizontal: 14,
+    // Equal cells: the row divides its width evenly no matter which label is
+    // mounted, so a focus change never reflows the row or moves the
+    // indicator. No `minWidth` — it would break the equal division.
+    flex: 1,
+    paddingHorizontal: 8,
     borderRadius: 999,
+  },
+  labelWrap: {
+    // A long label truncates inside its cell instead of pushing past it.
+    flexShrink: 1,
   },
   pressed: {
     opacity: 0.65,

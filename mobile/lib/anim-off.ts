@@ -51,6 +51,25 @@
  */
 
 /**
+ * Every function below carries a `'worklet'` directive, and that is not
+ * decoration — it is the fix for a real crash.
+ *
+ * Call sites run from two threads. Event handlers and effects call from the JS
+ * thread, where a plain function is fine. But `useAnimatedProps` /
+ * `useAnimatedStyle` bodies, gesture handlers and anything marked `'worklet'`
+ * run on the **UI runtime**, and there a plain JS function captured in the
+ * closure is serialised as a *Remote Function* — calling it throws
+ * `[Worklets] Tried to synchronously call a Remote Function`, which took the
+ * dashboard down (line-chart's `AnimatedPoint` does exactly this, via
+ * `TaskCompletionCard`). Real Reanimated primitives are worklets, so swapping
+ * them for plain functions silently moved those call sites onto a landmine.
+ *
+ * The directive makes `react-native-worklets/plugin` (auto-applied by
+ * `babel-preset-expo` — no babel.config.js needed) give each function a copy
+ * in the UI runtime, so they work identically from either thread.
+ */
+
+/**
  * Runs the completion callback immediately and resolves to the target value.
  *
  * Shared values accept a plain number, so assigning the destination is exactly
@@ -58,6 +77,7 @@
  * N frames later.
  */
 function instant<T>(toValue: T, callback?: (finished: boolean) => void): T {
+  'worklet';
   callback?.(true);
   return toValue;
 }
@@ -68,6 +88,7 @@ export function withTiming<T>(
   _config?: unknown,
   callback?: (finished: boolean) => void
 ): T {
+  'worklet';
   return instant(toValue, callback);
 }
 
@@ -77,6 +98,7 @@ export function withSpring<T>(
   _config?: unknown,
   callback?: (finished: boolean) => void
 ): T {
+  'worklet';
   return instant(toValue, callback);
 }
 
@@ -91,6 +113,7 @@ export function withDelay<T>(
   animation: T,
   callback?: (finished: boolean) => void
 ): T {
+  'worklet';
   return instant(animation, callback);
 }
 
@@ -100,10 +123,12 @@ export function withRepeat<T>(
   _repetitions?: number,
   _reverse?: boolean
 ): T {
+  'worklet';
   return animation;
 }
 
 /** A sequence of steps, collapsed to its final step. */
 export function withSequence<T>(...values: T[]): T {
+  'worklet';
   return values[values.length - 1];
 }

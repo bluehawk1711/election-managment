@@ -67,10 +67,13 @@ export function searchableFieldsOf(voter: VoterView): string[] {
   const e = voter.effective;
   return [
     e.name,
+    voter.nameEn ?? '',
     voter.fatherOrHusbandName,
     e.fatherOrHusbandName,
+    voter.fatherOrHusbandNameEn ?? '',
     e.locality,
     voter.locality,
+    voter.localityEn ?? '',
     e.houseNo,
     voter.houseNo,
     voter.epicId,
