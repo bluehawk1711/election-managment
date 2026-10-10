@@ -1,11 +1,11 @@
-import { Chip } from '@/components/campaign/chip';
+import { Chip, type ChipTone } from '@/components/campaign/chip';
 import { Icon } from '@/components/ui/icon';
 import { Image } from '@/components/ui/image';
 import { Text } from '@/components/ui/text';
 import { View } from '@/components/ui/view';
 import { useColor } from '@/hooks/useColor';
 import { formatDistance } from '@/lib/geo';
-import type { VoterView } from '@/lib/roll/types';
+import type { Leaning, VoterView } from '@/lib/roll/types';
 import { CONTROL_RADIUS } from '@/theme/globals';
 import { UserX } from 'lucide-react-native';
 import { Pressable, StyleSheet } from 'react-native';
@@ -23,6 +23,27 @@ type Props = {
   meters?: number;
   onPress: () => void;
 };
+
+/**
+ * Leaning → chip tone, as a warm-to-cool spectrum across the 5-point scale.
+ *
+ * Deliberately *not* red/green: those two carry the success/destructive
+ * meaning that `support` uses (supporter / opponent), and re-using them here
+ * would make "left wing" read as "bad". Amber → neutral → sky reads as a
+ * temperature scale, which is what a political spectrum is.
+ */
+function leaningTone(leaning: Leaning): ChipTone {
+  switch (leaning) {
+    case 'right':
+    case 'centerRight':
+      return 'warning';
+    case 'centerLeft':
+    case 'left':
+      return 'info';
+    default:
+      return 'default';
+  }
+}
 
 /**
  * One voter in the roll list: photo on the left, labelled data on the right.
@@ -129,11 +150,29 @@ export function VoterCard({ voter, meters, onPress }: Props) {
           <Text variant='caption' numberOfLines={1} style={{ color: outline }}>
             {t('voters.serial', { no: voter.serialNo })} · {voter.epicId}
           </Text>
-          {/* Conditional rather than an always-rendered empty row: `headText`
-              is a `gap: 4` column, so an empty child still costs a gap, and
-              most voters are neither voted nor pending. */}
-          {voter.voted === 'voted' || voter.pending ? (
+          {/* The voter's intention first — with us / against us is what a
+              karykarta scans for — then turnout and sync state. `active` on
+              the centre-leaning chip: a bare `default` tone renders
+              unfilled, which would read as *unselected* rather than
+              *neutral*. */}
+          {voter.support !== 'unknown' ||
+          voter.leaning !== 'unknown' ||
+          voter.voted === 'voted' ||
+          voter.pending ? (
             <View style={styles.chips}>
+              {voter.support === 'supporter' ? (
+                <Chip label={t('voters.support.supporter')} tone='success' />
+              ) : null}
+              {voter.support === 'opponent' ? (
+                <Chip label={t('voters.support.opponent')} tone='danger' />
+              ) : null}
+              {voter.leaning !== 'unknown' ? (
+                <Chip
+                  label={t(`voters.leaning.${voter.leaning}` as const)}
+                  tone={leaningTone(voter.leaning)}
+                  active
+                />
+              ) : null}
               {voter.voted === 'voted' ? (
                 <Chip label={t('voters.votedYes')} tone='success' />
               ) : null}
@@ -168,8 +207,12 @@ export function VoterCard({ voter, meters, onPress }: Props) {
  * voter photo fits without the crop `contentFit='cover'` would otherwise take
  * off the head and feet. Writing both numbers by hand is how a box quietly
  * drifts off-ratio the next time someone bumps one side.
+ *
+ * 100, up from 90: a face at 90pt is legible but barely, and this card *is*
+ * how a karykarta recognises the person in front of them. The growth is paid
+ * for by the tightened paddings below, so the card does not get taller.
  */
-const PHOTO_WIDTH = 90;
+const PHOTO_WIDTH = 100;
 const PHOTO_HEIGHT = Math.round((PHOTO_WIDTH * 16) / 9); // 160 — exactly 9:16
 
 /**
@@ -205,14 +248,14 @@ function Field({
 
 const styles = StyleSheet.create({
   card: {
-    padding: 14,
+    padding: 12,
     borderRadius: CONTROL_RADIUS,
     borderWidth: StyleSheet.hairlineWidth,
   },
   // `flex-start`, not `center`: the right column is taller than the photo, and
   // centring would float the photo in the middle of it and leave an awkward gap
   // under the image — the thing that made the first version look unbalanced.
-  head: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
+  head: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
   headText: { flex: 1, gap: 4, minWidth: 0 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   photoBox: {
@@ -228,7 +271,7 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
   },
   placeholderText: { fontSize: 10 },
-  fields: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 2 },
+  fields: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 1 },
   // `flexGrow` on the halves so a lone field (phone recorded, nearest mode off)
   // still fills its row instead of hugging the left edge.
   field: { flexGrow: 1, flexBasis: '45%', gap: 2 },

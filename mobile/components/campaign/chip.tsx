@@ -6,7 +6,13 @@ import { typeStyle } from '@/theme/typography';
 import { LucideProps } from 'lucide-react-native';
 import { Pressable, StyleSheet, ViewStyle } from 'react-native';
 
-export type ChipTone = 'default' | 'primary' | 'danger' | 'success';
+export type ChipTone =
+  | 'default'
+  | 'primary'
+  | 'danger'
+  | 'success'
+  | 'warning'
+  | 'info';
 
 type Props = {
   label: string;
@@ -22,6 +28,25 @@ const TONE_BG: Record<ChipTone, Parameters<typeof useColor>[0]> = {
   primary: 'primary',
   danger: 'error',
   success: 'success',
+  warning: 'warning',
+  info: 'info',
+};
+
+/**
+ * Foreground per tone — from the token pair, not a blanket white.
+ *
+ * `warning` (#F59E0B) and `info` (#0EA5E9) are light enough that white on
+ * them lands at ~1.9:1 and ~2.3:1 — both far below the 4.5:1 floor. Their
+ * paired `*Foreground` tokens carry the dark ink that was designed for them
+ * (#1A1200 / #04283A), so every tone reads at AA on both themes.
+ */
+const TONE_FG: Record<ChipTone, Parameters<typeof useColor>[0]> = {
+  default: 'secondaryForeground',
+  primary: 'primaryForeground',
+  danger: 'errorForeground',
+  success: 'successForeground',
+  warning: 'warningForeground',
+  info: 'infoForeground',
 };
 
 /** Filter/status pill — active fills with the tone, inactive sits quiet. */
@@ -32,18 +57,11 @@ export function Chip({ label, active = false, tone = 'default', icon, onPress, s
   const text = useColor('text');
   const outline = useColor('outline');
 
-  // Two different foregrounds, and the choice between them is the whole point.
-  //
-  // `primary` / `success` / `error` are saturated, so white text on them is
-  // legible. But the `default` tone fills with `secondary` — a pale lavender
-  // (#ECECFF in light mode) — and white on that is very close to invisible.
-  // Since `isActive` is true for a *selected* default-tone chip, that made
-  // exactly the thing the user is looking for — the currently-selected filter —
-  // the hardest one to read. Both are resolved unconditionally because hooks
-  // cannot be called conditionally; only the pick is conditional.
-  const onSolid = useColor('primaryForeground');
-  const onPale = useColor('secondaryForeground');
-  const onTone = tone === 'default' ? onPale : onSolid;
+  // One hook, one call: `useColor` only reads a key out of the theme object,
+  // so a dynamic key keeps the hook count stable across renders. The pick
+  // lives in `TONE_FG` — see why there (the pale `default` and light
+  // `warning`/`info` fills all need dark ink, not white).
+  const onTone = useColor(TONE_FG[tone]);
 
   const isActive = active || tone !== 'default';
 
@@ -51,6 +69,9 @@ export function Chip({ label, active = false, tone = 'default', icon, onPress, s
     <Pressable
       onPress={onPress}
       disabled={!onPress}
+      // 34pt pill + 5pt slop on each side = 44pt effective target — the
+      // accessibility floor the visual height alone misses.
+      hitSlop={5}
       accessibilityRole={onPress ? 'button' : undefined}
       accessibilityState={onPress ? { selected: active } : undefined}
       style={[

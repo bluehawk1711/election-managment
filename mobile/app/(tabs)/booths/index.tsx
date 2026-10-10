@@ -166,6 +166,7 @@ export default function BoothsScreen() {
                     ? reference.memberName(booth.coordinatorId)
                     : t('booths.unassigned')
                 }
+                tone={staffed ? 'success' : 'danger'}
                 onPress={() =>
                   router.push({
                     pathname: '/(tabs)/booths/[id]',

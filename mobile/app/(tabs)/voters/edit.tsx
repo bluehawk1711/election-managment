@@ -1,5 +1,5 @@
 import { DetailRow } from '@/components/roll/detail-row';
-import { SelectField } from '@/components/campaign/select-field';
+import { Chip, type ChipTone } from '@/components/campaign/chip';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Icon } from '@/components/ui/icon';
@@ -42,6 +42,7 @@ import type {
   VoterView,
 } from '@/lib/roll/types';
 import { CONTROL_RADIUS } from '@/theme/globals';
+import { withOpacity } from '@/theme/colors';
 import { useAuth } from '@/providers/auth-provider';
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
@@ -71,6 +72,84 @@ const supportKey = (value: SupportCategory) => `voters.support.${value}` as cons
 
 /** i18n key for one leaning value (`voters.leaning.right`, …). */
 const leaningKey = (value: Leaning) => `voters.leaning.${value}` as const;
+
+/**
+ * Intent colours for the fieldwork segments — the core of this screen.
+ *
+ * Each option wears the colour *of what choosing it means*, so the saved
+ * state is readable at a glance and the choice itself teaches the scale:
+ *
+ * - Voted → success green; Not voted → destructive red; Not marked → quiet.
+ * - Supporter → green; Opponent → red; Not recorded → quiet. This is the
+ *   "with us / against us" dial, and it should feel like one.
+ * - Leaning → the warm-to-cool spectrum (amber → neutral → sky) so the
+ *   5-point scale reads left-to-right as a temperature gradient. Red and
+ *   green are kept out of it on purpose: they mean good/bad in the two
+ *   segments above, and a "left wing" chip wearing destructive red would be
+ *   an editorial statement the roll does not make.
+ *
+ * The maps hold *token keys*, resolved through `useColor` in the component,
+ * so dark mode follows automatically.
+ */
+const VOTED_TONE: Record<VotedStatus, ChipTone> = {
+  voted: 'success',
+  notVoted: 'danger',
+  unknown: 'default',
+};
+
+const SUPPORT_TONE: Record<SupportCategory, ChipTone> = {
+  supporter: 'success',
+  opponent: 'danger',
+  unknown: 'default',
+};
+
+function leaningSegmentTone(value: Leaning): ChipTone {
+  switch (value) {
+    case 'right':
+    case 'centerRight':
+      return 'warning';
+    case 'centerLeft':
+    case 'left':
+      return 'info';
+    default:
+      return 'default';
+  }
+}
+
+/**
+ * Background / foreground for one segment button, by tone — resolved from
+ * the palette the component already holds, so dark mode follows for free.
+ *
+ * Filled when the tone is coloured (that is what makes the selection read);
+ * the `default` tone stays a tinted-quiet pill in both states, because
+ * "Not marked" / "Not recorded" is a real choice, not a disabled control —
+ * the old hairline-and-muted-text style read as disabled.
+ */
+function segmentColors(
+  tone: ChipTone,
+  active: boolean,
+  palette: Record<ChipTone, { bg: string; fg: string }>
+): { backgroundColor: string; borderColor: string; color: string } {
+  const { bg, fg } = palette[tone];
+  if (active) {
+    return { backgroundColor: bg, borderColor: bg, color: fg };
+  }
+  if (tone === 'default') {
+    return {
+      backgroundColor: withOpacity(bg, 0.5),
+      borderColor: 'transparent',
+      color: fg,
+    };
+  }
+  // Quiet rest state for a coloured tone: its fill at 15% over the card
+  // with a hairline of the same fill — a tinted ghost of the selected
+  // state rather than an empty outline.
+  return {
+    backgroundColor: withOpacity(bg, 0.15),
+    borderColor: withOpacity(bg, 0.45),
+    color: fg,
+  };
+}
 
 /** Photo box edge length in the identity header. */
 const PHOTO_SIZE = 72;
@@ -213,7 +292,32 @@ function EditForm({
   const outline = useColor('outline');
   const muted = useColor('muted');
   const border = useColor('border');
-  const primary = useColor('primary');
+  // Tone palette for the fieldwork segments — one `useColor` per key,
+  // fixed count, picked from a module-level map. See `segmentColors`.
+  const toneBg = {
+    default: useColor('secondary'),
+    primary: useColor('primary'),
+    danger: useColor('error'),
+    success: useColor('success'),
+    warning: useColor('warning'),
+    info: useColor('info'),
+  } as const;
+  const toneFg = {
+    default: useColor('secondaryForeground'),
+    primary: useColor('primaryForeground'),
+    danger: useColor('errorForeground'),
+    success: useColor('successForeground'),
+    warning: useColor('warningForeground'),
+    info: useColor('infoForeground'),
+  } as const;
+  const tonePalette = {
+    default: { bg: toneBg.default, fg: toneFg.default },
+    primary: { bg: toneBg.primary, fg: toneFg.primary },
+    danger: { bg: toneBg.danger, fg: toneFg.danger },
+    success: { bg: toneBg.success, fg: toneFg.success },
+    warning: { bg: toneBg.warning, fg: toneFg.warning },
+    info: { bg: toneBg.info, fg: toneFg.info },
+  };
 
   const base = voter.effective;
 
@@ -228,9 +332,10 @@ function EditForm({
   const [locality, setLocality] = useState(base.locality ?? '');
   const [phone, setPhone] = useState(base.phone ?? '');
   const [jati, setJati] = useState(base.jati ?? '');
-  const [support, setSupport] = useState<SupportCategory>(
-    voter.support ?? 'unknown'
-  );
+  // No staged `support` state: the segment below writes through `saveNow`
+  // like voted/leaning, so it always renders `voter.support`. Staging it as
+  // well would let a stale draft overwrite the committed tap on the next
+  // Save — two sources of truth for one field.
   const [note, setNote] = useState(voter.overlay.note ?? '');
   const [showErrors, setShowErrors] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -270,7 +375,6 @@ function EditForm({
     locality !== (base.locality ?? '') ||
     phone !== (base.phone ?? '') ||
     jati !== (base.jati ?? '') ||
-    support !== (voter.support ?? 'unknown') ||
     (voter.overlay.note ?? '') !== note;
 
   /**
@@ -335,7 +439,6 @@ function EditForm({
           ...(locality !== current.locality ? { locality: locality.trim() } : {}),
           ...(phone !== current.phone ? { phone: phone.trim() } : {}),
           ...(jati !== current.jati ? { jati: jati.trim() } : {}),
-          ...(support !== (voter.support ?? 'unknown') ? { support } : {}),
           ...((voter.overlay.note ?? '') !== note ? { note } : {}),
         },
       });
@@ -501,6 +604,40 @@ function EditForm({
             <Text variant='caption' style={{ color: outline }}>
               {t('voters.serial', { no: voter.serialNo })} · {voter.epicId}
             </Text>
+            {/* Intent at a glance, right under the name: which side, which
+                leaning, whether they voted — the three facts this whole
+                screen exists to record, summarised before the form asks
+                for anything. Rendered only when at least one is recorded,
+                so the untouched state stays as quiet as it was. */}
+            {voter.support !== 'unknown' ||
+            voter.leaning !== 'unknown' ||
+            voter.voted !== 'unknown' ? (
+              <View style={styles.intentRow}>
+                {voter.support !== 'unknown' ? (
+                  <Chip
+                    label={t(supportKey(voter.support))}
+                    tone={SUPPORT_TONE[voter.support]}
+                  />
+                ) : null}
+                {voter.leaning !== 'unknown' ? (
+                  <Chip
+                    label={t(leaningKey(voter.leaning))}
+                    tone={leaningSegmentTone(voter.leaning)}
+                    active
+                  />
+                ) : null}
+                {voter.voted !== 'unknown' ? (
+                  <Chip
+                    label={t(
+                      voter.voted === 'voted'
+                        ? 'voters.votedYes'
+                        : 'voters.votedNo'
+                    )}
+                    tone={VOTED_TONE[voter.voted]}
+                  />
+                ) : null}
+              </View>
+            ) : null}
             <Text variant='caption' style={{ color: outline }}>
               {busy === 'photo'
                 ? t('voters.photoUploading')
@@ -625,19 +762,23 @@ function EditForm({
               ] as [VotedStatus, string, typeof Circle][]
             ).map(([value, label, glyph]) => {
               const active = voter.voted === value;
+              const colors = segmentColors(VOTED_TONE[value], active, tonePalette);
               return (
                 <Pressable
                   key={value}
                   onPress={() => void saveNow({ voted: value }, 'voted')}
                   style={[
                     styles.segmentItem,
-                    active ? { backgroundColor: primary, borderColor: primary } : null,
+                    {
+                      backgroundColor: colors.backgroundColor,
+                      borderColor: colors.borderColor,
+                    },
                   ]}
                   accessibilityRole='button'
                   accessibilityState={{ selected: active }}
                 >
-                  <Icon name={glyph} size={16} color={active ? '#FFFFFF' : outline} />
-                  <Text variant='caption' style={{ color: active ? '#FFFFFF' : outline }}>
+                  <Icon name={glyph} size={16} color={colors.color} />
+                  <Text variant='caption' style={{ color: colors.color }}>
                     {label}
                   </Text>
                 </Pressable>
@@ -645,38 +786,65 @@ function EditForm({
             })}
           </View>
 
-          <View style={styles.divider} />
+          <View style={[styles.divider, { backgroundColor: border }]} />
 
+          {/* Support was a select — a dropdown for the one field that says
+              which side this voter is on. As a segment it is one tap, and
+              the colours (green / red) carry the meaning before the label
+              is even read. */}
           <Text variant='subtitle'>{t('voters.support')}</Text>
-          <SelectField
-            label={t('voters.support')}
-            value={support}
-            placeholder={t('voters.support.unknown')}
-            options={SUPPORTS.map((value) => ({
-              value,
-              label: t(supportKey(value)),
-            }))}
-            onChange={(value) => setSupport(value as SupportCategory)}
-          />
+          <View style={styles.segment}>
+            {SUPPORTS.map((value) => {
+              const active = (voter.support ?? 'unknown') === value;
+              const colors = segmentColors(SUPPORT_TONE[value], active, tonePalette);
+              return (
+                <Pressable
+                  key={value}
+                  onPress={() => void saveNow({ support: value }, 'support')}
+                  style={[
+                    styles.segmentItem,
+                    {
+                      backgroundColor: colors.backgroundColor,
+                      borderColor: colors.borderColor,
+                    },
+                  ]}
+                  accessibilityRole='button'
+                  accessibilityState={{ selected: active }}
+                >
+                  <Text variant='caption' style={{ color: colors.color }}>
+                    {t(supportKey(value))}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
 
-          <View style={styles.divider} />
+          <View style={[styles.divider, { backgroundColor: border }]} />
 
           <Text variant='subtitle'>{t('voters.leaning')}</Text>
           <View style={styles.segment}>
             {LEANING.map((value) => {
               const active = voter.leaning === value;
+              const colors = segmentColors(
+                leaningSegmentTone(value),
+                active,
+                tonePalette
+              );
               return (
                 <Pressable
                   key={value}
                   onPress={() => void saveNow({ leaning: value }, 'leaning')}
                   style={[
                     styles.segmentItem,
-                    active ? { backgroundColor: primary, borderColor: primary } : null,
+                    {
+                      backgroundColor: colors.backgroundColor,
+                      borderColor: colors.borderColor,
+                    },
                   ]}
                   accessibilityRole='button'
                   accessibilityState={{ selected: active }}
                 >
-                  <Text variant='caption' style={{ color: active ? '#FFFFFF' : outline }}>
+                  <Text variant='caption' style={{ color: colors.color }}>
                     {t(leaningKey(value))}
                   </Text>
                 </Pressable>
@@ -832,6 +1000,7 @@ const styles = StyleSheet.create({
   card: { gap: 12 },
   identity: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   identityText: { flex: 1, gap: 3, minWidth: 0 },
+  intentRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 2 },
   photoBox: {
     width: PHOTO_SIZE,
     height: PHOTO_SIZE,
@@ -874,5 +1043,8 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
   },
   inlineAction: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  divider: { height: StyleSheet.hairlineWidth, backgroundColor: '#E4E7F0' },
+  // Height only — the colour is applied at each call site from the `border`
+  // token, because a hardcoded light-theme hex (#E4E7F0) rendered as a
+  // near-white line across the dark theme's cards.
+  divider: { height: StyleSheet.hairlineWidth },
 });

@@ -18,6 +18,11 @@ export const hi: Record<TranslationKey, string> = {
   'common.search': 'खोजें',
   'common.filter': 'छानें',
   'common.filters': 'फ़िल्टर',
+  // क्षेत्र — वोटर सूची हेडर का डेटा चयनकर्ता। अभी एक ही क्षेत्र;
+  // पिल वैसी ही रहेगी ताकि दूसरा क्षेत्र जोड़ना सिर्फ़ डेटा बदले।
+  'areas.label': 'क्षेत्र',
+  'areas.veernagar': 'वीरनगर',
+
   'common.clear': 'हटाएँ',
   'common.apply': 'लागू करें',
   'common.reset': 'रीसेट',
@@ -265,7 +270,8 @@ export const hi: Record<TranslationKey, string> = {
   'voters.ward': 'वार्ड {{no}}',
   'voters.emptyBody': 'वार्ड खोलने पर मतदाता सूची बंडल डेटा से लोड होती है।',
   'voters.noMatches': 'कोई मतदाता नहीं मिला',
-  'voters.noMatchesBody': 'दूसरी खोज आज़माएँ या फ़िल्टर हटाएँ।',
+  'voters.noMatchesBody':
+    'दूसरी खोज आज़माएँ, या \u201cकिसमें खोजें\u201d में पिता का नाम या मोहल्ला चुनें।',
   'voters.moreResults': '{{total}} में से {{shown}} दिखाए जा रहे हैं — सीमित करने के लिए खोज साफ़ करें।',
   'voters.errorBody': 'मतदाता सूची पढ़ी नहीं जा सकी।',
   'voters.serial': 'क्रमांक {{no}}',

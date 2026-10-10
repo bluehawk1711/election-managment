@@ -137,17 +137,39 @@ describe('keyOf / keyContains', () => {
 
 describe('rankKey', () => {
   it('ranks an exact match highest', () => {
-    expect(rankKey(keyOf('मुकेश कुमार'), keyOf('मुकेश कुमार'))).toBe(3);
+    expect(rankKey(keyOf('मुकेश कुमार'), keyOf('मुकेश कुमार'))).toBe(6);
   });
 
-  it('ranks a substring below an exact match', () => {
-    // 3 is reserved for the whole value; a prefix of it is a 2.
-    expect(rankKey(keyOf('मुकेश कुमार'), keyOf('मुकेश'))).toBe(2);
+  it('ranks a word-start of a field just below exact', () => {
+    // 'मुकेश' begins the field 'मुकेश कुमार' — a starting word, so tier 5,
+    // not the old flat tier-2 bucket it shared with mid-string hits.
+    expect(rankKey(keyOf('मुकेश कुमार'), keyOf('मुकेश'))).toBe(5);
   });
 
-  it('ranks a Roman query on a Devanagari row below a native one', () => {
+  it('ranks a Roman query on a Devanagari row by its skeleton tier', () => {
     const row = keyOf('मुकेश कुमार');
-    expect(rankKey(row, keyOf('mukesh'))).toBe(2);
-    expect(rankKey(row, keyOf('मुकेश कुमार'))).toBe(3);
+    // 'mukesh' has no native counterpart, but its skeleton 'mks' *begins*
+    // the row's skeleton 'mkskmr' → phonetic word-start (3), still well
+    // below the native exact (6) of the Hindi spelling.
+    expect(rankKey(row, keyOf('mukesh'))).toBe(3);
+    expect(rankKey(row, keyOf('मुकेश कुमार'))).toBe(6);
+  });
+
+  it('puts starting-word matches above rows that merely contain the query', () => {
+    // The hariram/ram complaint: 'ram' must lead with rows that *start* with
+    // it and trail rows that only end in it.
+    expect(rankKey(keyOf('राम देवी'), keyOf('ram'))).toBeGreaterThan(
+      rankKey(keyOf('हरिराम'), keyOf('ram'))
+    );
+    expect(rankKey(keyOf('Ramesh Singh'), keyOf('ram'))).toBeGreaterThan(
+      rankKey(keyOf('Hariram'), keyOf('ram'))
+    );
+    // And a genuine 'hariram' query still puts the real Hariram on top of
+    // the phonetic neighbours.
+    expect(rankKey(keyOf('Hariram'), keyOf('hariram'))).toBe(6);
+    expect(rankKey(keyOf('हरिराम'), keyOf('hariram'))).toBe(4);
+    expect(rankKey(keyOf('Hariram'), keyOf('hariram'))).toBeGreaterThan(
+      rankKey(keyOf('हरिराम'), keyOf('hariram'))
+    );
   });
 });

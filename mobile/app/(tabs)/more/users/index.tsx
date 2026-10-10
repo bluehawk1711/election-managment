@@ -119,6 +119,7 @@ export default function UsersScreen() {
                 : t('settings.allWards')
             }
             meta={t(roleLabelKey(item.role))}
+            tone={item.role === null ? 'danger' : 'primary'}
             trailing={
               // No role is the state a super admin most needs to see at a
               // glance: the account exists, is signed in, and can do nothing.

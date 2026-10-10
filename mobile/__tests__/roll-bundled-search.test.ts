@@ -107,9 +107,10 @@ describe('Hindi → English search (Latin query, Devanagari roll)', () => {
     const hits = searchVoters(VIEWS, INDEX, 'ramesh');
     const token = keyOf('ramesh');
 
-    // Ranking is monotone: exact-field hits lead, then substrings.
+    // Ranking is monotone: exact-field hits lead, then word-starts, then
+    // substrings.
     const ranks = hits.map((voter) => rankKey(INDEX.get(voter.id)!.all, token));
-    expect(ranks[0]).toBe(3);
+    expect(ranks[0]).toBe(6);
     for (let i = 1; i < ranks.length; i += 1) {
       expect(ranks[i]).toBeLessThanOrEqual(ranks[i - 1]);
     }
@@ -173,15 +174,15 @@ describe('English → Hindi search (Devanagari query, romanised copy)', () => {
 
     const token = keyOf('रमेश');
     const ranks = hits.map((voter) => rankKey(INDEX.get(voter.id)!.all, token));
-    expect(ranks[0]).toBe(3);
+    expect(ranks[0]).toBe(6);
     for (let i = 1; i < ranks.length; i += 1) {
       expect(ranks[i]).toBeLessThanOrEqual(ranks[i - 1]);
     }
 
     // रामस्वरूप shares the skeleton (rms…) but no field equals the query —
     // it must sit below every exact row.
-    const firstExactAt = hits.findIndex((voter, i) => ranks[i] === 3);
-    const lastExactAt = hits.length - 1 - [...ranks].reverse().findIndex((r) => r === 3);
+    const firstExactAt = hits.findIndex((voter, i) => ranks[i] === 6);
+    const lastExactAt = hits.length - 1 - [...ranks].reverse().findIndex((r) => r === 6);
     const swarupAt = hits.findIndex((voter) => voter.name === 'रामस्वरूप');
     expect(firstExactAt).toBe(0);
     expect(swarupAt).toBeGreaterThan(lastExactAt);

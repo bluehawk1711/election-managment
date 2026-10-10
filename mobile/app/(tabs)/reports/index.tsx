@@ -237,9 +237,21 @@ export default function ReportsScreen() {
                     {t('voters.ward', { no: ward.wardNo })} · {t('common.booth')}{' '}
                     {ward.boothNo}
                   </Text>
+                  {/* Three tiers, not two: indigo said nothing about *how* far
+                      from goal a ward was. Green = at/above half, amber =
+                      work needed, red = under a quarter — a ward where one
+                      in four has not turned out yet. The rails keep their own
+                      `warnBelow={1}` (pure red only at zero); this chip grades
+                      the distance, it does not duplicate the rail. */}
                   <Chip
                     label={`${Math.round(percent)}%`}
-                    tone={percent >= 50 ? 'success' : 'primary'}
+                    tone={
+                      percent >= 50
+                        ? 'success'
+                        : percent >= 25
+                          ? 'warning'
+                          : 'danger'
+                    }
                   />
                 </View>
                 <ProgressRail

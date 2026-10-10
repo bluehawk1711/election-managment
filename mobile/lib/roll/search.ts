@@ -37,9 +37,15 @@
  * `kmr` matches `कुमार` but also anything else running k-m-r. Left unordered,
  * the wrong Mukesh can sit above the right one, which for a karykarta standing
  * in front of a voter is worse than no result at all. So results carry a rank
- * from `rankKey` — exact, then substring, then phonetic-only — and
+ * from `rankKey` — native exact, native word-start, phonetic exact, phonetic
+ * word-start, then plain substring — and
  * `searchVoters` sorts by it, stable, so equal ranks keep roll order (ward,
  * then serial) and the list does not reshuffle between keystrokes.
+ *
+ * The word-start tiers are what make "starting words first" work: a `ram`
+ * query leads with the `राम`s and `Ramesh`es and trails the `हरिराम`s, and a
+ * `hariram` query puts the real Hariram above rows that merely contain the
+ * consonants.
  */
 import {
   HAYSTACK_SEP,
@@ -313,16 +319,18 @@ export function searchVoters(
     const haystack = resolveKey(entry, scopes);
     if (!tokens.every((token) => keyContains(haystack, token))) continue;
 
-    let rank = 3;
+    let rank = 6;
     for (const token of tokens) rank = Math.min(rank, rankKey(haystack, token));
     hits.push({ voter, rank });
   }
 
-  // Descending: rank 3 (exact field) is *best*, so it must lead. Ascending
-  // here put every exact match below every loose one — invisible while
-  // whole-haystack equality never fired and everything tied at 2, but a
+  // Descending: rank 6 (native-exact field) is *best*, so it must lead.
+  // Ascending here put every exact match below every loose one — invisible
+  // while whole-haystack equality never fired and everything tied, but a
   // real inversion the moment `rankKey` started recognising field-level
-  // exacts. Stable either way, so equal ranks keep roll order.
+  // exacts. The word-start tiers (5/3) are what keep `राम`/`Ramesh` above
+  // `हरिराम` for a `ram` query — see the ranking note in `translit.ts`.
+  // Stable either way, so equal ranks keep roll order.
   hits.sort((a, b) => b.rank - a.rank);
   return hits.map((hit) => hit.voter);
 }

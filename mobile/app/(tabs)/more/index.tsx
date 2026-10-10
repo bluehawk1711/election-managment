@@ -36,6 +36,8 @@ interface HubEntry {
   title: string;
   hint?: string;
   icon: React.ComponentType<LucideProps>;
+  /** Medallion tint — each module gets its own colour so the hub scans by colour, not by reading every label. */
+  tone: 'primary' | 'danger' | 'warning' | 'info' | 'success';
   href:
     | '/(tabs)/more/tasks'
     | '/(tabs)/more/calendar'
@@ -55,12 +57,14 @@ export default function MoreScreen() {
       key: 'tasks',
       title: t('nav.tasks'),
       icon: ClipboardList,
+      tone: 'primary',
       href: '/(tabs)/more/tasks',
     },
     {
       key: 'calendar',
       title: t('nav.calendar'),
       icon: CalendarDays,
+      tone: 'info',
       href: '/(tabs)/more/calendar',
     },
     {
@@ -68,6 +72,7 @@ export default function MoreScreen() {
       title: t('more.accounts'),
       hint: t('more.accountsHint'),
       icon: UserCog,
+      tone: 'success',
       href: '/(tabs)/more/users',
     },
     {
@@ -75,6 +80,7 @@ export default function MoreScreen() {
       title: t('more.settings'),
       hint: t('more.settingsHint'),
       icon: Settings,
+      tone: 'warning',
       href: '/(tabs)/more/settings',
     },
   ];
@@ -127,6 +133,7 @@ export default function MoreScreen() {
           title={entry.title}
           subtitle={entry.hint}
           icon={entry.icon}
+          tone={entry.tone}
           onPress={() => router.push(entry.href)}
         />
       ))}

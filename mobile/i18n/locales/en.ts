@@ -22,6 +22,11 @@ export const en = {
   'common.search': 'Search',
   'common.filter': 'Filter',
   'common.filters': 'Filters',
+  // Roll areas — the dataset selector at the top of the voters header.
+  // One area for now; the pill stays so the second one is a data change.
+  'areas.label': 'Area',
+  'areas.veernagar': 'Veernagar',
+
   'common.clear': 'Clear',
   'common.apply': 'Apply',
   'common.reset': 'Reset',
@@ -269,7 +274,8 @@ export const en = {
   'voters.ward': 'Ward {{no}}',
   'voters.emptyBody': 'The roll loads from the bundled data when a ward is opened.',
   'voters.noMatches': 'No matching voters',
-  'voters.noMatchesBody': 'Try a different search or clear the filters.',
+  'voters.noMatchesBody':
+    'Try a different search, or widen "Search in" above to the father name or locality.',
   'voters.moreResults': 'Showing {{shown}} of {{total}} matches — refine the search to narrow it down.',
   'voters.errorBody': 'The roll could not be read.',
   'voters.serial': 'Serial {{no}}',

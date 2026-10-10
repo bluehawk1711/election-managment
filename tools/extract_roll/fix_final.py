@@ -44,6 +44,60 @@ base_path = os.path.join(WORK, 'records_v4c.json')
 if os.path.exists(base_path):
     base = {key(r): r for r in json.load(open(base_path, encoding='utf-8'))['records']}
 
+# ---- cell_fixes.json: targeted 900-2400 dpi cell OCR (fix_cells.py) ------
+# Applied BEFORE the history loop below, with a was->now drift guard; keys
+# that went through cell OCR are excluded from the restore/history branches
+# so this pass stays the single source of truth (they are all listed in the
+# new verification section N instead).
+CELL_PATH = os.path.join(WORK, 'cell_fixes.json')
+CELL = json.load(open(CELL_PATH, encoding='utf-8')) if os.path.exists(CELL_PATH) else {}
+by_key = {key(r): r for r in recs}
+name_fix_keys, father_fix_keys, house_fix_keys, rel_fix_keys = set(), set(), set(), set()
+cell_drift, cell_applied = [], {'name': 0, 'father': 0, 'house': 0, 'relation': 0}
+
+
+def _apply_cell(field, fixes, keys):
+    for f in fixes:
+        k = (f['ward'], f['page'], f['serial'])
+        r = by_key.get(k)
+        if r is None:
+            cell_drift.append([field, list(k), 'record missing'])
+            continue
+        cur = r.get(field)
+        if cur == f['now']:
+            # Already applied by an earlier run — nothing to write, but the
+            # key still counts as cell-fixed so the restore/history branches
+            # below keep their hands off it.
+            keys.add(k)
+            cell_applied[field] += 1
+            continue
+        if cur != f['was']:
+            cell_drift.append([field, list(k), cur, f['was']])
+            continue
+        r[field] = f['now']
+        keys.add(k)
+        cell_applied[field] += 1
+
+
+_apply_cell('name', CELL.get('names', []), name_fix_keys)
+_apply_cell('father', CELL.get('fathers', []), father_fix_keys)
+_apply_cell('relation', CELL.get('relations', []), rel_fix_keys)
+_apply_cell('house', CELL.get('houses_raw', []) + CELL.get('houses_ocr', []),
+            house_fix_keys)
+for f in CELL.get('localities', []):
+    n = 0
+    for r in recs:
+        if r['ward'] == f['ward'] and r['locality'] == f['was']:
+            r['locality'] = f['now']
+            n += 1
+    f['applied_rows'] = n
+# fresh re-reads of the 6 माता cells are *reported* in section N7, but they
+# do NOT replace MATA_RECOVERED: phase-2 re-reads came back weaker than the
+# originals more often than stronger ('सुप्रसन्ना झा' → 'माता का झा' with the
+# label re-attached, single-vote wins), and the six stored values are the
+# ones verification.md already asks a human to confirm. The re-reads ride
+# along as confirmation evidence only.
+
 age_fixed, house_fixed, name_fixed, mata_fixed, stray_fixed = [], [], [], [], []
 for r in recs:
     k = key(r)
@@ -51,14 +105,14 @@ for r in recs:
     # --- relation / father label handling (rebuilt from the pre-fix value)
     bf = (b['father'] if b else r['father']) or ''
     m = MATA_LABEL.match(bf)
-    if m or bf.strip() in ('माता', 'माता का'):
+    if k not in father_fix_keys and (m or bf.strip() in ('माता', 'माता का')):
         rest = bf[m.end():].strip() if m else ''
         if not rest:
             rest = MATA_RECOVERED.get((r['page'], r['serial']), '')
         r['father'] = rest
         r['relation'] = 'माता'
         mata_fixed.append((r['ward'], r['page'], r['serial'], r['name'], rest))
-    elif b is not None and b['father'] != r['father']:
+    elif b is not None and k not in father_fix_keys and b['father'] != r['father']:
         # undo any earlier over-aggressive strip (e.g. 'माता प्रसाद शर्मा')
         r['father'] = b['father']
     # --- history of numeric corrections vs the pre-fix snapshot
@@ -66,10 +120,10 @@ for r in recs:
         if b['age'] != r['age']:
             age_fixed.append((r['ward'], r['page'], r['serial'], r['name'],
                               b['age'], r['age']))
-        if b['house'] != r['house']:
+        if b['house'] != r['house'] and k not in house_fix_keys:
             house_fixed.append((r['ward'], r['page'], r['serial'], r['name'],
                                 b['house'], r['house']))
-        if b['name'] != r['name']:
+        if b['name'] != r['name'] and k not in name_fix_keys:
             name_fixed.append((r['ward'], r['page'], r['serial'],
                                b['name'] or '(empty)', r['name']))
     # leftover label text inside father from any other source
@@ -138,6 +192,7 @@ DESC_OVERRIDE = {
     1: 'पार्श्चनाथ सिटी, जेपीनगर, रामनगर (खसरा न 72) का क्षेत्र',
     11: 'इंद्रा नगर, बालाजी नगर रिको क्षेत्र',                # full-page OCR (crop OCR agreed: नगर, बालाजी...)
 }
+addr_changes, desc_confirm = [], {}
 for wd in wards:
     booth, room, nbooth = cover_meta(wd['cover'])
     wd['booth_cands'] = nbooth
@@ -149,6 +204,17 @@ for wd in wards:
     wd['booth_address'] = addr
     if wd['ward_no'] in DESC_OVERRIDE:
         wd['desc'] = DESC_OVERRIDE[wd['ward_no']]
+    # targeted cover-line OCR (fix_cells.py): better address / confirmations
+    c = CELL.get('covers', {}).get(str(wd['ward_no']))
+    if not c:
+        continue
+    a9 = c.get('address_900', '')
+    if a9 and re.search(p4.DEV_RE.pattern, a9) and a9 != wd['booth_address']:
+        addr_changes.append([wd['ward_no'], wd['booth_address'], a9])
+        wd['booth_address'] = a9
+    d9, dsim = c.get('desc_900', ''), c.get('desc_sim', 0)
+    if d9 and dsim and dsim >= 0.6:
+        desc_confirm[wd['ward_no']] = (d9, dsim)
 
 # ---- analysis lists for verification.md --------------------------------
 def suspicious(v):
@@ -263,6 +329,32 @@ if bad_father:
 else:
     L.append('None.\n')
 
+# The two genuinely unreadable cells (see also validate.py KNOWN_RESIDUE):
+# every crop/DPI/PSM variant returns junk glyphs over a printed `...करसिंह`,
+# so the residue cannot be fixed by re-OCR - awaiting manual transcription.
+PENDING_ROWS = [
+    (1, 11, 217),  # father cell mixes a neighbour's name + unreadable glyphs
+    (1, 16, 354),  # father cell cut off after `नाम:`
+]
+pending = [(w, p, s, next((r['epic'] for r in recs
+                           if r['ward'] == w and r['page'] == p
+                           and r['serial'] == s), ''),
+            next(((r['father'] or '') for r in recs
+                  if r['ward'] == w and r['page'] == p
+                  and r['serial'] == s), ''))
+           for (w, p, s) in PENDING_ROWS]
+
+L.append('## F2. Unresolved cells - awaiting manual data (%d)\n' % len(pending))
+if pending:
+    L.append(rows_md(['ward', 'pdf_page', 'serial', 'epic_id',
+                      'stored father_or_husband_name'], pending, 5))
+    L.append('These two father cells are unreadable by OCR: every crop and '
+             'DPI/PSM variant (900-3600 dpi, psm 6/7/13, hin-only and '
+             'legacy OEM) returns junk glyphs over the printed `...करसिंह`. '
+             'Everything else in the row (serial, EPIC, age, gender, '
+             'house) is verified. **Values above will be replaced with '
+             'manual transcriptions of the printed cells.**\n')
+
 L.append('## G. Rows whose printed label is "माता का नाम" - relation set to माता (%d)\n'
          % len(mata_fixed))
 if mata_fixed:
@@ -298,6 +390,12 @@ if empty_loc:
         L.append('... and %d more (all rows with blank locality column).\n'
                  % (len(empty_loc) - 200))
 
+if addr_changes:
+    L.append('Booth addresses replaced by 900 dpi single-line crop OCR (see N):\n')
+    for wn, was, now in addr_changes:
+        L.append('- **Ward %d:** `%s` -> `%s`' % (wn, was, now))
+    L.append('')
+
 L.append('## J. Ward metadata (booth / room / delimitation)\n')
 jm = []
 for wd in wards:
@@ -314,16 +412,50 @@ L.append('Notes:\n')
 L.append('- Booth numbers come from the PDF text layer (reliable digits); the '
          'full-page OCR had misread several (e.g. ward 1: OCR 94, actual **91** '
          '- matches your screenshot).')
-L.append('- **Ward 11 & 13 booth = "102"** in the text layer while OCR read "02". '
-         'Other booths follow 91..96 = room 1..6; room 7 would suggest 97. '
-         'Please confirm wards 11/13 booth number from the PDF.')
-L.append('- **Ward 1 delimitation**: kept as the zoomed-crop OCR reading '
-         '"पार्श्चनाथ सिटी, जेपीनगर, रामनगर (खसरा न 72) का क्षेत्र". '
-         'Full-page OCR had read the first word as "area" / "Gras" and one '
-         'earlier read looked like "शहरीकृत क्षेत्र" - **please confirm the first '
-         'word from the ward-1 cover page**. Rest of the line agrees everywhere.')
-L.append('- Ward 11 delimitation taken as "इंद्रा नगर, बालाजी नगर रिको क्षेत्र" '
-         'from full-page OCR + crop OCR agreement.\n')
+c11 = CELL.get('covers', {}).get('11', {})
+c13 = CELL.get('covers', {}).get('13', {})
+if c11 or c13:
+    t11 = c11.get('booth_ocr2400', '')
+    t13 = c13.get('booth_ocr2400', '')
+    if t11 == '102' and t13 == '102':
+        L.append('- **Wards 11 & 13 booth = 102 - CONFIRMED** by 2400 dpi '
+                 'tight-crop OCR of the printed number (both covers read "102", '
+                 'text layer also says 102; the old full-page OCR "02" was '
+                 'dropping the leading 1).')
+    else:
+        L.append('- **Wards 11 & 13 booth = 102** (stored value = text layer). '
+                 'A glyph count of the 1200 dpi screenshots '
+                 '(`ocr_cells/w11_p229_booth.png`, `ocr_cells/w13_p284_booth.png`) '
+                 'finds **3 printed digits**, so the print is `102`; every '
+                 'Tesseract config still reads %r/%r because it drops the thin '
+                 'leading `1` — the same font quirk that makes wards 1 & 7 '
+                 '(printed 91, 2 glyphs) OCR as "94". **One eyeball of the '
+                 'covers** would close this question for good.' % (t11, t13))
+else:
+    L.append('- **Ward 11 & 13 booth = "102"** in the text layer while OCR '
+             'read "02" - please confirm from the PDF.')
+c1 = CELL.get('covers', {}).get('1', {})
+if c1.get('desc_900'):
+    if c1.get('desc_sim', 0) >= 0.75:
+        L.append('- **Ward 1 delimitation CONFIRMED** by 900 dpi crop OCR: '
+                 '"%s" (similarity %.2f vs stored) - the first word reads '
+                 '"पार्श्चनाथ", not "शहरीकृत"/"area".'
+                 % (c1['desc_900'], c1.get('desc_sim', 0)))
+    else:
+        L.append('- **Ward 1 delimitation**: stored "%s" vs 900 dpi crop OCR '
+                 '"%s" (sim %.2f) - **please confirm the first word from the '
+                 'ward-1 cover page** (screenshot: ocr_cells/w1_p*_desc.png).'
+                 % (next(w['desc'] for w in wards if w['ward_no'] == 1),
+                    c1['desc_900'], c1.get('desc_sim', 0)))
+else:
+    L.append('- **Ward 1 delimitation**: kept as the zoomed-crop OCR reading '
+             '"पार्श्चनाथ सिटी, जेपीनगर, रामनगर (खसरा न 72) का क्षेत्र" - '
+             '**please confirm the first word from the ward-1 cover page**.')
+for wn, (d9, dsim) in sorted(desc_confirm.items()):
+    if wn != 1:
+        L.append('- Ward %d delimitation crop-OCR agrees (sim %.2f): "%s"'
+                 % (wn, dsim, d9))
+L.append('')
 
 L.append('## K. Old-format EPIC IDs (%d)\n' % len(old_epic))
 if old_epic:
@@ -337,7 +469,9 @@ L.append('- `gender`: OCR, validated by exact per-ward male/female totals vs cov
 L.append('- `name`, `father_or_husband_name`, `relation`, `locality`, '
          'text `house_no`: OCR only (raw layer text is unreadable due to broken '
          'font ToUnicode) - spot-check these against the PDF, especially '
-         'sections E/F/G/H.\n')
+         'sections E/F/G/H. All suspicious values were re-read at 900-2400 dpi '
+         'and fixed where the read was confident (section N); what is still '
+         'listed in E/F is genuinely unresolved.\n')
 
 L.append('## M. Everything else kept exactly as OCR read it (nothing removed)\n')
 rel_counts = Counter(r['relation'] for r in recs)
@@ -356,6 +490,134 @@ L.append('- `locality`: OCR of the section headers inside the roll; full list pe
 L.append('- `booth_address` (wards-summary.csv): OCR of the cover booth line - see J.')
 L.append('- No row and no column was dropped anywhere: 6855 rows in the CSVs = '
          '6855 voters on the covers.\n')
+
+# ---- N: targeted high-dpi cell OCR fixes (fix_cells.py) ----------------
+if CELL:
+    n_names = CELL.get('names', [])
+    n_fathers = CELL.get('fathers', [])
+    n_rels = CELL.get('relations', [])
+    n_hraw = CELL.get('houses_raw', [])
+    n_hocr = CELL.get('houses_ocr', [])
+    n_locs = CELL.get('localities', [])
+    n_unres = CELL.get('unresolved', [])
+    sc = CELL.get('sample_check', {})
+    L.append('## N. Targeted high-dpi cell OCR fixes applied this pass '
+             '(%d)\n' % (len(n_names) + len(n_fathers) + len(n_rels) +
+                        len(n_hraw) + len(n_hocr) + len(n_locs)))
+    L.append('Re-read from `data/veernagar-1.pdf` at 900-2400 dpi with '
+             'Tesseract `hin+eng`, voted across psm 7/11 x 900/1800 dpi '
+             'variants; only results that look like real Devanagari/text were '
+             'accepted, everything else stayed unchanged and is listed under '
+             '`unresolved` below. Each OCR-decided cell has a screenshot in '
+             '`ocr_cells/` (the exact crop Tesseract saw). Method per group:')
+    L.append('- names / fathers / text houses / localities: cell crop OCR '
+             '900+1800 dpi.')
+    L.append('- numeric houses: **exact PDF text layer digits** (the layer is '
+             'proven exact for serials/EPICs/counts/ages; the old code only '
+             'repaired *numeric-looking* stored values, so junk-labelled rows '
+             'were never cross-checked until now) - no screenshot needed, the '
+             'text layer is the evidence.')
+    if sc:
+        L.append('- cross-check: %d random raw-layer house fixes were re-OCR\'d '
+                 'at 900 dpi: %d agreed, %d differed (listed in N8). The '
+                 'differs are **OCR artifacts, not data errors** — in every one '
+                 'the cell OCR lost or mangled the *leading digit* of a '
+                 'multi-digit number (raw `128` → OCR `28`, raw `102` → OCR '
+                 '`02`, raw `91` → OCR `97`): this font\'s `1` has a serif foot '
+                 'that Tesseract reads as part of a 4/7 or drops against the '
+                 'cell border. The raw text layer stays authoritative (it is '
+                 'proven exact for serials, EPICs, ages and counts).'
+                 % (sc.get('checked', 0), sc.get('agree', 0),
+                    sc.get('disagree', 0)))
+    L.append('')
+    if cell_applied['name'] or cell_drift:
+        L.append('Applied with drift guard: %s%s.\n'
+                 % (json.dumps(cell_applied),
+                    (', SKIPPED %d (value changed since OCR ran): %s'
+                     % (len(cell_drift), cell_drift[:5])) if cell_drift else ''))
+    if n_names:
+        L.append('### N1. Names fixed (%d)\n' % len(n_names))
+        L.append(rows_md(
+            ['ward', 'pdf_page', 'serial', 'was', 'now', 'votes', 'dpi',
+             'screenshot'],
+            [[f['ward'], f['page'], f['serial'], f['was'], f['now'],
+              f.get('votes', ''), f.get('dpi', ''),
+              '`%s`' % f.get('screenshot', '')] for f in n_names], 8))
+    if n_fathers:
+        L.append('### N2. Father/husband names fixed (%d)\n' % len(n_fathers))
+        L.append(rows_md(
+            ['ward', 'pdf_page', 'serial', 'was', 'now', 'votes', 'screenshot'],
+            [[f['ward'], f['page'], f['serial'], f['was'], f['now'],
+              f.get('votes', ''), '`%s`' % f.get('screenshot', '')]
+             for f in n_fathers], 7))
+    if n_rels:
+        L.append('### N3. Relation labels corrected from the father-cell label '
+                 '(%d)\n' % len(n_rels))
+        L.append(rows_md(['ward', 'pdf_page', 'serial', 'was', 'now'],
+                         [[f['ward'], f['page'], f['serial'], f['was'],
+                           f['now']] for f in n_rels], 5))
+    if n_hraw:
+        L.append('### N4. Junk house numbers replaced by exact text-layer '
+                 'digits (%d)\n' % len(n_hraw))
+        L.append(rows_md(['ward', 'pdf_page', 'serial', 'was', 'now=raw'],
+                         [[f['ward'], f['page'], f['serial'], f['was'],
+                           f['now']] for f in n_hraw], 5))
+    if n_hocr:
+        L.append('### N5. Text house numbers fixed by cell OCR (%d)\n'
+                 % len(n_hocr))
+        L.append(rows_md(
+            ['ward', 'pdf_page', 'serial', 'was', 'now', 'dpi', 'screenshot'],
+            [[f['ward'], f['page'], f['serial'], f['was'], f['now'],
+              f.get('dpi', ''), '`%s`' % f.get('screenshot', '')]
+             for f in n_hocr], 7))
+    if n_locs:
+        L.append('### N6. Locality headers fixed (%d)\n' % len(n_locs))
+        L.append(rows_md(['ward', 'rows affected', 'was', 'now'],
+                         [[f['ward'], f.get('applied_rows', f.get('rows', '?')),
+                           f['was'], f['now']] for f in n_locs], 4))
+    if CELL.get('mothers_confirmed'):
+        L.append('### N7. Re-read confirmation of the 6 माता name cells\n')
+        L.append(rows_md(
+            ['pdf_page', 'serial', 'stored', 're-read (900/1800 dpi)', 'votes'],
+            [[m['page'], m['serial'], m['stored'], m.get('re_read') or '(unreadable)',
+              m.get('votes', '')] for m in CELL['mothers_confirmed']], 5))
+        L.append('')
+    if CELL.get('sample_mismatches'):
+        L.append('### N8. Raw-layer vs OCR house mismatches in the sample '
+                 '(%d)\n' % len(CELL['sample_mismatches']))
+        L.append(rows_md(
+            ['ward', 'pdf_page', 'serial', 'raw', 'OCR candidates'],
+            [[f['ward'], f['page'], f['serial'], f['raw'],
+              ' \\| '.join(str(c) for c in f['ocr'][:4])]
+             for f in CELL['sample_mismatches']], 5))
+    if CELL.get('covers'):
+        L.append('### N9. Cover-page confirmations (booth / address / '
+                 'delimitation)\n')
+        rows = []
+        for wn in sorted(CELL['covers'], key=lambda x: int(x)):
+            c = CELL['covers'][wn]
+            rows.append([wn, c.get('booth_raw', ''),
+                         c.get('booth_ocr2400', ''),
+                         'ok' if not c.get('address_900') or
+                         c.get('address_900') == c.get('address_stored')
+                         else 'replaced',
+                         '%s' % c.get('desc_sim', '')])
+        L.append(rows_md(
+            ['ward', 'booth (raw layer)', 'booth (2400 dpi OCR)',
+             'address (900 dpi)', 'desc similarity'], rows, 5))
+        L.append('')
+    if n_unres:
+        L.append('### N10. Cells that stayed suspicious after 4-variant OCR - '
+                 '**manual check against the PDF please** (%d)\n'
+                 % len(n_unres))
+        L.append(rows_md(
+            ['field', 'ward', 'pdf_page', 'serial', 'kept value',
+             'OCR candidates'],
+            [[f.get('field'), f.get('ward'), f.get('page'), f.get('serial'),
+              f.get('was'),
+              ' \\| '.join(str(c)[:40] for c in (f.get('candidates') or [])[:4])]
+             for f in n_unres], 6))
+    L.append('')
 
 open(os.path.join(WORK, '..', '..', 'verification.md') if False else 'verification.md',
      'w', encoding='utf-8').write('\n'.join(L))

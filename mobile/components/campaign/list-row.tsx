@@ -15,23 +15,59 @@ type Props = {
   trailing?: React.ReactNode;
   onPress?: () => void;
   style?: ViewStyle;
+  /**
+   * Tints the leading medallion. Omitted → the neutral grey it always was.
+   *
+   * Backgrounds and inks come in *pairs* from `theme/colors.ts`
+   * (primaryFixed/onPrimaryFixed, errorContainer/onErrorContainer, …) —
+   * tokens documented as "identical in light & dark, they carry their own
+   * ink". Pairing across sets (a raw green on `secondaryFixed`) would
+   * re-test contrast per mode; these pairs are already known-good AA.
+   */
+  tone?: 'primary' | 'danger' | 'warning' | 'info' | 'success';
+};
+
+const TONE: Record<
+  NonNullable<Props['tone']>,
+  { bg: Parameters<typeof useColor>[0]; fg: Parameters<typeof useColor>[0] }
+> = {
+  primary: { bg: 'primaryFixed', fg: 'onPrimaryFixed' },
+  danger: { bg: 'errorContainer', fg: 'onErrorContainer' },
+  warning: { bg: 'secondaryFixed', fg: 'onSecondaryFixed' },
+  info: { bg: 'tertiaryFixed', fg: 'onTertiaryFixed' },
+  // No green pastel pair exists; `success` is dark enough in light mode
+  // (#15803D, 5.0:1) and bright enough in dark (#16A34A) to sit on the
+  // neutral `secondary` fill in both.
+  success: { bg: 'secondary', fg: 'success' },
 };
 
 /**
  * The workhorse list row: optional leading icon medallion, title, subtitle,
  * trailing meta/badge/chevron. Whole row is one hit target.
  */
-export function ListRow({ title, subtitle, meta, icon, trailing, onPress, style }: Props) {
+export function ListRow({
+  title,
+  subtitle,
+  meta,
+  icon,
+  trailing,
+  onPress,
+  style,
+  tone,
+}: Props) {
   const card = useColor('card');
   const border = useColor('border');
-  const muted = useColor('muted');
   const outline = useColor('outline');
+  // Untoned rows keep the exact fills they had before (`muted` medallion,
+  // themed `icon` glyph) — the tone only ever overrides both together.
+  const toneBg = useColor(tone ? TONE[tone].bg : 'muted');
+  const toneFg = useColor(tone ? TONE[tone].fg : 'icon');
 
   const body = (
     <>
       {icon ? (
-        <View style={[styles.medallion, { backgroundColor: muted }]}>
-          <Icon name={icon} size={18} />
+        <View style={[styles.medallion, { backgroundColor: toneBg }]}>
+          <Icon name={icon} size={18} color={toneFg} />
         </View>
       ) : null}
       <View style={styles.text}>

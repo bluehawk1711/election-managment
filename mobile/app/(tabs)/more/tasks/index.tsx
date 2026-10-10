@@ -150,6 +150,13 @@ export default function TasksScreen() {
                   .filter(Boolean)
                   .join(' · ')}
                 meta={due.text}
+                tone={
+                  task.status === 'completed'
+                    ? 'success'
+                    : task.status === 'in_progress'
+                      ? 'info'
+                      : 'warning'
+                }
                 onPress={() =>
                   router.push({ pathname: '/(tabs)/more/tasks/[id]', params: { id: task.id } })
                 }

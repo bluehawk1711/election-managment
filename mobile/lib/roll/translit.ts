@@ -474,28 +474,79 @@ export function keyContains(key: SearchKey, token: SearchKey): boolean {
 }
 
 /**
- * How good a match is, for ordering: 3 is an exact match, 2 a substring, 1
- * phonetic-only.
+ * How good a match is, for ordering. Higher sorts first.
  *
- * The list sorts by this, so a row whose text the user typed *exactly* floats
- * above one that merely reduces to the same consonants. Without it, dropping
- * vowels makes every phonetic hit look equally good — which for a karykarta is
- * the difference between the right person and a plausible-looking stranger.
+ * ```
+ * 6  native exact        the typed text IS a whole field (nameEn 'Ram' for 'ram')
+ * 5  native word-start   begins a field or a word inside it ('Ramesh Singh')
+ * 4  phonetic exact      consonant skeleton equals the query ('ram' → राम)
+ * 3  phonetic word-start skeleton begins the query's skeleton (रमेशसिंह for 'ramesh')
+ * 2  substring           appears somewhere inside a field (हरिराम for 'ram')
+ * 1  no match
+ * ```
+ *
+ * The word-start tiers (5 and 3) exist because of a real complaint: typing
+ * `ram` returned `राम`, `Ramesh`… but also `हरिराम`, where the query only
+ * *ends* the name — and a karykarta searching a father's name `hariram` saw
+ * rows that merely contain `ram` mixed in with the person actually called
+ * Hariram. "Starting words first" is what makes both queries feel right:
+ * `ram` leads with the Ram-s and trails the -rams; `hariram` puts the real
+ * Hariram on top instead of the phonetic neighbours.
+ *
+ * Native tiers sit above their phonetic twins because the native side is the
+ * user's own alphabet: a Latin prefix of the romanised copy (`ramesh` →
+ * `Ramesh Singh`) is more trustworthy than a vowel-less skeleton equality,
+ * which by construction cannot distinguish `राम` from `हाऊराम` — both reduce
+ * to `rm`. That is exactly why the phonetic *exact* tier (4) must not share
+ * the top with the native one: otherwise the suffix-`ram` rows re-enter the
+ * exact block through the back door and the ordering the tiers exist for is
+ * gone.
  *
  * "Exact" means *a whole indexed field* equals the token, not the whole
  * haystack: a row's haystack joins ~20 fields, so `key.native === token.native`
- * could essentially never fire on real data — every hit tied at 2 and the list
+ * could essentially never fire on real data — every hit tied and the list
  * silently degraded to roll order, i.e. typing `ramesh` put `Rameshvar` above
  * the person actually named `Ramesh`. Field boundaries are carried in the
  * haystack itself (`HAYSTACK_SEP`), so a single-field key from `keyOf` still
  * hits the plain-equality path and the exported contract is unchanged.
+ *
+ * `searchVoters` takes the **minimum** over the query's tokens, so a
+ * multi-token query is ranked by its weakest token — `ram kumar` should not
+ * outrank a plain `Ram` just because one of its halves matched well.
  */
 export function rankKey(key: SearchKey, token: SearchKey): number {
-  if (token.native.length === 0 && token.phonetic.length === 0) return 3;
-  if (fieldEquals(key.native, token.native)) return 3;
-  if (fieldEquals(key.phonetic, token.phonetic)) return 3;
+  if (token.native.length === 0 && token.phonetic.length === 0) return 6;
+  if (fieldEquals(key.native, token.native)) return 6;
+  if (fieldStart(key.native, token.native)) return 5;
+  if (fieldEquals(key.phonetic, token.phonetic)) return 4;
+  if (fieldStart(key.phonetic, token.phonetic)) return 3;
   if (keyContains(key, token)) return 2;
   return 1;
+}
+
+/**
+ * True when `token` begins `haystack` **at a field or word boundary**.
+ *
+ * Word boundaries matter because a Latin field can hold several words:
+ * `ramesh` is a word-start of `ramesh singh` but not of `hariram`, and that
+ * single distinction is the difference between "the person called Ramesh" and
+ * "someone whose name ends in -ram".
+ *
+ * Devanagari fields have no boundaries to check — `nativeKey` deliberately
+ * removes spaces (`राम देवी` and `रामदेवी` are one word written two ways), so
+ * a Devanagari query can only be a start of the whole field there. The
+ * romanised copy (`nameEn` and friends, Latin, spaces intact) is what carries
+ * word-level precision for Latin queries, and the phonetic side collapses
+ * spaces by construction — hence the plain prefix check on it.
+ */
+function fieldStart(haystack: string, token: string): boolean {
+  if (token.length === 0) return false;
+  if (haystack.startsWith(token)) return true;
+  // A token that itself contains a space can never be a word *inside* a
+  // field's word list — tokens are whitespace-split before keying, so this
+  // only guards against a future caller passing one.
+  if (token.includes(' ')) return false;
+  return haystack.includes(` ${token}`);
 }
 
 /**

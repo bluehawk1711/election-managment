@@ -1,4 +1,5 @@
 import { EmptyState } from '@/components/campaign/empty-state';
+import { AreaSelect } from '@/components/campaign/area-select';
 import { FilterBar, type FilterItem } from '@/components/campaign/filter-bar';
 import { SearchInput } from '@/components/campaign/search-input';
 import { VoterCard } from '@/components/roll/voter-card';
@@ -27,7 +28,7 @@ import type { VoterView } from '@/lib/roll/types';
 import { FlashList } from '@shopify/flash-list';
 import * as Location from 'expo-location';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { LocateFixed, ShieldAlert, Users } from 'lucide-react-native';
+import { ShieldAlert, Users } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
@@ -149,6 +150,15 @@ export default function VotersScreen() {
 
   const roll = useRoll(initialWard);
   const [query, setQuery] = useState('');
+  /**
+   * Which roll area's data the list shows.
+   *
+   * One area ships with the app (Veernagar), so this is currently a label
+   * rather than a filter — but it sits at the very top of the header because
+   * it is the widest scope of the hierarchy (area > ward > voter) and the
+   * place a second roll will slot in without touching the layout.
+   */
+  const [area, setArea] = useState('veernagar');
   const [status, setStatus] = useState<StatusFilter>('all');
   /**
    * Which fields the query is matched against.
@@ -337,6 +347,13 @@ export default function VotersScreen() {
    * extra tap rather than a choice between two fixed queries. Turning the last
    * one off would leave a search box that silently matches everything, which
    * looks like the search is broken; the last active scope is kept instead.
+   *
+   * The row only renders while a query is typed (see the header JSX): with an
+   * empty query every scope matches everything, so the badges were pure chrome
+   * in the common case — and two identical-looking chip rows stacked on screen
+   * is exactly what made the filter area feel confusing. Shown *while typing*,
+   * directly under the input, they are also in the right place to be discovered
+   * at the only moment they matter: zero results for a father's name.
    */
   const scopeItems = useMemo<FilterItem[]>(
     () =>
@@ -354,6 +371,36 @@ export default function VotersScreen() {
       if (!current.includes(scope)) return [...current, scope];
       return current.length > 1 ? current.filter((item) => item !== scope) : current;
     });
+  };
+
+  /**
+   * The status chips plus the nearest-mode toggle, in one filter row.
+   *
+   * Nearest mode is a list filter like the rest — it narrows what is shown —
+   * so it lives in the chip row instead of occupying a full-width button of
+   * its own. That removed ~40pt of always-visible chrome and gave it the same
+   * "active = filled" affordance every other filter already speaks.
+   */
+  const filterItems = useMemo<FilterItem[]>(
+    () => [
+      ...statusItems,
+      {
+        key: 'nearby',
+        label: locating ? t('voters.nearbyLocating') : t('voters.nearby'),
+        active: Boolean(origin),
+      },
+    ],
+    [statusItems, locating, origin, t]
+  );
+
+  const handleFilterToggle = (key: string) => {
+    if (key === 'nearby') {
+      // A locate can take a second or two; a second tap mid-flight would
+      // start (or cancel) a race the user did not ask for.
+      if (!locating) void toggleNearby();
+      return;
+    }
+    setStatus(key as StatusFilter);
   };
 
   const ageOptions = useMemo<SelectOption[]>(
@@ -456,61 +503,72 @@ export default function VotersScreen() {
         }
         ListHeaderComponent={
           <View style={styles.header}>
+            {/* Area above search: the widest scope of the selector stack
+                (area → ward → query). One 36pt pill so the header keeps the
+                height the de-cluttering won back. */}
+            <View style={styles.areaRow}>
+              <Text variant='caption' numberOfLines={1} style={{ color: outline }}>
+                {t('areas.label')}:
+              </Text>
+              <AreaSelect value={area} onChange={setArea} />
+            </View>
             <SearchInput
               value={query}
               onChangeText={setQuery}
               placeholder={t('voters.searchPlaceholder')}
             />
-            {/* Which fields the search covers. Small badges under the input
-                rather than buried in settings: the default is name-only, so
-                this is how a user discovers why a father's name found nothing. */}
-            <View style={styles.gap}>
-              <Text variant='caption' style={{ color: outline }}>
-                {t('voters.searchIn')}
-              </Text>
-              <FilterBar items={scopeItems} onToggle={toggleScope} />
+            {/* Which fields the search covers — only while a query is typed.
+                With no query every scope matches everything, so the badges
+                were dead space in the default state; while typing they sit
+                right under the input, which is where a user hits zero results
+                for a father's name and needs to discover the widening. The
+                label is inline with the chips rather than on its own line to
+                keep the whole thing one 34pt row. */}
+            {query.trim() ? (
+              <View style={styles.scopeRow}>
+                <Text
+                  variant='caption'
+                  numberOfLines={1}
+                  style={{ color: outline }}
+                >
+                  {t('voters.searchIn')}:
+                </Text>
+                <FilterBar
+                  items={scopeItems}
+                  onToggle={toggleScope}
+                  style={styles.scopeChips}
+                />
+              </View>
+            ) : null}
+            {/* Ward and age side by side: each was a full-width row, and two
+                stacked 56pt selects is the bulk of what made this header eat
+                the screen. Both keep their label *inside* the control (the
+                closed state still says what it is and what it holds), so the
+                row costs one line instead of two. */}
+            <View style={styles.filterRow}>
+              <View style={styles.half}>
+                <SelectField
+                  label={t('common.ward')}
+                  value={selectedWard}
+                  placeholder={t('form.selectWard')}
+                  options={wardOptions}
+                  onChange={(value) => openWard(value === ALL_WARDS ? null : Number(value))}
+                  disabled={noRole || wardOptions.length <= 1}
+                />
+              </View>
+              <View style={styles.half}>
+                <SelectField
+                  label={t('voters.ageFilter')}
+                  value={ageBand}
+                  placeholder={t('voters.ageAny')}
+                  options={ageOptions}
+                  onChange={(value) => setAgeBand(value as AgeBand)}
+                  disabled={noRole}
+                />
+              </View>
             </View>
-            <SelectField
-              label={t('common.ward')}
-              value={selectedWard}
-              placeholder={t('form.selectWard')}
-              options={wardOptions}
-              onChange={(value) => openWard(value === ALL_WARDS ? null : Number(value))}
-              disabled={noRole || wardOptions.length <= 1}
-            />
-            <FilterBar
-              items={statusItems}
-              onToggle={(key) => setStatus(key as StatusFilter)}
-            />
-
-            {/* Age band, as a bottom sheet like the ward picker — the same
-                "current value is always visible" reason applies. */}
-            <SelectField
-              label={t('voters.ageFilter')}
-              value={ageBand}
-              placeholder={t('voters.ageAny')}
-              options={ageOptions}
-              onChange={(value) => setAgeBand(value as AgeBand)}
-              disabled={noRole}
-            />
-
-            <Button
-              size='sm'
-              variant={origin ? 'default' : 'outline'}
-              icon={LocateFixed}
-              loading={locating}
-              disabled={locating || noRole}
-              onPress={() => void toggleNearby()}
-            >
-              {/* Label says what tapping does *next*: the control is a toggle,
-                  and a label that reads the same either way gives no sign the
-                  mode is on beyond the button's own styling. */}
-              {locating
-                ? t('voters.nearbyLocating')
-                : origin
-                  ? t('voters.nearbyOff')
-                  : t('voters.nearby')}
-            </Button>
+            {/* Status chips with counts, plus nearest mode as the last chip. */}
+            <FilterBar items={filterItems} onToggle={handleFilterToggle} />
 
             {/* Nearest mode is deliberately loud when it yields nothing: the
                 usual cause is that no fix has been captured yet, which the
@@ -605,8 +663,16 @@ const styles = StyleSheet.create({
     paddingBottom: 112,
     gap: 8,
   },
-  header: { gap: 12, marginBottom: 4 },
+  header: { gap: 8, marginBottom: 4 },
   gap: { gap: 8 },
+  /** Inline "Search in:" label + scrolling scope chips — one 34pt row. */
+  scopeRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  scopeChips: { flex: 1, minWidth: 0 },
+  /** Area pill under its label — same inline pattern as the scope row. */
+  areaRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  /** Ward + age packed onto one line. */
+  filterRow: { flexDirection: 'row', gap: 8 },
+  half: { flex: 1, minWidth: 0 },
   trailing: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   banner: { borderWidth: StyleSheet.hairlineWidth, borderRadius: 12, padding: 10 },
 });
