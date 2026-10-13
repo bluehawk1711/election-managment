@@ -463,13 +463,44 @@ export function clearKeyCache(): void {
 export const HAYSTACK_SEP = '\u0001';
 
 /**
+ * Minimum consonant-skeleton length that is allowed to match.
+ *
+ * A one-letter skeleton carries no information: "hari" loses its vowels *and*
+ * its aspiration-h, collapsing to a bare `r` — and `r` begins roughly half the
+ * roll. Matching on it returned every Ram and Ramesh for a `hari` query, with
+ * the real Harirams correct on top and pure noise immediately below — exactly
+ * the complaint that produced this constant. Two letters is still loose by
+ * design (`rm` matches राम and the -rams) but it is at least a shape, and the
+ * rank tiers below keep the right rows on top of it.
+ *
+ * Only the *phonetic* side is gated. The native side is the literal text the
+ * user typed (or its matra-stripped twin), so even a single character there is
+ * a real substring of the real row — searching "र" to find every र-starting
+ * name is a legitimate query, not an accident of keying.
+ */
+export const MIN_PHONETIC_LENGTH = 2;
+
+/** True when a token's skeleton is short enough to be pure coincidence. */
+function phoneticIsDegenerate(token: SearchKey): boolean {
+  return token.phonetic.length < MIN_PHONETIC_LENGTH;
+}
+
+/**
  * A token matches if **either** of its forms appears in the corresponding form
  * of the key. Symmetric on purpose: a Hindi query matches the native side, a
  * Latin query matches the phonetic side, and either keyboard can find either.
+ *
+ * The phonetic side is skipped for degenerate skeletons (`MIN_PHONETIC_LENGTH`)
+ * — a bare `r` from `hari` must not match the whole roll.
  */
 export function keyContains(key: SearchKey, token: SearchKey): boolean {
   if (token.native.length > 0 && key.native.includes(token.native)) return true;
-  if (token.phonetic.length > 0 && key.phonetic.includes(token.phonetic)) return true;
+  if (
+    !phoneticIsDegenerate(token) &&
+    token.phonetic.length > 0 &&
+    key.phonetic.includes(token.phonetic)
+  )
+    return true;
   return false;
 }
 
@@ -518,8 +549,14 @@ export function rankKey(key: SearchKey, token: SearchKey): number {
   if (token.native.length === 0 && token.phonetic.length === 0) return 6;
   if (fieldEquals(key.native, token.native)) return 6;
   if (fieldStart(key.native, token.native)) return 5;
-  if (fieldEquals(key.phonetic, token.phonetic)) return 4;
-  if (fieldStart(key.phonetic, token.phonetic)) return 3;
+  // A degenerate skeleton (`hari` → `r`) must not earn phonetic tiers either:
+  // `r` *begins* half the roll, so tier 3 would put the whole alphabet above
+  // real substring hits. Native tiers above still apply — that is what keeps
+  // `Hari`/`Hariram` findable when the skeleton is useless.
+  if (!phoneticIsDegenerate(token)) {
+    if (fieldEquals(key.phonetic, token.phonetic)) return 4;
+    if (fieldStart(key.phonetic, token.phonetic)) return 3;
+  }
   if (keyContains(key, token)) return 2;
   return 1;
 }

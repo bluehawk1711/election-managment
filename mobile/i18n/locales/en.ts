@@ -252,7 +252,7 @@ export const en = {
   // Voter roll (plan-voters.md §6.1–6.3)
   'voters.title': 'Voter Roll',
   'voters.count': '{{count}} voters',
-  'voters.searchPlaceholder': 'Search name, EPIC, house, locality…',
+  'voters.searchPlaceholder': 'Search in English or Hindi — name, EPIC…',
   'voters.searchIn': 'Search in',
   'voters.searchScope.name': 'Name',
   'voters.searchScope.father': 'Father name',
@@ -282,6 +282,9 @@ export const en = {
   'voters.epic': 'EPIC ID',
   'voters.age': 'Age',
   'voters.gender': 'Gender',
+  'voters.genderOption.male': 'Male',
+  'voters.genderOption.female': 'Female',
+  'voters.genderOption.other': 'Other',
   'voters.house': 'House no.',
   'voters.locality': 'Locality',
   'voters.father': 'Father / husband',

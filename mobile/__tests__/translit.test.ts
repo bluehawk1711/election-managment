@@ -133,6 +133,27 @@ describe('keyOf / keyContains', () => {
   it('never matches on an empty token', () => {
     expect(keyContains(keyOf('मुकेश'), keyOf(''))).toBe(false);
   });
+
+  it('does not let a vowel-less skeleton of one letter match the whole roll', () => {
+    // Regression: 'hari' loses its vowels and its aspiration-h, collapsing to
+    // a bare 'r' — which began half the roll. Typing `hari` returned the real
+    // Harirams first and then every Rām/­Ramesh row, none of which contained
+    // the query in either name or father's name. The native side still
+    // matches literally; only the degenerate phonetic side is refused.
+    expect(phoneticKey('hari')).toBe('r');
+
+    // The real rows still match — through nameEn's native copy.
+    expect(keyContains(keyOf('Hariram'), keyOf('hari'))).toBe(true);
+    // …but an unrelated R-row must not ride in on the bare 'r' skeleton.
+    expect(keyContains(keyOf('रमेश सिंह'), keyOf('hari'))).toBe(false);
+    expect(keyContains(keyOf('Ramesh Singh'), keyOf('hari'))).toBe(false);
+  });
+
+  it('still allows two-letter skeletons, which are loose but shaped', () => {
+    // 'ram' → 'rm' is the documented fuzzy case and must keep working.
+    expect(keyContains(keyOf('राम देवी'), keyOf('ram'))).toBe(true);
+    expect(keyContains(keyOf('हरिराम'), keyOf('ram'))).toBe(true);
+  });
 });
 
 describe('rankKey', () => {

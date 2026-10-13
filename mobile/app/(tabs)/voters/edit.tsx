@@ -690,7 +690,7 @@ function EditForm({
                 style={styles.genderButton}
                 onPress={() => setGender(value)}
               >
-                {value}
+                {t(`voters.genderOption.${value}` as const)}
               </Button>
             );
           })}

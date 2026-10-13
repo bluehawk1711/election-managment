@@ -248,7 +248,7 @@ export const hi: Record<TranslationKey, string> = {
   // Voter roll
   'voters.title': 'मतदाता सूची',
   'voters.count': '{{count}} मतदाता',
-  'voters.searchPlaceholder': 'नाम, EPIC, मकान, मोहल्ला खोजें…',
+  'voters.searchPlaceholder': 'अंग्रेज़ी या हिंदी में खोजें — नाम, EPIC…',
   'voters.searchIn': 'किसमें खोजें',
   'voters.searchScope.name': 'नाम',
   'voters.searchScope.father': 'पिता का नाम',
@@ -278,6 +278,9 @@ export const hi: Record<TranslationKey, string> = {
   'voters.epic': 'EPIC पहचान',
   'voters.age': 'आयु',
   'voters.gender': 'लिंग',
+  'voters.genderOption.male': 'पुरुष',
+  'voters.genderOption.female': 'महिला',
+  'voters.genderOption.other': 'अन्य',
   'voters.house': 'मकान संख्या',
   'voters.locality': 'मोहल्ला',
   'voters.father': 'पिता / पति',

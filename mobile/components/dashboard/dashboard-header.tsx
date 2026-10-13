@@ -10,16 +10,23 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 type Props = {
   title: string;
   subtitle: string;
-  initials: string;
   onSearch: () => void;
-  onAvatar: () => void;
 };
 
-/** Custom dashboard header — brandmark, title stack, search, avatar. */
-export function DashboardHeader({ title, subtitle, initials, onSearch, onAvatar }: Props) {
+/**
+ * Custom dashboard header — brandmark, title stack, search.
+ *
+ * The avatar that used to sit here has been removed: `GreetingRow` directly
+ * below renders the same initials (with a presence dot) and is the more
+ * expressive identity element, so keeping a second one stacked ~60pt above it
+ * read as the same person twice and added a duplicate route to Settings. This
+ * row is now purely *utility* (brand + search) and the greeting row is purely
+ * *personal* (identity + notifications + settings) — a clean split instead of
+ * two competing headers.
+ */
+export function DashboardHeader({ title, subtitle, onSearch }: Props) {
   const insets = useSafeAreaInsets();
   const primary = useColor('primary');
-  const card = useColor('card');
   const outline = useColor('outline');
 
   return (
@@ -33,13 +40,8 @@ export function DashboardHeader({ title, subtitle, initials, onSearch, onAvatar 
           {subtitle}
         </Text>
       </View>
-      <Pressable onPress={onSearch} hitSlop={8} accessibilityRole='button' accessibilityLabel='Search'>
+      <Pressable onPress={onSearch} hitSlop={12} accessibilityRole='button' accessibilityLabel='Search'>
         <Icon name={Search} size={20} />
-      </Pressable>
-      <Pressable onPress={onAvatar} hitSlop={8} accessibilityRole='button' accessibilityLabel={title}>
-        <View style={[styles.avatar, { backgroundColor: card }]}>
-          <Text style={[typeStyle('labelSm'), { color: primary }]}>{initials}</Text>
-        </View>
       </Pressable>
     </View>
   );
@@ -63,13 +65,5 @@ const styles = StyleSheet.create({
   titles: {
     flex: 1,
     gap: 1,
-  },
-  avatar: {
-    width: 38,
-    height: 38,
-    borderRadius: 999,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: StyleSheet.hairlineWidth,
   },
 });

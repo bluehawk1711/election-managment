@@ -83,7 +83,15 @@ const lightColors = {
   surfaceContainerHighest: '#E0E1F8',
 
   // Outlines
-  outline: '#777587',
+  //
+  // `outline` is the caption/label ink across the app (field labels, the
+  // serial/EPIC line, hints). The old #777587 measured 4.49:1 on the white
+  // card and 4.19:1 on the #F6F7FB canvas — both under the 4.5:1 WCAG AA floor
+  // for the 12–14px text it renders. #66647A measures 5.7:1 on white and
+  // 5.35:1 on the canvas: still clearly a muted label, but legible. Same
+  // reasoning as the `success` token above. Dark theme keeps #9AA2BC, which is
+  // already well over the floor on #141824.
+  outline: '#66647A',
   outlineVariant: '#C7C4D8',
 
   // Inverse (tooltips, snackbar surfaces)

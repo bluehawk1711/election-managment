@@ -284,12 +284,10 @@ export default function HomeScreen() {
       <DashboardHeader
         title={t('dash.brandTitle')}
         subtitle={t('home.title')}
-        initials={initials}
         // Search belongs to the roll. It used to open the More hub, which was
         // never what the magnifier implied — a user tapping search is looking
         // for a person, and the voter list is where people are.
         onSearch={() => router.push('/(tabs)/voters')}
-        onAvatar={() => router.push('/(tabs)/more/settings')}
       />
 
       <View style={{ paddingHorizontal: 20, gap: 16 }}>

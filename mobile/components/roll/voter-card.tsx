@@ -85,6 +85,10 @@ export function VoterCard({ voter, meters, onPress }: Props) {
   const border = useColor('border');
   const muted = useColor('muted');
   const outline = useColor('outline');
+  // Shadow tint — matched to the foreground ink so the drop shadow carries the
+  // surface's own hue rather than a flat grey. Same recipe as `Card` and the
+  // floating tab bar, just tighter for a repeated list row.
+  const foreground = useColor('foreground');
 
   const e = voter.effective;
 
@@ -100,6 +104,15 @@ export function VoterCard({ voter, meters, onPress }: Props) {
         {
           backgroundColor: card,
           borderColor: border,
+          // Layered lift: a soft ambient drop plus a faint deeper one, so the
+          // card reads as sitting *above* the canvas instead of just being
+          // outlined. Tinted with the foreground ink (house style), scaled
+          // down from `Card` because these repeat every ~90pt down the list.
+          shadowColor: foreground,
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.08,
+          shadowRadius: 8,
+          elevation: 2,
           opacity: pressed ? 0.7 : 1,
         },
       ]}
@@ -248,7 +261,12 @@ function Field({
 
 const styles = StyleSheet.create({
   card: {
-    padding: 12,
+    // 14 vertical / 14 horizontal: the card used to be uniformly tight (12),
+    // which crammed the three stacked lines (name, serial/EPIC, chips) against
+    // the border. A touch more room top/bottom lets each line breathe while
+    // the fields grid below keeps its own rhythm.
+    paddingVertical: 14,
+    paddingHorizontal: 14,
     borderRadius: CONTROL_RADIUS,
     borderWidth: StyleSheet.hairlineWidth,
   },

@@ -661,7 +661,11 @@ const styles = StyleSheet.create({
     padding: 20,
     paddingTop: 8,
     paddingBottom: 112,
-    gap: 8,
+    // 12, not 8: each VoterCard now carries a soft shadow, and shadows that
+    // sit only 8pt apart visually collide into one grey smear. 12 keeps a
+    // clear gutter of canvas between lifts so each card reads as its own
+    // plane — the relationship-based spacing the design guide calls for.
+    gap: 12,
   },
   header: { gap: 8, marginBottom: 4 },
   gap: { gap: 8 },
