@@ -12,7 +12,7 @@
  *
  * Run after `tools/export_photos_to_app.py` (repo root) re-writes the assets.
  */
-import { readdirSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -43,6 +43,8 @@ if (wardDirs.length === 0) {
 
 const groups = [];
 let total = 0;
+/** Every emitted require, kept so we can prove each one resolves before writing. */
+const emitted = [];
 
 for (const dir of wardDirs) {
   const files = readdirSync(path.join(ASSETS, dir.name))
@@ -51,8 +53,10 @@ for (const dir of wardDirs) {
 
   const rows = files.map((file) => {
     const voterId = file.slice(0, -4); // strip .jpg
-    // Relative to this file: mobile/lib/roll → mobile/assets/...
-    const assetPath = `../assets/photos/${dir.name}/${file}`;
+    // Relative to the output file mobile/lib/roll/photo-maps.generated.ts:
+    // up two levels (lib/roll → mobile/) then into assets/photos/...
+    const assetPath = `../../assets/photos/${dir.name}/${file}`;
+    emitted.push({ assetPath, file });
     return `    ${JSON.stringify(voterId)}: require(${JSON.stringify(assetPath)}),`;
   });
 
@@ -75,6 +79,24 @@ const content = `${banner}export const PHOTO_ASSETS: Record<number, Record<strin
 ${groups.join('\n')}
 };
 `;
+
+/**
+ * Metro resolves every require relative to the generated file, so a path that
+ * does not exist on disk would only blow up minutes into a CI bundle. Fail here
+ * instead — cheap, local, and pointed at the exact bad path.
+ */
+const OUT_DIR = path.dirname(OUT);
+const unresolved = emitted
+  .map(({ assetPath, file }) => ({ file, resolved: path.resolve(OUT_DIR, assetPath) }))
+  .filter(({ resolved }) => !existsSync(resolved));
+
+if (unresolved.length > 0) {
+  console.error(`${unresolved.length} emitted require(s) do not resolve, relative to ${path.relative(MOBILE, OUT_DIR)}:`);
+  for (const { file, resolved } of unresolved.slice(0, 10)) {
+    console.error(`  ${file} → ${resolved}`);
+  }
+  process.exit(1);
+}
 
 writeFileSync(OUT, content);
 console.log(`wrote ${path.relative(MOBILE, OUT)} — ${total} portraits across ${wardDirs.length} wards`);
