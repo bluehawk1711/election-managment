@@ -9,8 +9,9 @@ import { LEANING_BADGE, SUPPORT_BADGE } from '@/lib/roll/badges';
 import { rollPhotoAsset } from '@/lib/roll/photos';
 import type { Leaning, VoterView } from '@/lib/roll/types';
 import { CONTROL_RADIUS } from '@/theme/globals';
+import { typeStyle } from '@/theme/typography';
 import { UserX } from 'lucide-react-native';
-import { Pressable, StyleSheet } from 'react-native';
+import { Pressable, StyleSheet, type ViewStyle } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 type Props = {
@@ -84,6 +85,17 @@ function leaningTone(leaning: Leaning): ChipTone {
  * work, not the whitespace) and cuts the card back to roughly the height of its
  * own text: the photo no longer adds a row of its own underneath.
  *
+ * ## Label: value, on one line
+ *
+ * Each field is a `label: value` pair occupying one line rather than a label
+ * over its value occupying two (`House: 44`, `Age: 33`, `Address: मेन रोड`).
+ * The stacked pair spent 20pt a field — six fields ran taller than the photo
+ * they sat beside — while the label's actual job, telling the reader which
+ * number is which, survives the inline form unchanged: the label is still
+ * there, still muted, still attached to its own value. House and age are short
+ * enough to share a line; address and mobile each have long values and get a
+ * line apiece.
+ *
  * ## The photo box
  *
  * A voter with no photo gets a labelled placeholder box rather than nothing at
@@ -92,7 +104,8 @@ function leaningTone(leaning: Leaning): ChipTone {
  * collapsed the card to a different height than a photographed one.
  */
 export function VoterCard({ voter, meters, onPress, onLongPress, selected = false }: Props) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const lang = i18n.resolvedLanguage ?? i18n.language;
   const card = useColor('card');
   const border = useColor('border');
   const primary = useColor('primary');
@@ -189,13 +202,22 @@ export function VoterCard({ voter, meters, onPress, onLongPress, selected = fals
             {e.name}
           </Text>
           {/* The father/husband name rides directly under the name — the
-              single most-used way a karykarta identifies someone in the
+              single-most-used way a karykarta identifies someone in the
               field ("whose son/daughter?"). The roll's own relation label
               (`पिता`/`पति`) prefixes it so the line reads the way the
               speaking does; hidden entirely rather than shown as `—` when
-              the roll carries nothing (rare, but the CSVs do have blanks). */}
+              the roll carries nothing (rare, but the CSVs do have blanks).
+              `bodyMd`, not `caption`: at 12px this line read as fine print
+              under a name it is meant to *serve*, and a karykarta squinting
+              at a phone in sunlight is the reader it has. 14px keeps it
+              clearly secondary to the 20px name while staying readable, and
+              `typeStyle` (rather than a bare `fontSize`) is what carries the
+              Devanagari leading through — see `theme/typography.ts`. */}
           {e.fatherOrHusbandName ? (
-            <Text variant='caption' numberOfLines={1} style={{ color: outline }}>
+            <Text
+              numberOfLines={1}
+              style={[typeStyle('bodyMd', lang), { color: outline }]}
+            >
               {voter.relationLabel ? `${voter.relationLabel}: ` : ''}
               {e.fatherOrHusbandName}
             </Text>
@@ -237,16 +259,38 @@ export function VoterCard({ voter, meters, onPress, onLongPress, selected = fals
             </View>
           ) : null}
 
-          {/* EPIC rides in the caption line above rather than taking a grid row
-              of its own: it is a fixed-width identifier, so a dedicated slot
-              was a whole line spent saying what the caption already said. */}
+          {/* EPIC rides in the caption line above rather than taking a field
+              row of its own: it is a fixed-width identifier, so a dedicated
+              slot was a whole line spent saying what the caption already said. */}
+          {/* Label and value on one line (`House: 44`), not a label over its
+              value: the stacked form cost two lines per field, so the six
+              fields below took the height of the photo beside them and the
+              card grew to fit its furniture. Inlining keeps the label's
+              disambiguation — which is the whole point of the grid — for one
+              line per row, and lets the short pair (house + age) share a row
+              while the long ones (address, mobile) each get their own. */}
           <View style={styles.fields}>
-            <Field label={t('voters.house')} value={e.houseNo} />
-            <Field label={t('voters.age')} value={String(e.age)} />
-            <Field label={t('voters.locality')} value={e.locality} wide />
-            {e.phone ? <Field label={t('common.phone')} value={e.phone} /> : null}
+            <View style={styles.pairRow}>
+              <InlineField
+                label={t('voters.house')}
+                value={e.houseNo}
+                style={styles.pair}
+              />
+              <InlineField
+                label={t('voters.age')}
+                value={String(e.age)}
+                style={styles.pair}
+              />
+            </View>
+            <InlineField label={t('voters.locality')} value={e.locality} wrap />
+            {e.phone ? (
+              <InlineField label={t('common.phone')} value={e.phone} />
+            ) : null}
             {meters === undefined ? null : (
-              <Field label={t('voters.distance')} value={formatDistance(meters)} />
+              <InlineField
+                label={t('voters.distance')}
+                value={formatDistance(meters)}
+              />
             )}
           </View>
         </View>
@@ -273,32 +317,42 @@ const PHOTO_WIDTH = 80;
 const PHOTO_HEIGHT = Math.round((PHOTO_WIDTH * 16) / 9); // 160 — exactly 9:16
 
 /**
- * One label/value pair.
+ * One `label: value` pair, on a single line.
  *
  * Module-level for the same reason as `DetailRow`: a component declared inside
  * `VoterCard`'s body is a *new type* every render, so React unmounts and
  * remounts the subtree instead of diffing it — which defeats every `memo`
  * beneath it and shows up as flicker in a recycled list.
+ *
+ * Label first, in the muted caption ink, value after it in body ink: the label
+ * is what stops `44` and `33` from being two anonymous numbers (the reason the
+ * card is a grid rather than a run-on line), and it does not need to be as
+ * loud as the value it names.
  */
-function Field({
+function InlineField({
   label,
   value,
-  wide,
+  wrap,
+  style,
 }: {
   label: string;
   value: string;
-  wide?: boolean;
+  /** Let a long value take a second line — the address, and only the address. */
+  wrap?: boolean;
+  style?: ViewStyle;
 }) {
   const outline = useColor('outline');
 
   return (
-    <View style={[styles.field, wide ? styles.fieldWide : null]}>
+    <View style={[styles.inlineField, style]}>
       <Text variant='caption' style={{ color: outline }}>
-        {label}
+        {label}:
       </Text>
       {/* `—` for an empty value: the slot stays put, so a voter missing a
           locality has the same shape as one that has it. */}
-      <Text numberOfLines={2}>{value || '—'}</Text>
+      <Text numberOfLines={wrap ? 2 : 1} style={styles.inlineValue}>
+        {value || '—'}
+      </Text>
     </View>
   );
 }
@@ -336,9 +390,16 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
   },
   placeholderText: { fontSize: 10 },
-  fields: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 1 },
-  // `flexGrow` on the halves so a lone field (phone recorded, nearest mode off)
-  // still fills its row instead of hugging the left edge.
-  field: { flexGrow: 1, flexBasis: '45%', gap: 2 },
-  fieldWide: { flexBasis: '100%' },
+  // Stacked rows of one-line fields: `fields` is the column, `pairRow` is the
+  // house + age line that shares its width, and the address/phone lines below
+  // it run full width because each has a long value to spend it on.
+  fields: { gap: 6, marginTop: 1 },
+  pairRow: { flexDirection: 'row', gap: 12 },
+  // `minWidth: 0` beside the flex: without it neither half of the pair can
+  // shrink below its content, and a long house number pushes age off the line.
+  pair: { flex: 1, minWidth: 0 },
+  inlineField: { flexDirection: 'row', alignItems: 'baseline', gap: 4 },
+  // The value takes the room the label leaves, so a long locality wraps inside
+  // its own box instead of widening the row past the card's edge.
+  inlineValue: { flex: 1, minWidth: 0 },
 });

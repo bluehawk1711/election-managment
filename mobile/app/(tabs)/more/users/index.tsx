@@ -1,3 +1,4 @@
+import { AccountCredentialsModal } from '@/components/campaign/account-credentials-modal';
 import { ListRow } from '@/components/campaign/list-row';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -13,7 +14,7 @@ import { useAuth } from '@/providers/auth-provider';
 import type { DocumentData, QueryDocumentSnapshot } from 'firebase/firestore';
 import { useRouter } from 'expo-router';
 import { ShieldOff, UserCog, Users } from 'lucide-react-native';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FlatList, StyleSheet } from 'react-native';
 
@@ -59,6 +60,16 @@ export default function UsersScreen() {
 
   const canView = can(profile?.role ?? null, 'accountView');
   const canManage = can(profile?.role ?? null, 'accountManage');
+
+  /**
+   * The tapped account, i.e. the credentials dialog's subject.
+   *
+   * Every row opens it. What the dialog *shows* is another matter: the email
+   * is already visible in the row itself, while the password comes from this
+   * device's keystore and only for `accountManage` — see
+   * `components/campaign/account-credentials-modal.tsx`.
+   */
+  const [selected, setSelected] = useState<Profile | null>(null);
 
   const { docs, loading, error } = useCollection<Profile | null>(
     COLLECTIONS.users,
@@ -140,6 +151,12 @@ export default function UsersScreen() {
             }
             meta={t(roleLabelKey(item.role))}
             tone={item.role === null ? 'danger' : 'primary'}
+            // The reason a created account used to be invisible after the
+            // moment of creation: Auth keeps only a password hash, so the one
+            // screen that ever held the password was the create form, one
+            // navigation ago. Tapping the account now reopens exactly that
+            // information, from what this device filed at creation time.
+            onPress={() => setSelected(item)}
             trailing={
               // No role is the state a super admin most needs to see at a
               // glance: the account exists, is signed in, and can do nothing.
@@ -149,6 +166,12 @@ export default function UsersScreen() {
             }
           />
         )}
+      />
+
+      <AccountCredentialsModal
+        profile={selected}
+        revealPassword={canManage}
+        onClose={() => setSelected(null)}
       />
     </View>
   );

@@ -31,6 +31,17 @@ export type AlertDialogProps = {
   onCancel?: () => void;
   dismissible?: boolean;
   showCancelButton?: boolean;
+  /**
+   * Whether pressing the confirm button closes the dialog. Defaults to true —
+   * "confirm" normally means "done, and that was the dialog's whole job".
+   *
+   * `false` is for a confirm that can still *fail*, where the caller keeps the
+   * dialog open so the reader can act on what the failure says (retype the
+   * password, sign back in) instead of watching the explanation arrive over a
+   * dialog that has already gone. The caller then calls `onClose` itself on
+   * success — `DeleteAccountDialog` is the case this prop exists for.
+   */
+  closeOnConfirm?: boolean;
   style?: ViewStyle;
 };
 
@@ -47,6 +58,7 @@ export function AlertDialog({
   onCancel,
   dismissible = true,
   showCancelButton = true,
+  closeOnConfirm = true,
   style,
 }: AlertDialogProps) {
   const cardColor = useColor('card');
@@ -103,7 +115,9 @@ export function AlertDialog({
 
   const handleConfirm = () => {
     if (onConfirm) onConfirm();
-    animateClose();
+    // Conditional on purpose: a confirm that can fail must not also be the
+    // thing that dismisses its own explanation. See `closeOnConfirm`.
+    if (closeOnConfirm) animateClose();
   };
 
   return (

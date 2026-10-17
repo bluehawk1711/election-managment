@@ -7,6 +7,7 @@ import { useDeleteAccount } from '@/hooks/useDeleteAccount';
 import { useAuth } from '@/providers/auth-provider';
 import { Lock } from 'lucide-react-native';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 /**
  * Confirms, reauthenticates, then deletes.
@@ -34,6 +35,7 @@ export function DeleteAccountDialog({
   visible: boolean;
   onClose: () => void;
 }) {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const { deleteAccount, deleting } = useDeleteAccount();
   const [password, setPassword] = useState('');
@@ -46,16 +48,24 @@ export function DeleteAccountDialog({
   );
 
   const confirm = async () => {
+    // The dialog stays open while a deletion is in flight (`closeOnConfirm`
+    // below), so a second tap while the first is still working would start a
+    // second teardown over the same documents.
+    if (deleting) return;
     if (usesPassword && !password) return;
 
     const ok = await deleteAccount(usesPassword ? password : undefined);
 
     if (!ok) {
+      // Still on screen — which is the point of `closeOnConfirm={false}`.
+      // `auth/wrong-password` and `auth/requires-recent-login` are both
+      // *fixable here*, and a dialog that closes on the reader the moment it
+      // fails turns "check your password" into "which password?".
       toast.error(
-        'Could not delete your account',
+        t('settings.deleteFailed'),
         usesPassword
-          ? 'Check your password and try again.'
-          : 'Sign out, sign back in, and try again — Firebase requires a recent sign-in for this.'
+          ? t('settings.deleteFailedPassword')
+          : t('settings.deleteFailedProvider')
       );
       return;
     }
@@ -70,10 +80,11 @@ export function DeleteAccountDialog({
     <AlertDialog
       isVisible={visible}
       onClose={onClose}
-      title='Delete your account?'
-      confirmText={deleting ? 'Deleting…' : 'Delete everything'}
-      cancelText='Keep my account'
+      title={t('settings.deleteTitle')}
+      confirmText={deleting ? t('settings.deletePending') : t('settings.deleteConfirm')}
+      cancelText={t('settings.deleteCancel')}
       onConfirm={confirm}
+      closeOnConfirm={false}
       onCancel={() => {
         setPassword('');
         onClose();
@@ -81,16 +92,13 @@ export function DeleteAccountDialog({
       dismissible={!deleting}
     >
       <View style={{ gap: 12 }}>
-        <Text variant='caption'>
-          This removes your tasks, your avatar and your profile, then deletes
-          the account itself. It cannot be undone.
-        </Text>
+        <Text variant='caption'>{t('settings.deleteBody')}</Text>
 
         {usesPassword ? (
           <Input
-            label='Confirm your password'
+            label={t('settings.deletePasswordLabel')}
             icon={Lock}
-            placeholder='Your password'
+            placeholder={t('settings.deletePasswordPlaceholder')}
             value={password}
             onChangeText={setPassword}
             secureTextEntry
@@ -98,11 +106,7 @@ export function DeleteAccountDialog({
             textContentType='password'
           />
         ) : (
-          <Text variant='caption'>
-            You signed in with a provider, so Firebase needs a recent sign-in
-            before it will delete the account. If this fails, sign out, sign
-            back in, and try again straight away.
-          </Text>
+          <Text variant='caption'>{t('settings.deleteProviderNote')}</Text>
         )}
       </View>
     </AlertDialog>

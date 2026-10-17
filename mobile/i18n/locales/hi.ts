@@ -422,7 +422,14 @@ export const hi: Record<TranslationKey, string> = {
   'accounts.wardScope': 'नियुक्त वार्ड',
   'accounts.noWardScope': 'सभी वार्ड',
   'accounts.created': 'खाता बन गया',
-  'accounts.createdHint': 'अभी साझा करें — पासवर्ड दोबारा नहीं दिखेगा।',
+  'accounts.createdHint':
+    'अभी साझा करें, या बाद में सूची से खाता खोलें — यह डिवाइस इसकी अपनी प्रति रखता है।',
+  'accounts.credentialsDeviceOnly':
+    'केवल इस डिवाइस पर सहेजा गया। कुछ भी सर्वर पर नहीं जाता, इसलिए कोई दूसरा डिवाइस इसे नहीं दिखा सकता।',
+  'accounts.passwordNotStored':
+    'इस डिवाइस पर उस खाते का पासवर्ड नहीं है — वह कहीं और बना था (या सेव विफल रहा), इसलिए यहाँ कॉपी करने के लिए कुछ नहीं है।',
+  'accounts.passwordNotForRole':
+    'पासवर्ड केवल सुपर एडमिन को दिखते हैं, क्योंकि खाते प्रबंधित करने की अनुमति केवल उन्हीं को है।',
   'accounts.failed': 'खाता बनाना विफल',
   'accounts.emptyBody': 'अभी तक कोई खाता नहीं बनाया गया।',
   'accounts.superAdminOnly': 'केवल सुपर एडमिन खाता बना सकता है।',
@@ -511,4 +518,19 @@ export const hi: Record<TranslationKey, string> = {
   'settings.yourRole': 'आपकी भूमिका',
   'settings.yourWard': 'आपका वार्ड',
   'settings.allWards': 'सभी वार्ड',
+  'settings.deleteAccount': 'खाता हटाएँ',
+  'settings.deleteTitle': 'अपना खाता हटाएँ?',
+  'settings.deleteBody':
+    'इससे आपके कार्य, आपकी फ़ोटो और आपकी प्रोफ़ाइल हट जाएँगी, फिर खाता स्वयं हटा दिया जाएगा। इसे वापस नहीं किया जा सकता।',
+  'settings.deleteConfirm': 'सब कुछ हटाएँ',
+  'settings.deleteCancel': 'मेरा खाता रखें',
+  'settings.deletePending': 'हटाया जा रहा है…',
+  'settings.deletePasswordLabel': 'पासवर्ड दोबारा डालें',
+  'settings.deletePasswordPlaceholder': 'आपका पासवर्ड',
+  'settings.deleteProviderNote':
+    'आप किसी प्रदाता से साइन इन किए हैं, इसलिए खाता हटाने से पहले Firebase को हाल ही में किया गया साइन-इन चाहिए। अगर यह विफल हो, तो साइन आउट कर तुरंत दोबारा साइन इन कर फिर कोशिश करें।',
+  'settings.deleteFailed': 'आपका खाता हटाया नहीं जा सका',
+  'settings.deleteFailedPassword': 'अपना पासवर्ड जाँचें और फिर कोशिश करें।',
+  'settings.deleteFailedProvider':
+    'साइन आउट कर दोबारा साइन इन कर फिर कोशिश करें — Firebase को इसके लिए हाल ही का साइन-इन चाहिए।',
 };

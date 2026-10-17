@@ -8,6 +8,7 @@ import {
 } from 'firebase/auth';
 import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { useCallback, useState } from 'react';
+import { saveAccountCredential } from '@/lib/account-credentials';
 import { messageFor } from '@/lib/errors';
 import { db } from '@/lib/firebase';
 import type { AppRole } from '@/lib/roles';
@@ -126,6 +127,21 @@ export function useCreateAccount() {
           : {}),
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
+      });
+
+      // Remember what was just typed so the admin can read it back from the
+      // Accounts list later — Firebase Auth keeps only a hash, so this is the
+      // one moment the password exists anywhere. After the profile write and
+      // best-effort: it is a convenience layered on an account that already
+      // exists, so a keystore that is locked must not roll back an Auth user
+      // and a `users` document that are both perfectly good. On failure the
+      // screen's old promise is what holds — `accounts.createdHint` then tells
+      // the admin the password cannot be read back, which is the truth for an
+      // account this device could not file (`lib/account-credentials.ts`).
+      await saveAccountCredential({
+        uid: created.uid,
+        email: input.email,
+        password: input.password,
       });
 
       return true;

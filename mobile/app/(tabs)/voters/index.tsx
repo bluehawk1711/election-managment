@@ -571,24 +571,34 @@ export default function VotersScreen() {
    * would only have been a second copy of the same screen.
    */
   const renderRow = ({ item }: { item: VoterView }) => (
-    <VoterCard
-      voter={item}
-      meters={located?.get(item.id)}
-      selected={selected.has(item.id)}
-      onLongPress={() => toggleSelected(item.id)}
-      onPress={() => {
-        // Selection mode: a tap ticks instead of navigating, so a whole row
-        // of people can be ticked with one thumb without leaving the list.
-        if (selecting) {
-          toggleSelected(item.id);
-          return;
-        }
-        router.push({
-          pathname: '/(tabs)/voters/edit',
-          params: { id: item.id, ward: String(item.wardNo) },
-        });
-      }}
-    />
+    // Spacing between cards is carried by the row, not by the list's
+    // `contentContainerStyle`. FlashList positions every cell absolutely (its
+    // `CellRendererComponent` is given `position: 'absolute'` and a computed
+    // `top`), and a flex `gap` on a container applies only to in-flow children
+    // — so the `gap: 16` that used to sit on `listContent` spaced nothing, and
+    // consecutive cards rendered flush against each other. Padding on the row
+    // *is* part of the height FlashList measures, so it moves the next cell
+    // down for certain, on both platforms.
+    <View style={styles.listRow}>
+      <VoterCard
+        voter={item}
+        meters={located?.get(item.id)}
+        selected={selected.has(item.id)}
+        onLongPress={() => toggleSelected(item.id)}
+        onPress={() => {
+          // Selection mode: a tap ticks instead of navigating, so a whole row
+          // of people can be ticked with one thumb without leaving the list.
+          if (selecting) {
+            toggleSelected(item.id);
+            return;
+          }
+          router.push({
+            pathname: '/(tabs)/voters/edit',
+            params: { id: item.id, ward: String(item.wardNo) },
+          });
+        }}
+      />
+    </View>
   );
 
   return (
@@ -859,12 +869,20 @@ const styles = StyleSheet.create({
     padding: 20,
     paddingTop: 8,
     paddingBottom: 112,
-    // 16, up from 12: each VoterCard carries a soft shadow, and the gutters
-    // have to stay wider than the shadow's falloff or consecutive lifts
-    // merge into one grey smear. 16 keeps a clear band of canvas between
-    // cards so each reads as its own plane.
-    gap: 16,
+    // Not `gap`: see `renderRow` — cells are absolutely positioned, so a
+    // container gap never reaches them. The band of canvas between cards is
+    // `listRow.paddingBottom` instead, wide enough to keep the two shadows
+    // from merging into one grey smear.
   },
+  /**
+   * The gap between one card and the next — measured as part of the cell, so
+   * FlashList spaces the rows with it.
+   *
+   * 16: each VoterCard carries a soft lift, and the band between two cards has
+   * to stay wider than that lift's falloff or consecutive cards read as one
+   * plane.
+   */
+  listRow: { paddingBottom: 16 },
   header: { gap: 8, marginBottom: 4 },
   gap: { gap: 8 },
   /** Bulk-action bar — count on the left, actions on the right. */

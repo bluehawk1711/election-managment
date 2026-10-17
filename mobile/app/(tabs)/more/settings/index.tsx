@@ -1,3 +1,4 @@
+import { DeleteAccountDialog } from '@/components/auth/delete-account-dialog';
 import { SignOutButton } from '@/components/auth/sign-out-button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -61,6 +62,8 @@ export default function SettingsScreen() {
 
   const [displayName, setDisplayName] = useState(profile?.displayName ?? '');
   const [sendingVerification, setSendingVerification] = useState(false);
+  /** Whether the delete-account confirmation is up — see the Session card. */
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
 
   const providerId = user?.providerData[0]?.providerId;
 
@@ -289,7 +292,26 @@ export default function SettingsScreen() {
 
       <Card style={{ gap: 12 }}>
         <SignOutButton />
+        {/* Deletion belongs beside sign-out — they are the two ways out of an
+            account — but it must not read as a sibling of it. The confirm step
+            is not ceremony: Firebase refuses to delete an account on a stale
+            token (`auth/requires-recent-login`), so the dialog reauthenticates
+            with the typed password first, and keeps itself open when that
+            fails so the reader can correct it. */}
+        <Button
+          variant='destructive'
+          onPress={() => setConfirmingDelete(true)}
+        >
+          {t('settings.deleteAccount')}
+        </Button>
       </Card>
+
+      {/* A modal, mounted permanently and toggled by `visible` — so the screen
+          owns one boolean and none of the dialog's state. */}
+      <DeleteAccountDialog
+        visible={confirmingDelete}
+        onClose={() => setConfirmingDelete(false)}
+      />
     </ScrollView>
   );
 }

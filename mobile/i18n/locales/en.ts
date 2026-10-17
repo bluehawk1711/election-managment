@@ -434,7 +434,17 @@ export const en = {
   'accounts.wardScope': 'Assigned ward',
   'accounts.noWardScope': 'All wards',
   'accounts.created': 'Account created',
-  'accounts.createdHint': 'Hand the credentials over now — the password is never shown again.',
+  // Written for a vault that did not exist when it was first phrased: the
+  // password is still worth handing over *now*, but it is no longer
+  // unrecoverable — the account's own row reopens it from this device.
+  'accounts.createdHint':
+    'Hand the credentials over now, or open the account from the list later — this device keeps its own copy.',
+  'accounts.credentialsDeviceOnly':
+    'Saved on this device only. Nothing is sent to the server, so no other device can show it.',
+  'accounts.passwordNotStored':
+    'This device has no password for that account — it was created elsewhere (or the save failed), so there is nothing to copy here.',
+  'accounts.passwordNotForRole':
+    'Passwords are only shown to super admins, who are the ones allowed to manage accounts.',
   'accounts.failed': 'Account creation failed',
   'accounts.emptyBody': 'No accounts have been created yet.',
   'accounts.superAdminOnly': 'Only a super admin can create accounts.',
@@ -525,6 +535,25 @@ export const en = {
   'settings.yourRole': 'Your role',
   'settings.yourWard': 'Your ward',
   'settings.allWards': 'All wards',
+  // Account deletion (Settings → Account). The dialog itself used to hard-code
+  // these in English while every other string on this screen went through
+  // `t()` — on an app that defaults to Hindi, a destructive confirmation is the
+  // last place to leave a reader guessing.
+  'settings.deleteAccount': 'Delete account',
+  'settings.deleteTitle': 'Delete your account?',
+  'settings.deleteBody':
+    'This removes your tasks, your avatar and your profile, then deletes the account itself. It cannot be undone.',
+  'settings.deleteConfirm': 'Delete everything',
+  'settings.deleteCancel': 'Keep my account',
+  'settings.deletePending': 'Deleting…',
+  'settings.deletePasswordLabel': 'Confirm your password',
+  'settings.deletePasswordPlaceholder': 'Your password',
+  'settings.deleteProviderNote':
+    'You signed in with a provider, so Firebase needs a recent sign-in before it will delete the account. If this fails, sign out, sign back in, and try again straight away.',
+  'settings.deleteFailed': 'Could not delete your account',
+  'settings.deleteFailedPassword': 'Check your password and try again.',
+  'settings.deleteFailedProvider':
+    'Sign out, sign back in, and try again — Firebase requires a recent sign-in for this.',
 } as const;
 
 export type TranslationKey = keyof typeof en;
