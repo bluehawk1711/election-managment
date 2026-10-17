@@ -1,0 +1,150 @@
+/**
+ * Snapshot → plain object for every document the panel reads.
+ *
+ * Mirrors `mobile/lib/mappers.ts`'s defensive style — untrusted Firestore
+ * data with closed-vocabulary enums funnelled through `enumOf` so a typo'd
+ * field degrades to a legal fallback instead of poisoning a render. The
+ * legal fallbacks are the SAME lists `firestore.rules` validates, so what
+ * the panel shows is always something the rules already agreed to.
+ */
+import type { DocumentData, QueryDocumentSnapshot } from 'firebase/firestore';
+import { TASK_STATUSES, type Task, type Profile, type TaskStatus } from '@/lib/types';
+import type { VoterRow, WardMeta, Gender, Relation } from '@/lib/types';
+import type {
+  FinalizedContact,
+  PhoneProposal,
+} from '@/lib/contacts';
+
+type AnyDoc = Pick<QueryDocumentSnapshot<DocumentData>, 'id' | 'data'>;
+
+const str = (value: unknown, fallback = ''): string =>
+  typeof value === 'string' ? value : fallback;
+
+const num = (value: unknown, fallback = 0): number =>
+  typeof value === 'number' && Number.isFinite(value) ? value : fallback;
+
+function enumOf<T extends string>(
+  value: unknown,
+  allowed: readonly T[],
+  fallback: T
+): T {
+  return typeof value === 'string' && (allowed as readonly string[]).includes(value)
+    ? (value as T)
+    : fallback;
+}
+
+/** Epoch millis from a number, a Timestamp-like, or null — never NaN. */
+export function millisOf(value: unknown): number | null {
+  if (value == null) return null;
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? value : null;
+  }
+  if (
+    typeof value === 'object' &&
+    'toMillis' in value &&
+    typeof (value as { toMillis: () => number }).toMillis === 'function'
+  ) {
+    return (value as { toMillis: () => number }).toMillis();
+  }
+  return null;
+}
+
+// ----------------------------------------------------------------- roll ----
+
+const GENDERS: readonly Gender[] = ['male', 'female', 'other'];
+const RELATIONS: readonly Relation[] = ['father', 'husband', 'mother', 'other'];
+
+export const voterFromDoc = (doc: AnyDoc): VoterRow => {
+  const data = doc.data();
+  return {
+    id: doc.id,
+    wardNo: num(data.wardNo, 1),
+    serialNo: num(data.serialNo),
+    epicId: str(data.epicId),
+    name: str(data.name),
+    relation: enumOf<Relation>(data.relation, RELATIONS, 'other'),
+    relationLabel: str(data.relationLabel),
+    fatherOrHusbandName: str(data.fatherOrHusbandName),
+    houseNo: str(data.houseNo),
+    age: num(data.age),
+    gender: enumOf<Gender>(data.gender, GENDERS, 'other'),
+    locality: str(data.locality),
+    pdfPage: num(data.pdfPage),
+  };
+};
+
+export const wardFromDoc = (doc: AnyDoc): WardMeta => {
+  const data = doc.data();
+  return {
+    wardNo: num(data.wardNo, Number(doc.id)),
+    voterCount: num(data.voterCount),
+    male: num(data.male),
+    female: num(data.female),
+    thirdGender: num(data.thirdGender),
+    delimitation: str(data.delimitation),
+    boothNo: num(data.boothNo),
+    roomNo: num(data.roomNo),
+    boothAddress: str(data.boothAddress),
+    pdfPages: str(data.pdfPages),
+  };
+};
+
+// --------------------------------------------------------------- people ----
+
+export const profileFromDoc = (doc: AnyDoc): Profile => {
+  const data = doc.data();
+  return {
+    uid: doc.id,
+    email: str(data.email),
+    displayName: str(data.displayName),
+    photoURL: typeof data.photoURL === 'string' ? data.photoURL : null,
+    onboarded: data.onboarded === true,
+    role: typeof data.role === 'string' ? data.role : null,
+    wardNo: typeof data.wardNo === 'number' ? data.wardNo : null,
+    createdAt: data.createdAt ?? null,
+  };
+};
+
+// ---------------------------------------------------------------- tasks ----
+
+export const taskFromDoc = (doc: AnyDoc): Task => {
+  const data = doc.data();
+  return {
+    id: doc.id,
+    title: str(data.title),
+    description: str(data.description),
+    assigneeId: str(data.assigneeId),
+    areaId: str(data.areaId),
+    boothId: str(data.boothId),
+    dueDate: millisOf(data.dueDate),
+    status: enumOf<TaskStatus>(data.status, TASK_STATUSES, 'pending'),
+    report: str(data.report),
+    createdBy: str(data.createdBy),
+    createdAt: millisOf(data.createdAt),
+    updatedAt: millisOf(data.updatedAt),
+  };
+};
+
+// ------------------------------------------------------------ phone board --
+
+export const boardFromDoc = (doc: AnyDoc): FinalizedContact => {
+  const data = doc.data();
+  return {
+    wardNo: num(data.wardNo),
+    finalPhone: str(data.finalPhone),
+    finalizedBy: str(data.finalizedBy),
+    finalizedName: str(data.finalizedName),
+    finalizedAt: millisOf(data.finalizedAt),
+  };
+};
+
+export const proposalFromDoc = (doc: AnyDoc): PhoneProposal => {
+  const data = doc.data();
+  return {
+    uid: doc.id,
+    phone: str(data.phone),
+    authorName: str(data.authorName, 'Unknown'),
+    wardNo: num(data.wardNo),
+    updatedAt: num(data.updatedAt),
+  };
+};

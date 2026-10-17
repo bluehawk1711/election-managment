@@ -1,0 +1,463 @@
+name: Build Android APK to release storage
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_type:
+        description: "Build type"
+        required: true
+        type: choice
+        options:
+          - dev
+          - release
+        default: dev
+
+# Cancel an older build started for the same branch.
+concurrency:
+  group: android-${{ github.ref }}
+  cancel-in-progress: true
+
+# Required to create a GitHub prerelease and upload APK/AAB files to it.
+# This avoids actions/upload-artifact and its exhausted artifact-storage quota.
+permissions:
+  contents: write
+
+env:
+  NODE_VERSION: "22"
+  JAVA_VERSION: "17"
+  PNPM_VERSION: "11"
+
+jobs:
+  build:
+    name: "Build ${{ inputs.build_type }} Android app"
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    environment: ${{ inputs.build_type == 'release' && 'production' || 'dev' }}
+    defaults:
+      run:
+        shell: bash
+        working-directory: mobile
+
+    steps:
+      - name: Free disk space
+        # This step runs before checkout, so use the repository root explicitly.
+        working-directory: ${{ github.workspace }}
+        run: |
+          df -h /
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/.ghcup \
+            /usr/local/share/boost /usr/share/swift /opt/hostedtoolcache/CodeQL \
+            /usr/local/lib/heroku /usr/lib/jvm/temurin-8* /usr/lib/jvm/temurin-11*
+          sudo docker image prune --all --force || true
+          sudo apt-get clean
+          df -h /
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+          cache-dependency-path: mobile/pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --prefer-offline
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Compute Android project cache key
+        id: android-project-key
+        run: |
+          echo "key=android-project-${{ runner.os }}-node${{ env.NODE_VERSION }}-${{ hashFiles('mobile/package.json', 'mobile/pnpm-lock.yaml', 'mobile/app.json', 'mobile/app.config.ts', 'mobile/constants/brand.json', 'mobile/assets/**') }}" >> "$GITHUB_OUTPUT"
+
+      - name: Restore cached Android project
+        id: android-project
+        uses: actions/cache@v4
+        with:
+          path: |
+            mobile/android
+            !mobile/android/.gradle/
+            !mobile/android/build/
+            !mobile/android/app/build/
+            !mobile/android/.cxx/
+            !mobile/android/app/.cxx/
+          key: ${{ steps.android-project-key.outputs.key }}
+
+      - name: Generate native Android project
+        if: steps.android-project.outputs.cache-hit != 'true'
+        run: |
+          npx expo prebuild --platform android --clean --no-install
+          # Keep an untouched version for restoring the cache after CI edits.
+          cp android/app/build.gradle "$RUNNER_TEMP/build.gradle.pristine"
+
+      - name: Write .env file
+        run: |
+          cat > .env << 'ENVEOF'
+          EXPO_PUBLIC_FIREBASE_API_KEY=${{ secrets.EXPO_PUBLIC_FIREBASE_API_KEY }}
+          EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN=${{ secrets.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN }}
+          EXPO_PUBLIC_FIREBASE_PROJECT_ID=${{ secrets.EXPO_PUBLIC_FIREBASE_PROJECT_ID }}
+          EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET=${{ secrets.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET }}
+          EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=${{ secrets.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }}
+          EXPO_PUBLIC_FIREBASE_APP_ID=${{ secrets.EXPO_PUBLIC_FIREBASE_APP_ID }}
+          EXPO_PUBLIC_FIREBASE_LINK_URL=${{ secrets.EXPO_PUBLIC_FIREBASE_LINK_URL }}
+          EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID=${{ secrets.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID }}
+          EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID=${{ secrets.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID }}
+          EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID=${{ secrets.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID }}
+          ENVEOF
+
+      - name: Verify applicationId
+        id: application-id
+        run: |
+          set -euo pipefail
+          EXPECTED=$(grep -oE '"packageName"[[:space:]]*:[[:space:]]*"[^"]+"' constants/brand.json | sed -E 's/.*"packageName"[[:space:]]*:[[:space:]]*"([^"]+)".*/\1/')
+          APP_ID=$(grep -oE "applicationId[[:space:]]+'[^']+'" android/app/build.gradle | head -n 1 | cut -d "'" -f 2)
+          echo "applicationId = $APP_ID (expected $EXPECTED)"
+          if [ -z "$EXPECTED" ] || [ "$APP_ID" != "$EXPECTED" ]; then
+            echo "::error::Wrong applicationId '$APP_ID' — expected '$EXPECTED' (check constants/brand.json)"
+            exit 1
+          fi
+          echo "package=$EXPECTED" >> "$GITHUB_OUTPUT"
+          echo "package=$EXPECTED" >> "$GITHUB_ENV"
+
+      - name: Tune Gradle performance
+        run: |
+          # Remove any previous CI tuning block before adding it again.
+          awk '
+            /^# >>> CI tuning >>>$/ { skip = 1; next }
+            /^# <<< CI tuning <<<$/{ skip = 0; next }
+            skip != 1 { print }
+          ' android/gradle.properties > android/gradle.properties.tmp
+          mv android/gradle.properties.tmp android/gradle.properties
+
+          cat >> android/gradle.properties <<'EOF'
+          # >>> CI tuning >>>
+          org.gradle.caching=true
+          org.gradle.parallel=true
+          org.gradle.jvmargs=-Xmx4096m -XX:MaxMetaspaceSize=1024m -Dfile.encoding=UTF-8
+          org.gradle.configuration-cache=true
+          org.gradle.configuration-cache.problems=warn
+          # <<< CI tuning <<<
+          EOF
+          echo "--- gradle.properties (CI block) ---"
+          tail -6 android/gradle.properties
+
+      - name: Bump versionCode
+        run: |
+          # Include the workflow run number so another dispatch of the same
+          # commit does not reuse the same versionCode. The larger commit
+          # multiplier keeps this value increasing as the repository grows.
+          COMMIT_COUNT=$(git rev-list --count HEAD)
+          VERSION_CODE=$((COMMIT_COUNT * 100000 + GITHUB_RUN_NUMBER * 1000 + GITHUB_RUN_ATTEMPT))
+          if [ "$VERSION_CODE" -gt 2100000000 ]; then
+            echo "::error::Computed Android versionCode exceeds Google's supported maximum. Adjust the versionCode formula."
+            exit 1
+          fi
+          sed -i -E "s/versionCode [0-9]+/versionCode $VERSION_CODE/" android/app/build.gradle
+          echo "versionCode = $VERSION_CODE (commit $COMMIT_COUNT, run $GITHUB_RUN_NUMBER, attempt $GITHUB_RUN_ATTEMPT)"
+
+      - name: Prepare signing
+        if: inputs.build_type == 'release'
+        id: signing
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          STORE_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASS: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          KS=android/app/release.keystore
+
+          if [ -z "$KEYSTORE_BASE64" ]; then
+            echo "::warning::ANDROID_KEYSTORE_BASE64 is not set — falling back to Android's debug keystore. This build can be installed by sideloading, but it cannot be uploaded to Google Play."
+            echo "key_type=debug" >> "$GITHUB_OUTPUT"
+            cat >> android/app/build.gradle <<'EOF'
+
+          // CI debug-key signing fallback (no upload keystore configured).
+          android {
+              buildTypes {
+                  release {
+                      signingConfig signingConfigs.debug
+                  }
+              }
+          }
+          EOF
+            echo "Debug signing config injected into app/build.gradle"
+            exit 0
+          fi
+
+          printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$KS"
+          echo "Keystore decoded from ANDROID_KEYSTORE_BASE64 secret"
+
+          for VAR in STORE_PASS ALIAS KEY_PASS; do
+            if [ -z "${!VAR}" ]; then
+              echo "::error::$VAR is empty but ANDROID_KEYSTORE_BASE64 is set. Configure all four ANDROID_* secrets or remove them all."
+              exit 1
+            fi
+          done
+
+          if ! keytool -list -keystore "$KS" -storepass "$STORE_PASS" -alias "$ALIAS" >/dev/null 2>&1; then
+            echo "::error::Keystore credential check failed. Verify ANDROID_KEYSTORE_PASSWORD and ANDROID_KEY_ALIAS."
+            exit 1
+          fi
+
+          echo "Signing credentials verified against keystore (alias: $ALIAS)"
+          echo "key_type=upload" >> "$GITHUB_OUTPUT"
+
+          cat >> android/app/build.gradle <<'EOF'
+
+          // CI upload-key signing configuration.
+          android {
+              signingConfigs {
+                  release {
+                      storeFile file(findProperty('ANDROID_KEYSTORE_FILE') ?: 'release.keystore')
+                      storePassword findProperty('ANDROID_KEYSTORE_PASSWORD') ?: ''
+                      keyAlias findProperty('ANDROID_KEY_ALIAS') ?: ''
+                      keyPassword findProperty('ANDROID_KEY_PASSWORD') ?: ''
+                  }
+              }
+              buildTypes {
+                  release {
+                      signingConfig signingConfigs.release
+                  }
+              }
+          }
+          EOF
+          echo "Upload-key signing config injected into app/build.gradle"
+
+      - name: Build Android APK and AAB
+        working-directory: mobile/android
+        env:
+          KEY_TYPE: ${{ steps.signing.outputs.key_type }}
+        run: |
+          set -euo pipefail
+          chmod +x gradlew
+          GRADLE_FLAGS="--build-cache --parallel --no-daemon"
+
+          if [ "${{ inputs.build_type }}" = "release" ]; then
+            if [ "$KEY_TYPE" = "upload" ]; then
+              ./gradlew assembleRelease bundleRelease \
+                -PreactNativeArchitectures=arm64-v8a \
+                -Pandroid.lint.enabled=false \
+                -x lintVitalRelease \
+                -PANDROID_KEYSTORE_FILE="${{ github.workspace }}/mobile/android/app/release.keystore" \
+                -PANDROID_KEYSTORE_PASSWORD="${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" \
+                -PANDROID_KEY_ALIAS="${{ secrets.ANDROID_KEY_ALIAS }}" \
+                -PANDROID_KEY_PASSWORD="${{ secrets.ANDROID_KEY_PASSWORD }}" \
+                $GRADLE_FLAGS
+            else
+              echo "Building a debug-key-signed release APK/AAB (not suitable for Google Play upload)"
+              ./gradlew assembleRelease bundleRelease \
+                -PreactNativeArchitectures=arm64-v8a \
+                -Pandroid.lint.enabled=false \
+                -x lintVitalRelease \
+                $GRADLE_FLAGS
+            fi
+          else
+            ./gradlew assembleDebug \
+              -PreactNativeArchitectures=arm64-v8a \
+              $GRADLE_FLAGS
+          fi
+
+      - name: Disk usage after build
+        if: always()
+        working-directory: ${{ github.workspace }}
+        run: df -h /
+
+      - name: Verify release signatures
+        if: inputs.build_type == 'release'
+        env:
+          KEY_TYPE: ${{ steps.signing.outputs.key_type }}
+        run: |
+          set -euo pipefail
+          APK=$(find android -type f -name '*.apk' -path '*/release/*' -print -quit)
+          AAB=$(find android -type f -name '*.aab' -path '*/release/*' -print -quit)
+          if [ -z "$APK" ]; then
+            echo "::error::No release APK found"
+            exit 1
+          fi
+          if [ -z "$AAB" ]; then
+            echo "::error::No release AAB found"
+            exit 1
+          fi
+          jarsigner -verify "$APK"
+          jarsigner -verify "$AAB"
+          if [ "$KEY_TYPE" = "upload" ]; then
+            echo "APK and AAB are signed with the configured upload keystore"
+          else
+            echo "::warning::APK/AAB are signed with Android's DEBUG keystore. They can be used for testing, but Google Play will reject them. Configure the four ANDROID_* secrets for a Play-ready release."
+          fi
+
+      - name: Remove decoded keystore
+        if: always()
+        run: rm -f android/app/release.keystore
+
+      - name: Restore pristine build.gradle
+        if: always()
+        run: |
+          if [ -f "$RUNNER_TEMP/build.gradle.pristine" ]; then
+            cp "$RUNNER_TEMP/build.gradle.pristine" android/app/build.gradle
+            echo "build.gradle restored to its pre-CI-edit state"
+          else
+            echo "::warning::No pristine build.gradle snapshot — the Android project cache will be skipped for this run"
+            echo "SKIP_ANDROID_CACHE=1" >> "$GITHUB_ENV"
+          fi
+
+      - name: Save Android project cache
+        if: always() && env.SKIP_ANDROID_CACHE != '1'
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            mobile/android
+            !mobile/android/.gradle/
+            !mobile/android/build/
+            !mobile/android/app/build/
+            !mobile/android/.cxx/
+            !mobile/android/app/.cxx/
+          key: ${{ steps.android-project-key.outputs.key }}
+
+      - name: Find build outputs
+        id: find-apk
+        run: |
+          set -euo pipefail
+          if [ "${{ inputs.build_type }}" = "release" ]; then
+            APK_PATH=$(find android -type f -name '*.apk' -path '*/release/*' -print -quit)
+            AAB_PATH=$(find android -type f -name '*.aab' -path '*/release/*' -print -quit)
+          else
+            APK_PATH=$(find android -type f -name '*.apk' -path '*/debug/*' -print -quit)
+            AAB_PATH=""
+          fi
+
+          if [ -z "$APK_PATH" ]; then
+            echo "::error::No APK found"
+            exit 1
+          fi
+          if [ "${{ inputs.build_type }}" = "release" ] && [ -z "$AAB_PATH" ]; then
+            echo "::error::No release AAB found"
+            exit 1
+          fi
+
+          # GitHub Release upload runs from the repository root, not mobile/.
+          echo "apk_path=mobile/$APK_PATH" >> "$GITHUB_OUTPUT"
+          if [ -n "$AAB_PATH" ]; then
+            echo "aab_path=mobile/$AAB_PATH" >> "$GITHUB_OUTPUT"
+          fi
+          echo "Found APK: mobile/$APK_PATH"
+          if [ -n "$AAB_PATH" ]; then
+            echo "Found AAB: mobile/$AAB_PATH"
+          fi
+
+      - name: Publish build to GitHub prerelease
+        id: publish-release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BUILD_TYPE: ${{ inputs.build_type }}
+          KEY_TYPE: ${{ steps.signing.outputs.key_type }}
+          PACKAGE: ${{ steps.application-id.outputs.package }}
+          APK_PATH: ${{ steps.find-apk.outputs.apk_path }}
+          AAB_PATH: ${{ steps.find-apk.outputs.aab_path }}
+        working-directory: ${{ github.workspace }}
+        run: |
+          set -euo pipefail
+
+          # A new tag per run attempt avoids conflicts when a workflow is re-run.
+          TAG="android-build-${GITHUB_RUN_NUMBER}-${GITHUB_RUN_ATTEMPT}"
+
+          if [ "$BUILD_TYPE" = "release" ]; then
+            if [ "$KEY_TYPE" = "upload" ]; then
+              ASSET_BASE="app-release-upload-key"
+              SIGNING_LABEL="upload keystore (Play upload key)"
+            else
+              ASSET_BASE="app-release-debug-signed"
+              SIGNING_LABEL="debug keystore (sideload/testing only; not accepted by Google Play)"
+            fi
+            ASSETS=("$APK_PATH#${ASSET_BASE}.apk" "$AAB_PATH#${ASSET_BASE}.aab")
+          else
+            ASSET_BASE="app-dev-debug"
+            SIGNING_LABEL="debug keystore"
+            ASSETS=("$APK_PATH#${ASSET_BASE}.apk")
+          fi
+
+          NOTES=$(cat <<EOF
+          Automated Android ${BUILD_TYPE} build.
+
+          - Package: ${PACKAGE}
+          - Signing: ${SIGNING_LABEL}
+          - ABI: arm64-v8a
+          - Commit: ${GITHUB_SHA}
+          - Workflow run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}
+
+          This is a prerelease build.
+          EOF
+          )
+
+          gh release create "$TAG" "${ASSETS[@]}" \
+            --title "Android ${BUILD_TYPE} build ${GITHUB_RUN_NUMBER}.${GITHUB_RUN_ATTEMPT}" \
+            --notes "$NOTES" \
+            --prerelease \
+            --target "$GITHUB_SHA"
+
+          RELEASE_URL=$(gh release view "$TAG" --json url --jq .url)
+          echo "release_url=$RELEASE_URL" >> "$GITHUB_OUTPUT"
+          echo "Release created: $RELEASE_URL"
+
+      - name: Build summary
+        if: always()
+        env:
+          BUILD_TYPE: ${{ inputs.build_type }}
+          KEY_TYPE: ${{ steps.signing.outputs.key_type }}
+          PACKAGE: ${{ steps.application-id.outputs.package }}
+          APK_PATH: ${{ steps.find-apk.outputs.apk_path }}
+          AAB_PATH: ${{ steps.find-apk.outputs.aab_path }}
+          RELEASE_URL: ${{ steps.publish-release.outputs.release_url }}
+        working-directory: ${{ github.workspace }}
+        run: |
+          set -u
+          if [ "$BUILD_TYPE" = "release" ]; then
+            if [ "$KEY_TYPE" = "upload" ]; then
+              SIGNING="Upload keystore — suitable for Play upload, assuming it matches the app's registered upload key"
+            else
+              SIGNING="DEBUG keystore — sideload/testing only; NOT accepted by Google Play"
+            fi
+          else
+            SIGNING="Debug keystore — for testing/sideloading"
+          fi
+
+          {
+            echo "## Android Build Summary"
+            echo ""
+            echo "| Property | Value |"
+            echo "|---|---|"
+            echo "| Build type | \\`${BUILD_TYPE}\\` |"
+            echo "| Package | ${PACKAGE:-unknown} |"
+            echo "| Signing | ${SIGNING} |"
+            echo "| ABI | arm64-v8a |"
+            echo "| Commit | \\`${GITHUB_SHA}\\` |"
+            echo ""
+            if [ -n "${RELEASE_URL:-}" ]; then
+              echo "**Download build files:** ${RELEASE_URL}"
+            else
+              echo "The prerelease was not created. Check the preceding step's logs."
+            fi
+            if [ -n "${APK_PATH:-}" ]; then
+              echo ""
+              echo "APK path: \\`${APK_PATH}\\`"
+            fi
+            if [ "$BUILD_TYPE" = "release" ] && [ -n "${AAB_PATH:-}" ]; then
+              echo "AAB path: \\`${AAB_PATH}\\`"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"

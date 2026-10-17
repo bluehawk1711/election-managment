@@ -1,0 +1,189 @@
+/* Campaign HQ's design layer — Tailwind v4 tokens plus a handful of
+   hand-written component classes.
+
+   The look, in one paragraph: a near-black ink canvas with two very soft
+   brand glows (indigo from the top-right, violet from the bottom-left) so
+   surfaces feel lit rather than painted; every card is a translucent
+   `ink-850` panel over that glow with a single hairline border — no heavy
+   shadows, because on a dark canvas shadows read as smudges. Depth comes
+   from the border + a top-edge highlight (the `.edge-lit` line), accent from
+   an indigo→violet gradient reserved for the ONE primary action per view and
+   the active nav pill. Motion is state-communicating only (routes, drawers,
+   staggering) — see `motion-page.tsx`. */
+@import "tailwindcss";
+
+@theme {
+  /* Canvas */
+  --color-ink-950: #06080d;
+  --color-ink-900: #0a0e16;
+  --color-ink-850: #0e131d;
+  --color-ink-800: #131a27;
+  --color-ink-750: #18202f;
+  --color-ink-700: #1e2839;
+
+  /* Hairlines */
+  --color-line: rgb(255 255 255 / 0.07);
+  --color-line-strong: rgb(255 255 255 / 0.14);
+
+  /* Text ramp */
+  --color-mist-50: #eef1f7;
+  --color-mist-200: #c5ccd9;
+  --color-mist-400: #8b94a8;
+  --color-mist-600: #5b6377;
+
+  /* Brand + signals (fixed hexes so contrast never depends on a theme flip) */
+  --color-brand-400: #818cf8;
+  --color-brand-500: #6366f1;
+  --color-brand-600: #4f46e5;
+  --color-violet-400: #a78bfa;
+  --color-signal-emerald: #34d399;
+  --color-signal-amber: #fbbf24;
+  --color-signal-rose: #fb7185;
+  --color-signal-sky: #38bdf8;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+html {
+  height: 100%;
+}
+
+body {
+  min-height: 100%;
+  color: var(--color-mist-50);
+  background:
+    radial-gradient(1100px 560px at 78% -8%, rgb(99 102 241 / 0.15), transparent 60%),
+    radial-gradient(860px 480px at 6% 112%, rgb(139 92 246 / 0.10), transparent 55%),
+    var(--color-ink-950);
+  background-attachment: fixed;
+  font-feature-settings: "cv02", "cv03", "cv04";
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: rgb(99 102 241 / 0.35);
+  color: #fff;
+}
+
+/* Thin, quiet scrollbars — content surfaces get `scroll-slim`. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(255 255 255 / 0.14) transparent;
+}
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-thumb {
+  background: rgb(255 255 255 / 0.14);
+  border-radius: 8px;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: rgb(255 255 255 / 0.24);
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* --------------------------------------------------------------- panels -- */
+
+.panel {
+  background: rgb(14 19 29 / 0.86);
+  border: 1px solid var(--color-line);
+  border-radius: 1rem;
+}
+
+/* The top-edge highlight: a 1px gradient line that makes a flat panel read
+   as a physical surface catching the ambient glows. */
+.edge-lit {
+  position: relative;
+  overflow: hidden;
+}
+.edge-lit::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgb(255 255 255 / 0.16) 20%,
+    rgb(129 140 248 / 0.35) 55%,
+    transparent
+  );
+  pointer-events: none;
+}
+
+.glass {
+  background: rgb(10 14 22 / 0.72);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--color-line);
+}
+
+/* Gradient reserved for the primary action / active nav glow. */
+.brand-gradient {
+  background-image: linear-gradient(135deg, var(--color-brand-500), var(--color-violet-400));
+}
+.brand-text {
+  background-image: linear-gradient(120deg, #a5b4fc, #c4b5fd);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Focus ring, consistent everywhere — keyboard users get the brand colour. */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--color-brand-400);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* ---------------------------------------------------------------- states -- */
+
+@keyframes shimmer {
+  0% {
+    background-position: -420px 0;
+  }
+  100% {
+    background-position: 420px 0;
+  }
+}
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    rgb(255 255 255 / 0.04) 25%,
+    rgb(255 255 255 / 0.09) 45%,
+    rgb(255 255 255 / 0.04) 65%
+  );
+  background-size: 840px 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+  border-radius: 0.5rem;
+}
+
+@keyframes live-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.45;
+    transform: scale(0.72);
+  }
+}
+.live-dot {
+  animation: live-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes shake {
+  10%, 90% { transform: translateX(-2px); }
+  20%, 80% { transform: translateX(4px); }
+  30%, 50%, 70% { transform: translateX(-6px); }
+  40%, 60% { transform: translateX(6px); }
+}
+.shake {
+  animation: shake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
