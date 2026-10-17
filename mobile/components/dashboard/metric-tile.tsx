@@ -2,12 +2,11 @@ import { Sparkline } from '@/components/campaign/sparkline';
 import { Chip, ChipTone } from '@/components/campaign/chip';
 import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
-import { View } from '@/components/ui/view';
 import { useColor } from '@/hooks/useColor';
 import { BORDER_RADIUS } from '@/theme/globals';
 import { typeStyle } from '@/theme/typography';
 import { LucideProps } from 'lucide-react-native';
-import { StyleSheet } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 type Props = {
   icon: React.ComponentType<LucideProps>;
@@ -17,17 +16,34 @@ type Props = {
   label: string;
   series: number[];
   colorName?: string;
+  /**
+   * Where the tile leads. Every dashboard number is a door into the screen
+   * that owns it — a metric you cannot open is a poster, not an instrument.
+   */
+  onPress?: () => void;
 };
 
 /** 2×2 dashboard metric tile — icon box + chip, big value, label, sparkline. */
-export function MetricTile({ icon, chipLabel, chipTone, value, label, series, colorName = 'primary' }: Props) {
+export function MetricTile({ icon, chipLabel, chipTone, value, label, series, colorName = 'primary', onPress }: Props) {
   const card = useColor('card');
   const border = useColor('border');
   const iconBg = useColor('muted');
   const outline = useColor('outline');
 
   return (
-    <View style={[styles.tile, { backgroundColor: card, borderColor: border }]}>
+    // The Pressable IS the tile (style on the wrapper, not a child View): as
+    // a flex child of the two-up row it has to stretch to its half, and an
+    // unstyled wrapper would shrink to content and collapse the grid.
+    <Pressable
+      onPress={onPress}
+      disabled={!onPress}
+      accessibilityRole={onPress ? 'button' : undefined}
+      style={({ pressed }) => [
+        styles.tile,
+        { backgroundColor: card, borderColor: border },
+        pressed && onPress ? { opacity: 0.75 } : null,
+      ]}
+    >
       <View style={styles.top}>
         <View style={[styles.iconBox, { backgroundColor: iconBg }]}>
           <Icon name={icon} size={16} />
@@ -41,7 +57,7 @@ export function MetricTile({ icon, chipLabel, chipTone, value, label, series, co
       <View style={styles.spark}>
         <Sparkline values={series} colorName={colorName} width={110} height={24} />
       </View>
-    </View>
+    </Pressable>
   );
 }
 

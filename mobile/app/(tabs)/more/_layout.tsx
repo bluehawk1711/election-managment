@@ -37,6 +37,10 @@ export default function MoreLayout() {
         { name: 'calendar', title: t('nav.calendar'), headerShown: false },
         { name: 'users/index', title: t('accounts.title') },
         { name: 'users/new', title: t('accounts.create'), presentation: 'modal' },
+        { name: 'issues/index', title: t('more.issues') },
+        { name: 'issues/new', title: t('more.newIssue'), presentation: 'modal' },
+        { name: 'expenses/index', title: t('more.expenses') },
+        { name: 'expenses/new', title: t('more.newExpense'), presentation: 'modal' },
         { name: 'settings/index', title: t('settings.title') },
       ]}
     />

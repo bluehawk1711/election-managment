@@ -5,6 +5,7 @@ import { Text } from '@/components/ui/text';
 import { View } from '@/components/ui/view';
 import { useColor } from '@/hooks/useColor';
 import { formatDistance } from '@/lib/geo';
+import { LEANING_BADGE, SUPPORT_BADGE } from '@/lib/roll/badges';
 import { rollPhotoAsset } from '@/lib/roll/photos';
 import type { Leaning, VoterView } from '@/lib/roll/types';
 import { CONTROL_RADIUS } from '@/theme/globals';
@@ -212,15 +213,17 @@ export function VoterCard({ voter, meters, onPress, onLongPress, selected = fals
           voter.voted === 'voted' ||
           voter.pending ? (
             <View style={styles.chips}>
+              {/* Support and leaning badges are English-only on purpose —
+                  see lib/roll/badges.ts. */}
               {voter.support === 'supporter' ? (
-                <Chip label={t('voters.support.supporter')} tone='success' />
+                <Chip label={SUPPORT_BADGE.supporter} tone='success' />
               ) : null}
               {voter.support === 'opponent' ? (
-                <Chip label={t('voters.support.opponent')} tone='danger' />
+                <Chip label={SUPPORT_BADGE.opponent} tone='danger' />
               ) : null}
               {voter.leaning !== 'unknown' ? (
                 <Chip
-                  label={t(`voters.leaning.${voter.leaning}` as const)}
+                  label={LEANING_BADGE[voter.leaning]}
                   tone={leaningTone(voter.leaning)}
                   active
                 />
@@ -260,11 +263,13 @@ export function VoterCard({ voter, meters, onPress, onLongPress, selected = fals
  * off the head and feet. Writing both numbers by hand is how a box quietly
  * drifts off-ratio the next time someone bumps one side.
  *
- * 100, up from 90: a face at 90pt is legible but barely, and this card *is*
- * how a karykarta recognises the person in front of them. The growth is paid
- * for by the tightened paddings below, so the card does not get taller.
+ * 80, down from 100: at 100 the 160pt photo was the card's height floor, and
+ * a list of 9:16 portraits is a contact sheet, not a roll — the karykarta
+ * scrolls past three voters where they should see five. 80×142 keeps a face
+ * recognisable (the card taps through to the full photo for the rest) and
+ * lets the data column set the card's height instead.
  */
-const PHOTO_WIDTH = 100;
+const PHOTO_WIDTH = 80;
 const PHOTO_HEIGHT = Math.round((PHOTO_WIDTH * 16) / 9); // 160 — exactly 9:16
 
 /**
@@ -300,12 +305,12 @@ function Field({
 
 const styles = StyleSheet.create({
   card: {
-    // 14 vertical / 14 horizontal: the card used to be uniformly tight (12),
-    // which crammed the three stacked lines (name, serial/EPIC, chips) against
-    // the border. A touch more room top/bottom lets each line breathe while
-    // the fields grid below keeps its own rhythm.
-    paddingVertical: 14,
-    paddingHorizontal: 14,
+    // 10 vertical / 12 horizontal: the card used to run 14/14, which at the
+    // new photo size spent more vertical budget on border clearance than on
+    // rows of data. The tighter inset is what actually shrinks the card — the
+    // photo box alone only moved the floor.
+    paddingVertical: 10,
+    paddingHorizontal: 12,
     borderRadius: CONTROL_RADIUS,
     borderWidth: StyleSheet.hairlineWidth,
   },
@@ -313,8 +318,11 @@ const styles = StyleSheet.create({
   // centring would float the photo in the middle of it and leave an awkward gap
   // under the image — the thing that made the first version look unbalanced.
   head: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
-  headText: { flex: 1, gap: 4, minWidth: 0 },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  headText: { flex: 1, gap: 3, minWidth: 0 },
+  // 8, the same rail every chip row in the app uses (FilterBar, the edit
+  // screen's intent row and segments) — 6 made this row visibly tighter
+  // than the ones beside it in the flow.
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   photoBox: {
     width: PHOTO_WIDTH,
     height: PHOTO_HEIGHT,

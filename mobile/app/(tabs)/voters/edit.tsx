@@ -25,6 +25,7 @@ import { openMaps } from '@/lib/contact';
 import { formatDateTime, formatDurationLong } from '@/lib/format';
 import { isValidPhone, type PhoneGroup } from '@/lib/roll/contacts';
 import { writeProposal } from '@/lib/roll/contacts-store';
+import { LEANING_BADGE, SUPPORT_BADGE } from '@/lib/roll/badges';
 import {
   loadQueue,
   overlayStorage,
@@ -42,7 +43,7 @@ import type {
   VoterOverlay,
   VoterView,
 } from '@/lib/roll/types';
-import { CONTROL_RADIUS } from '@/theme/globals';
+import { CONTROL_RADIUS, CORNERS } from '@/theme/globals';
 import { withOpacity } from '@/theme/colors';
 import { useAuth } from '@/providers/auth-provider';
 import * as ImagePicker from 'expo-image-picker';
@@ -58,7 +59,7 @@ import {
 } from 'lucide-react-native';
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Alert, Pressable, StyleSheet } from 'react-native';
+import { Alert, Image as RNImage, Modal, Pressable, StyleSheet } from 'react-native';
 
 const GENDERS: Gender[] = ['male', 'female', 'other'];
 const SUPPORTS: SupportCategory[] = ['unknown', 'supporter', 'opponent'];
@@ -66,11 +67,8 @@ const SUPPORTS: SupportCategory[] = ['unknown', 'supporter', 'opponent'];
 /** The leaning options, in the order plan-voters.md §2 fixes them. */
 const LEANING: Leaning[] = ['unknown', 'right', 'centerRight', 'center', 'centerLeft', 'left'];
 
-/** i18n key for one support value (`voters.support.supporter`, …). */
-const supportKey = (value: SupportCategory) => `voters.support.${value}` as const;
-
-/** i18n key for one leaning value (`voters.leaning.right`, …). */
-const leaningKey = (value: Leaning) => `voters.leaning.${value}` as const;
+// Support and leaning BADGES are English-only — `lib/roll/badges.ts` holds
+// the labels (and the reason) so the list card and this screen cannot drift.
 
 /**
  * Intent colours for the fieldwork segments — the core of this screen.
@@ -656,12 +654,35 @@ function EditForm({
     }
   };
 
+  /**
+   * Full-screen viewer for the photo box.
+   *
+   * Tapping an EXISTING photo opens THIS, never the system picker — looking
+   * at someone's picture must not raise a permission sheet. The picker lives
+   * on the caption below (add/replace), which is where "I want to change
+   * it" belongs.
+   */
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+
   const showMaps = async () => {
     const location = voter.location;
     if (!location) return;
     const ok = await openMaps(location.lat, location.lng);
     if (!ok) toast.error(t('voters.openMapsFailed'));
   };
+
+  /**
+   * What the photo box shows — computed ONCE per render and shared by the
+   * tap handler (lightbox vs picker) and the render below, replacing an
+   * inline IIFE whose whole job was the same look-up.
+   *
+   * Precedence, same as the list card: the user's own capture first, then
+   * the bundled roll portrait (`assets/photos/`, keyed by voter id), then
+   * nothing.
+   */
+  const photoSource = voter.photoUrl
+    ? ({ uri: voter.photoUrl } as const)
+    : rollPhotoAsset(voter);
 
   return (
     // The bounded `View` is load-bearing, not decoration on the ScrollView.
@@ -681,44 +702,44 @@ function EditForm({
             is why there is no separate "Add photo" button repeating it. */}
         <View style={styles.identity}>
           <Pressable
-            onPress={() => void pickPhoto()}
+            onPress={() => {
+              // Tap an EXISTING photo → view it full-screen (lightbox
+              // below). The picker is deliberately NOT on this tap: looking
+              // at someone's picture must never raise a permission sheet.
+              // Only the empty frame (no photo at all) opens the picker,
+              // since there is nothing to view yet.
+              if (photoSource) setLightboxOpen(true);
+              else void pickPhoto();
+            }}
             accessibilityRole='button'
-            accessibilityLabel={t('voters.addPhoto')}
+            accessibilityLabel={
+              photoSource ? t('voters.photo') : t('voters.addPhoto')
+            }
             style={[
               styles.photoBox,
               { backgroundColor: muted, borderColor: border },
             ]}
           >
-            {(() => {
-              // Same precedence as the list card: the user's own photo first,
-              // then the bundled roll portrait (`assets/photos/`, keyed by
-              // voter id), then the placeholder. Computed here rather than
-              // hoisted so the picker box reads exactly what it displays
-              // without a second look-up drifting from it.
-              const userPhoto = voter.photoUrl ? { uri: voter.photoUrl } : null;
-              const bundled = rollPhotoAsset(voter);
-              const source = userPhoto ?? bundled;
-              return source ? (
-                <Image
-                  source={source}
-                  width={PHOTO_SIZE}
-                  height={PHOTO_SIZE}
-                  variant='default'
-                  showLoadingIndicator={false}
-                  containerStyle={styles.photoFill}
-                />
-              ) : (
-                <>
-                  <Icon name={UserX} size={20} color={outline} />
-                  <Text
-                    variant='caption'
-                    style={[styles.placeholderText, { color: outline }]}
-                  >
-                    {t('voters.noPhoto')}
-                  </Text>
-                </>
-              );
-            })()}
+            {photoSource ? (
+              <Image
+                source={photoSource}
+                width={PHOTO_SIZE}
+                height={PHOTO_SIZE}
+                variant='default'
+                showLoadingIndicator={false}
+                containerStyle={styles.photoFill}
+              />
+            ) : (
+              <>
+                <Icon name={UserX} size={20} color={outline} />
+                <Text
+                  variant='caption'
+                  style={[styles.placeholderText, { color: outline }]}
+                >
+                  {t('voters.noPhoto')}
+                </Text>
+              </>
+            )}
             {busy === 'photo' ? (
               <View style={styles.photoBusy}>
                 <Spinner size='sm' variant='circle' />
@@ -744,13 +765,13 @@ function EditForm({
               <View style={styles.intentRow}>
                 {voter.support !== 'unknown' ? (
                   <Chip
-                    label={t(supportKey(voter.support))}
+                    label={SUPPORT_BADGE[voter.support]}
                     tone={SUPPORT_TONE[voter.support]}
                   />
                 ) : null}
                 {voter.leaning !== 'unknown' ? (
                   <Chip
-                    label={t(leaningKey(voter.leaning))}
+                    label={LEANING_BADGE[voter.leaning]}
                     tone={leaningSegmentTone(voter.leaning)}
                     active
                   />
@@ -767,13 +788,25 @@ function EditForm({
                 ) : null}
               </View>
             ) : null}
-            <Text variant='caption' style={{ color: outline }}>
-              {busy === 'photo'
-                ? t('voters.photoUploading')
-                : voter.photoUrl
-                  ? t('voters.replacePhoto')
-                  : t('voters.addPhoto')}
-            </Text>
+            {/* Where the PICKER now lives: tapping the photo views it, so
+                changing it needs its own control — and this caption already
+                said exactly the right words, it just was not tappable. */}
+            <Pressable
+              onPress={() => void pickPhoto()}
+              hitSlop={8}
+              accessibilityRole='button'
+              accessibilityLabel={
+                photoSource ? t('voters.replacePhoto') : t('voters.addPhoto')
+              }
+            >
+              <Text variant='caption' style={{ color: outline }}>
+                {busy === 'photo'
+                  ? t('voters.photoUploading')
+                  : photoSource
+                    ? t('voters.replacePhoto')
+                    : t('voters.addPhoto')}
+              </Text>
+            </Pressable>
             {voter.pending ? (
               <Text variant='caption' style={{ color: outline }}>
                 {t('voters.pendingSync')}
@@ -1014,7 +1047,7 @@ function EditForm({
                   accessibilityState={{ selected: active }}
                 >
                   <Text variant='caption' style={{ color: colors.color }}>
-                    {t(supportKey(value))}
+                    {SUPPORT_BADGE[value]}
                   </Text>
                 </Pressable>
               );
@@ -1047,7 +1080,7 @@ function EditForm({
                   accessibilityState={{ selected: active }}
                 >
                   <Text variant='caption' style={{ color: colors.color }}>
-                    {t(leaningKey(value))}
+                    {LEANING_BADGE[value]}
                   </Text>
                 </Pressable>
               );
@@ -1173,6 +1206,41 @@ function EditForm({
             : t('voters.savedLocally')}
         </Text>
       </View>
+
+      {/* Lightbox — the whole backdrop is the close target (tap or system
+          back via `onRequestClose`), so the photo can be inspected at full
+          size one-handed. Mounted only while open: nothing hidden in the
+          tree, and no Modal competing with the edit sheet's own state. */}
+      {lightboxOpen && photoSource ? (
+        <Modal
+          visible
+          transparent
+          animationType='fade'
+          statusBarTranslucent
+          onRequestClose={() => setLightboxOpen(false)}
+        >
+          <Pressable
+            style={styles.lightbox}
+            onPress={() => setLightboxOpen(false)}
+            accessibilityRole='button'
+            accessibilityLabel={t('common.close')}
+          >
+            <RNImage
+              source={photoSource}
+              style={styles.lightboxImage}
+              resizeMode='contain'
+            />
+            {/* Fixed light ink: the backdrop is black in BOTH themes, so
+                the theme's own text token would be black-on-black in dark
+                mode. */}
+            <View style={styles.lightboxHint} pointerEvents='none'>
+              <Text variant='caption' style={{ color: 'rgba(255,255,255,0.85)' }}>
+                {t('common.close')}
+              </Text>
+            </View>
+          </Pressable>
+        </Modal>
+      ) : null}
     </View>
   );
 }
@@ -1202,7 +1270,7 @@ const styles = StyleSheet.create({
   card: { gap: 12 },
   identity: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   identityText: { flex: 1, gap: 3, minWidth: 0 },
-  intentRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 2 },
+  intentRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 2 },
   photoBox: {
     width: PHOTO_SIZE,
     height: PHOTO_SIZE,
@@ -1253,14 +1321,21 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     gap: 12,
   },
-  segment: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  segment: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   segmentItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 10,
-    paddingVertical: 7,
-    borderRadius: 999,
+    justifyContent: 'center',
+    gap: 6,
+    // Fixed 34 — the EXACT height of `Chip` (campaign/chip.tsx), which is
+    // what renders the badges a screen above. The old padding-derived
+    // height made the text-only support/leaning pills visibly shorter than
+    // those badges while the icon-bearing voted pills came out taller
+    // again: three different pill sizes in one card. One number, content
+    // centered inside it.
+    height: 34,
+    paddingHorizontal: 12,
+    borderRadius: CORNERS,
     borderWidth: StyleSheet.hairlineWidth,
   },
   inlineAction: { flexDirection: 'row', alignItems: 'center', gap: 4 },
@@ -1268,4 +1343,13 @@ const styles = StyleSheet.create({
   // token, because a hardcoded light-theme hex (#E4E7F0) rendered as a
   // near-white line across the dark theme's cards.
   divider: { height: StyleSheet.hairlineWidth },
+  lightbox: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.95)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 16,
+  },
+  lightboxImage: { width: '100%', height: '80%' },
+  lightboxHint: { position: 'absolute', bottom: 48, alignSelf: 'center' },
 });

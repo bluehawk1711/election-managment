@@ -1,18 +1,63 @@
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { Icon } from '@/components/ui/icon';
 import { Input } from '@/components/ui/input';
 import { ScrollView } from '@/components/ui/scroll-view';
 import { Text } from '@/components/ui/text';
 import { useToast } from '@/components/ui/toast';
 import { View } from '@/components/ui/view';
+import { useColor } from '@/hooks/useColor';
 import { useCreateAccount } from '@/hooks/useCreateAccount';
 import { APP_ROLES, can, roleLabelKey, type AppRole } from '@/lib/roles';
 import { useAuth } from '@/providers/auth-provider';
+import * as Clipboard from 'expo-clipboard';
 import { useRouter } from 'expo-router';
-import { AtSign, KeyRound, ShieldCheck, User, Users } from 'lucide-react-native';
-import { useMemo, useState } from 'react';
+import {
+  AtSign,
+  Copy,
+  Eye,
+  EyeOff,
+  KeyRound,
+  ShieldCheck,
+  User,
+  Users,
+  type LucideProps,
+} from 'lucide-react-native';
+import { useMemo, useState, type ComponentType } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet } from 'react-native';
+
+/**
+ * A trailing icon action inside an `Input` — reveal password, copy a field.
+ *
+ * Module-level rather than an inline arrow: a component declared in a
+ * screen's body is a new type every render, so React unmounts and remounts
+ * it instead of diffing — visible as a flash on every keystroke next to the
+ * field it decorates.
+ */
+function TrailingButton({
+  icon,
+  label,
+  onPress,
+}: {
+  icon: ComponentType<LucideProps>;
+  label: string;
+  onPress: () => void;
+}) {
+  const outline = useColor('outline');
+
+  return (
+    <Pressable
+      onPress={onPress}
+      hitSlop={10}
+      accessibilityRole='button'
+      accessibilityLabel={label}
+      style={({ pressed }) => [styles.trailing, pressed && styles.pressed]}
+    >
+      <Icon name={icon} size={18} color={outline} />
+    </Pressable>
+  );
+}
 
 /**
  * New account (plan-voters.md §6.5).
@@ -39,9 +84,20 @@ export default function NewAccountScreen() {
   const [displayName, setDisplayName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  // Revealable on purpose: a super admin handing credentials to a karykarta
+  // over the shoulder has to be able to READ what they typed, and a masked
+  // field they cannot unmask means reading it back from a password manager or
+  // retyping it — both worse than a toggle.
+  const [revealed, setRevealed] = useState(false);
   const [role, setRole] = useState<AppRole>('karykarta');
   const [wardNo, setWardNo] = useState('');
   const [touched, setTouched] = useState(false);
+
+  const copy = async (value: string) => {
+    if (!value) return;
+    await Clipboard.setStringAsync(value);
+    toast.success(t('common.copied'));
+  };
 
   // Wards 1–13, matching `wards-summary.csv`. Hard-coded because the roll is
   // not seeded in every environment (a fresh emulator has no `wards`
@@ -131,6 +187,16 @@ export default function NewAccountScreen() {
         keyboardType='email-address'
         autoCapitalize='none'
         autoCorrect={false}
+        // Copy next to the field it names: the credential hand-off is "here's
+        // your email, here's your password", and each one lands on the
+        // clipboard without the text having to be selected by hand.
+        rightComponent={
+          <TrailingButton
+            icon={Copy}
+            label={t('common.copy')}
+            onPress={() => void copy(trimmedEmail)}
+          />
+        }
       />
 
       <Input
@@ -140,8 +206,22 @@ export default function NewAccountScreen() {
         value={password}
         onChangeText={setPassword}
         error={passwordError}
-        secureTextEntry
+        secureTextEntry={!revealed}
         autoCapitalize='none'
+        rightComponent={
+          <View style={styles.trailingGroup}>
+            <TrailingButton
+              icon={revealed ? EyeOff : Eye}
+              label={t(revealed ? 'common.hidePassword' : 'common.showPassword')}
+              onPress={() => setRevealed((was) => !was)}
+            />
+            <TrailingButton
+              icon={Copy}
+              label={t('common.copy')}
+              onPress={() => void copy(password)}
+            />
+          </View>
+        }
       />
 
       {/* Role. A plain pressable row rather than a Picker: the native picker is
@@ -253,4 +333,6 @@ const styles = StyleSheet.create({
     borderColor: '#8888',
   },
   wardActive: { backgroundColor: '#2563eb', borderColor: '#2563eb' },
+  trailing: { alignItems: 'center', justifyContent: 'center' },
+  trailingGroup: { flexDirection: 'row', alignItems: 'center', gap: 12 },
 });

@@ -74,6 +74,10 @@ export const en = {
   'common.deletedToast': 'Deleted',
   'common.errorTitle': 'Something went wrong',
   'common.notFound': 'Not found',
+  'common.copy': 'Copy',
+  'common.copied': 'Copied',
+  'common.showPassword': 'Show password',
+  'common.hidePassword': 'Hide password',
 
   // Auth & onboarding
   'auth.signIn': 'Sign in',
@@ -157,7 +161,7 @@ export const en = {
   'dash.newTask': 'New Task',
   'dash.reportIssue': 'Report Issue',
   'dash.addEvent': 'Add Event',
-  'dash.boothIn': 'Booth In',
+  'dash.boothIn': 'Booth report',
   'dash.chipActive': 'Active',
   'dash.chipCritical': 'Critical',
   'dash.chipSynced': 'Synced',
@@ -277,6 +281,7 @@ export const en = {
   'voters.noMatchesBody':
     'Try a different search, or widen "Search in" above to the father name or locality.',
   'voters.moreResults': 'Showing {{shown}} of {{total}} matches — refine the search to narrow it down.',
+  'voters.backToTop': 'Back to top',
   'voters.errorBody': 'The roll could not be read.',
   'voters.serial': 'Serial {{no}}',
   'voters.epic': 'EPIC ID',
@@ -459,6 +464,36 @@ export const en = {
   'more.accountsHint': 'Create accounts and assign roles',
   'more.settings': 'Settings',
   'more.settingsHint': 'Language, profile and local data',
+  'more.issues': 'Issues',
+  'more.newIssue': 'Report issue',
+  'more.expenses': 'Expenses',
+  'more.newExpense': 'Add expense',
+
+  // Issues module (the dashboard's "Report Issue" lands here)
+  'issues.create': 'Report issue',
+  'issues.createdToast': 'Issue reported',
+  'issues.emptyBody':
+    'Report a civic issue — water, roads, streetlights — and walk it to resolution.',
+  'issues.noMatches': 'No matching issues',
+  'issues.noMatchesBody': 'Try a different search or clear the filters.',
+  'issues.titlePlaceholder': 'e.g. Streetlight out on Ward 4 main road',
+  'issues.titleRequired': 'Title is required',
+  'issues.descriptionPlaceholder': 'What happened, and where exactly?',
+  'issues.advanceHint': 'Tap an issue to advance it: Open → In progress → Resolved.',
+
+  // Expenses module (the dashboard's expense tile lands here)
+  'expenses.create': 'Add expense',
+  'expenses.createdToast': 'Expense logged',
+  'expenses.emptyBody':
+    'Log campaign spending — travel, fuel, printing — so the audit trail stays complete.',
+  'expenses.noMatches': 'No matching expenses',
+  'expenses.noMatchesBody': 'Try a different search or clear the filters.',
+  'expenses.amount': 'Amount (₹)',
+  'expenses.amountRequired': 'Enter an amount greater than zero',
+  'expenses.amountPlaceholder': 'e.g. 250',
+  'expenses.totalLabel': 'Total logged',
+  'expenses.descriptionPlaceholder': 'What was it for?',
+  'expenses.date': 'Date',
   'more.language': 'Language',
   'more.languageHint': 'Choose the language the app is shown in',
   'more.profile': 'Profile',

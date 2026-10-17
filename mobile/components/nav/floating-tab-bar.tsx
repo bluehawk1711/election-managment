@@ -89,29 +89,50 @@ export function FloatingTabBar({
   // The single measurement the indicator needs: the row's laid-out width.
   // Cells are equal, so active position/width follow from it by arithmetic.
   const [rowWidth, setRowWidth] = useState(0);
-  const count = state.routes.length;
+
+  /**
+   * Routes the bar actually renders — everything except `href: null`.
+   *
+   * `href: null` is how a screen is taken off the bar WITHOUT deleting the
+   * route (the Booths tab right now: its data source is unseeded, so the
+   * screen could only render empty). The default tab bar honours that flag;
+   * this custom one has to do it itself, and the indicator's arithmetic has
+   * to count the VISIBLE cells, not `state.routes` — an off-by-one there
+   * parks the fill on the wrong tab.
+   */
+  const tabs = state.routes
+    .map((route, index) => ({
+      route,
+      index,
+      options: descriptors[route.key].options as { href?: string | null },
+    }))
+    .filter((entry) => entry.options.href !== null);
+  const count = tabs.length;
+  const activeTab = Math.max(
+    0,
+    tabs.findIndex((entry) => entry.index === state.index)
+  );
 
   const x = useSharedValue(0);
   const width = useSharedValue(0);
   useEffect(() => {
     const cell =
       count > 0 ? Math.max(0, (rowWidth - ROW_PADDING * 2) / count) : 0;
-    x.value = withSpring(ROW_PADDING + state.index * cell, TAB_SPRING);
+    x.value = withSpring(ROW_PADDING + activeTab * cell, TAB_SPRING);
     width.value = withSpring(cell, TAB_SPRING);
-  }, [rowWidth, state.index, count, x, width]);
+  }, [rowWidth, activeTab, count, x, width]);
 
-  const onPress = (index: number) => {
-    const route = state.routes[index];
-    const focused = index === state.index;
+  const onPress = (entry: (typeof tabs)[number]) => {
+    const focused = entry.index === state.index;
     const event = navigation.emit({
       type: 'tabPress',
-      target: route.key,
+      target: entry.route.key,
       canPreventDefault: true,
     });
     if (!focused && !event.defaultPrevented) {
       // Only on an actual tab change, so a re-tap of the open tab stays silent.
       Haptics.selectionAsync().catch(() => {});
-      navigation.navigate(route.name, route.params);
+      navigation.navigate(entry.route.name, entry.route.params);
     }
   };
 
@@ -121,7 +142,8 @@ export function FloatingTabBar({
       onLayout={(event) => setRowWidth(event.nativeEvent.layout.width)}
     >
       <TabIndicator x={x} width={width} color={activeBg} />
-      {state.routes.map((route, index) => {
+      {tabs.map((entry) => {
+        const { route } = entry;
         const { options } = descriptors[route.key];
         const raw = options.tabBarLabel ?? options.title ?? route.name;
         const label = typeof raw === 'function' ? route.name : raw;
@@ -132,10 +154,10 @@ export function FloatingTabBar({
             key={route.key}
             label={label}
             icon={TabIcon ?? LayoutGrid}
-            focused={index === state.index}
+            focused={entry.index === state.index}
             color={activeFg}
             inactiveColor={inactiveFg}
-            onPress={() => onPress(index)}
+            onPress={() => onPress(entry)}
           />
         );
       })}

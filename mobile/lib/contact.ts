@@ -50,10 +50,60 @@ export function smsUrl(raw: string): string | null {
     : null;
 }
 
-export function whatsappUrl(raw: string): string | null {
+/**
+ * The campaign's standing WhatsApp message, typed into the chat before the
+ * karykarta has to write a word.
+ *
+ * Fixed content rather than UI copy — it is the campaign's own manifesto text
+ * for the Veernagar gram panchayat race, so it does not go through i18n: the
+ * candidate, the slogan and the promises are what they are in every locale.
+ *
+ * The WHOLE message is bold: WhatsApp renders `*…*` as bold, and the markers
+ * run from the first character to the last, so every line — heading, promises
+ * and the closing appeal — goes out in bold. (Inner asterisks around the
+ * candidate's name were removed on purpose: a second pair inside the wrapper
+ * would CLOSE the bold there and leave the rest of the message unbolded.)
+ */
+const CAMPAIGN_LINES = [
+  '🙏🏻 ग्राम पंचायत वीर नगर 🙏🏻',
+  'प्रत्याशी: गायत्री शर्मा (धर्मपत्नी संजय शर्मा जी)',
+  'पद: सरपंच',
+  'नारा: नई उम्मीद, शिक्षित सरपंच – विकसित ग्राम',
+  'प्रमुख वादे व संकल्प:',
+  'बुनियादी सुविधाएं: पानी, सड़क, सीवरेज और सफाई को पहली प्राथमिकता।',
+  'हेल्पलाइन सुविधा: बंद रोड लाइट और सीवरेज होदी की शिकायत हेतु फोन व व्हाट्सएप हेल्पलाइन।',
+  'पारदर्शी शासन: भेदभाव रहित विकास और पंचायत में साप्ताहिक जनसुनवाई।',
+  'हरित व स्वच्छ पंचायत: वृक्षारोपण और आदर्श ग्राम पंचायत स्वच्छता अभियान।',
+  "पहचान की सुरक्षा: सरकारी कागजों में पते के संकट से बचाने हेतु पंचायत का नाम 'सांगरिया फांटा' रखने का प्रयास।",
+  'बड़े कार्य: सैटेलाइट अस्पताल, पानी की टंकी और बिजलीघर के निर्माण हेतु जनभागीदारी से प्रयास।',
+  '',
+  '👉 गायत्री शर्मा को अपना अमूल्य वोट देकर भारी मतों से विजयी बनाएं!',
+];
+
+export const CAMPAIGN_MESSAGE = `*${CAMPAIGN_LINES.join('\n')}*`;
+
+/**
+ * WhatsApp deep link, message pre-filled.
+ *
+ * `wa.me/<digits>?text=…` opens the chat WITH the composer already holding
+ * the message — the karykarta picks the contact and sends, instead of
+ * copying this text from somewhere else first. URL-encoded because the body
+ * is Devanagari with newlines, which no URL parser would survive raw.
+ *
+ * The campaign message is the default rather than an argument at the call
+ * site so every WhatsApp button in the app opens the same ready-to-send
+ * text; a caller with a genuinely different message passes it explicitly.
+ */
+export function whatsappUrl(
+  raw: string,
+  text: string = CAMPAIGN_MESSAGE
+): string | null {
   const phone = e164(raw);
   if (!phone) return null;
-  return `https://wa.me/${phone.replace(/^\+/, '')}`;
+  const digits = phone.replace(/^\+/, '');
+  return text
+    ? `https://wa.me/${digits}?text=${encodeURIComponent(text)}`
+    : `https://wa.me/${digits}`;
 }
 
 /** `maps:q=lat,lng` on iOS/Android, falling back to a web URL. */

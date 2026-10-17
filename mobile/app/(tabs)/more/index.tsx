@@ -11,7 +11,9 @@ import {
   CalendarDays,
   ClipboardList,
   LucideProps,
+  Receipt,
   Settings,
+  TriangleAlert,
   UserCog,
 } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
@@ -43,6 +45,8 @@ interface HubEntry {
     | '/(tabs)/more/tasks'
     | '/(tabs)/more/calendar'
     | '/(tabs)/more/users'
+    | '/(tabs)/more/issues'
+    | '/(tabs)/more/expenses'
     | '/(tabs)/more/settings';
 }
 
@@ -67,6 +71,20 @@ export default function MoreScreen() {
       icon: CalendarDays,
       tone: 'info',
       href: '/(tabs)/more/calendar',
+    },
+    {
+      key: 'issues',
+      title: t('more.issues'),
+      icon: TriangleAlert,
+      tone: 'danger',
+      href: '/(tabs)/more/issues',
+    },
+    {
+      key: 'expenses',
+      title: t('more.expenses'),
+      icon: Receipt,
+      tone: 'info',
+      href: '/(tabs)/more/expenses',
     },
     {
       key: 'accounts',

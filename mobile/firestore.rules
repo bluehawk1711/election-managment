@@ -250,9 +250,20 @@ service cloud.firestore {
                     && request.resource.data.keys().hasOnly(
                          ['email', 'displayName', 'photoURL', 'onboarded',
                           'role', 'wardNo', 'createdAt', 'updatedAt'])
-                    && text(request.resource.data.email, 3, 320)
                     && request.resource.data.role in
                          ['karykarta', 'admin', 'superAdmin', 'developer']
+                    // Email sanity: 3–320 chars. `.get()` rather than a direct
+                    // field read because rules `&&` does not short-circuit —
+                    // an absent `email` on the other side of an operator would
+                    // be an evaluation error, not a denial. (The previous
+                    // `text(data.email, 3, 320)` here was not a valid rules
+                    // call at all — `text()` takes one argument — which made
+                    // EVERY admin-created account fail evaluation, karykarta
+                    // first and loudest because that is the form's default
+                    // role.)
+                    && request.resource.data.get('email', '') is string
+                    && request.resource.data.get('email', '').size() >= 3
+                    && request.resource.data.get('email', '').size() <= 320
                     // A karykarta must be ward-scoped and nothing else may be:
                     // an admin with a `wardNo` looks restricted in the UI
                     // (`visibleWards` ignores it for every role but karykarta)

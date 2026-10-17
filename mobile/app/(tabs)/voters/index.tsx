@@ -25,16 +25,24 @@ import {
   type SearchScope,
 } from '@/lib/roll/search';
 import { haversineMeters, type LatLng } from '@/lib/geo';
+import { SUPPORT_BADGE } from '@/lib/roll/badges';
 import type { VoterView } from '@/lib/roll/types';
-import { FlashList } from '@shopify/flash-list';
+import { FlashList, type FlashListRef } from '@shopify/flash-list';
 import * as Location from 'expo-location';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Phone, ShieldAlert, Users } from 'lucide-react-native';
-import { useMemo, useState } from 'react';
+import { ArrowUp, Phone, ShieldAlert, Users } from 'lucide-react-native';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 type StatusFilter = 'all' | 'voted' | 'unvoted' | 'edited';
+
+/**
+ * Support-side filter — the roll's "with us / against us" view, as the chip
+ * row under the search input. Labels come from `lib/roll/badges.ts` and are
+ * English-only, exactly like the badges they mirror.
+ */
+type SupportFilter = 'all' | 'supporter' | 'opponent' | 'unknown';
 
 /** Age bands offered in the filter sheet. `any` is the default. */
 type AgeBand = 'any' | '18-25' | '26-40' | '41-60' | '60+';
@@ -142,7 +150,12 @@ export default function VotersScreen() {
   const toast = useToast();
   const { profile } = useAuth();
   const outline = useColor('outline');
+  const primary = useColor('primary');
   const params = useLocalSearchParams<{ ward?: string }>();
+
+  /** Back-to-top exists only once the header is a memory. */
+  const listRef = useRef<FlashListRef<VoterView>>(null);
+  const [scrolled, setScrolled] = useState(false);
 
   const initialWard = useMemo(() => {
     const parsed = Number(params.ward);
@@ -151,6 +164,23 @@ export default function VotersScreen() {
 
   const roll = useRoll(initialWard);
   const [query, setQuery] = useState('');
+
+  /**
+   * The ward PARAM applied after mount, not just on it.
+   *
+   * The reports screen taps a ward and pushes `?ward=4` onto this route —
+   * often while this list is already mounted in a tab — and `useRoll` only
+   * reads the ward as its INITIAL value. Without this effect the tap landed
+   * on the list still showing whatever ward was selected before, which is
+   * the "does not apply the ward filter" bug. Choosing a ward from the
+   * dropdown does NOT re-trigger it (the param is unchanged), so the two ways
+   * of picking a ward cannot fight each other.
+   */
+  useEffect(() => {
+    roll.setWard(initialWard);
+    setQuery('');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialWard]);
   /**
    * Which roll area's data the list shows.
    *
@@ -171,6 +201,8 @@ export default function VotersScreen() {
    */
   const [scopes, setScopes] = useState<SearchScope[]>(['name']);
   const [ageBand, setAgeBand] = useState<AgeBand>('any');
+  /** Support chips under the search input — filter by with-us/against-us. */
+  const [support, setSupport] = useState<SupportFilter>('all');
   /** Origin for nearest-voter mode; `null` means the feature is off. */
   const [origin, setOrigin] = useState<LatLng | null>(null);
   const [locating, setLocating] = useState(false);
@@ -228,6 +260,18 @@ export default function VotersScreen() {
   );
 
   /**
+   * The support chips, applied after the age band — so every count in the
+   * header describes the same population the list below renders.
+   */
+  const supported = useMemo(
+    () =>
+      support === 'all'
+        ? aged
+        : aged.filter((voter) => voter.support === support),
+    [aged, support]
+  );
+
+  /**
    * Nearest-voter ordering.
    *
    * Only voters with a recorded fix can be ordered by distance — the roll
@@ -254,38 +298,80 @@ export default function VotersScreen() {
   const filtered = useMemo(() => {
     let base =
       status === 'all'
-        ? aged
+        ? supported
         : status === 'voted'
-          ? aged.filter((voter) => voter.voted === 'voted')
+          ? supported.filter((voter) => voter.voted === 'voted')
           : status === 'unvoted'
-            ? aged.filter((voter) => voter.voted !== 'voted')
-            : aged.filter((voter) => voter.pending);
+            ? supported.filter((voter) => voter.voted !== 'voted')
+            : supported.filter((voter) => voter.pending);
     if (located) base = base.filter((voter) => located.has(voter.id));
     return base.slice(0, RESULT_LIMIT);
-  }, [aged, status, located]);
+  }, [supported, status, located]);
 
   /** How many matched before the render cap, for the footer line. */
   const withheld = useMemo(() => {
     const base =
       status === 'all'
-        ? aged.length
+        ? supported.length
         : status === 'voted'
-          ? aged.filter((voter) => voter.voted === 'voted').length
+          ? supported.filter((voter) => voter.voted === 'voted').length
           : status === 'unvoted'
-            ? aged.filter((voter) => voter.voted !== 'voted').length
-            : aged.filter((voter) => voter.pending).length;
+            ? supported.filter((voter) => voter.voted !== 'voted').length
+            : supported.filter((voter) => voter.pending).length;
     return Math.max(0, base - filtered.length);
-  }, [aged, status, filtered.length]);
+  }, [supported, status, filtered.length]);
 
   const counts = useMemo(
     () => ({
+      all: supported.length,
+      voted: supported.filter((voter) => voter.voted === 'voted').length,
+      unvoted: supported.filter((voter) => voter.voted !== 'voted').length,
+      edited: supported.filter((voter) => voter.pending).length,
+    }),
+    [supported]
+  );
+
+  /** Chip counts for the support row — from `aged`, BEFORE support narrows. */
+  const supportCounts = useMemo(
+    () => ({
       all: aged.length,
-      voted: aged.filter((voter) => voter.voted === 'voted').length,
-      unvoted: aged.filter((voter) => voter.voted !== 'voted').length,
-      edited: aged.filter((voter) => voter.pending).length,
+      supporter: aged.filter((voter) => voter.support === 'supporter').length,
+      opponent: aged.filter((voter) => voter.support === 'opponent').length,
+      unknown: aged.filter((voter) => voter.support === 'unknown').length,
     }),
     [aged]
   );
+
+  const supportItems = useMemo<FilterItem[]>(
+    () =>
+      (
+        [
+          ['all', t('common.all')],
+          ['supporter', SUPPORT_BADGE.supporter],
+          ['opponent', SUPPORT_BADGE.opponent],
+          ['unknown', SUPPORT_BADGE.unknown],
+        ] as [SupportFilter, string][]
+      ).map(([key, label]) => ({
+        key,
+        label: `${label} (${supportCounts[key]})`,
+        active: support === key,
+      })),
+    [supportCounts, support, t]
+  );
+
+  /**
+   * Every visible ward's voter count, from the roll's own metadata.
+   *
+   * The loaded ROWS page in three wards at a time, so `scoped.length` is
+   * "what has arrived so far" (~2,200), not "how many voters exist" (6,855)
+   * — which is what the All option has to claim.
+   */
+  const rollTotal = useMemo(() => {
+    const meta = roll.wards?.wards ?? [];
+    return meta
+      .filter((ward) => !restricted || allowedWards.includes(ward.wardNo))
+      .reduce((sum, ward) => sum + ward.voterCount, 0);
+  }, [roll.wards, restricted, allowedWards]);
 
   // The ward filter is a select rather than a row of chips. Thirteen wards plus
   // "All" is fourteen targets in a horizontal scroller, which on a small phone
@@ -295,7 +381,9 @@ export default function VotersScreen() {
   const wardOptions = useMemo<SelectOption[]>(() => {
     const meta = roll.wards?.wards ?? [];
     const options: SelectOption[] = [
-      { value: ALL_WARDS, label: `${t('common.all')} (${scoped.length})` },
+      // The ROLL's own total (wards-summary metadata), never the loaded rows
+      // — see `rollTotal` above.
+      { value: ALL_WARDS, label: `${t('common.all')} (${rollTotal})` },
     ];
     for (const ward of meta) {
       if (restricted && !allowedWards.includes(ward.wardNo)) continue;
@@ -313,7 +401,7 @@ export default function VotersScreen() {
       });
     }
     return options;
-  }, [roll.wards, scoped.length, restricted, allowedWards, t]);
+  }, [roll.wards, rollTotal, restricted, allowedWards, t]);
 
   const selectedWard = roll.wardNo == null ? ALL_WARDS : String(roll.wardNo);
 
@@ -506,11 +594,18 @@ export default function VotersScreen() {
   return (
     <View style={styles.root}>
       <FlashList
+        ref={listRef}
         data={filtered}
         keyExtractor={(item) => item.id}
         renderItem={renderRow}
         keyboardShouldPersistTaps='handled'
         contentContainerStyle={styles.listContent}
+        // Drives the back-to-top button: it only exists once the header is
+        // far enough behind that getting back to search is a real trip.
+        onScroll={(event) =>
+          setScrolled(event.nativeEvent.contentOffset.y > 480)
+        }
+        scrollEventThrottle={160}
         // Progressive loading. `useRoll` pages the "all wards" selection in
         // batches of three wards; reaching the end asks for the next one
         // instead of having paid for all 6,855 rows on open.
@@ -592,6 +687,14 @@ export default function VotersScreen() {
               value={query}
               onChangeText={setQuery}
               placeholder={t('voters.searchPlaceholder')}
+            />
+            {/* Support chips — with us / against us / not recorded — always
+                visible right under the search, which is where the team asks
+                "how many supporters in this ward" before anything else.
+                Counts ride on the chips so tapping is never a guess. */}
+            <FilterBar
+              items={supportItems}
+              onToggle={(key) => setSupport(key as SupportFilter)}
             />
             {/* Which fields the search covers — only while a query is typed.
                 With no query every scope matches everything, so the badges
@@ -726,6 +829,25 @@ export default function VotersScreen() {
           </View>
         }
       />
+      {/* Back-to-top, floating above the tab bar. Plain conditional render —
+          the button is the affordance, and a fade-in would only delay the
+          tap it exists for. */}
+      {scrolled ? (
+        <Pressable
+          onPress={() =>
+            listRef.current?.scrollToOffset({ offset: 0, animated: true })
+          }
+          accessibilityRole='button'
+          accessibilityLabel={t('voters.backToTop')}
+          style={({ pressed }) => [
+            styles.toTop,
+            { backgroundColor: primary },
+            pressed && styles.toTopPressed,
+          ]}
+        >
+          <Icon name={ArrowUp} size={20} color='#fff' />
+        </Pressable>
+      ) : null}
     </View>
   );
 }
@@ -737,11 +859,11 @@ const styles = StyleSheet.create({
     padding: 20,
     paddingTop: 8,
     paddingBottom: 112,
-    // 12, not 8: each VoterCard now carries a soft shadow, and shadows that
-    // sit only 8pt apart visually collide into one grey smear. 12 keeps a
-    // clear gutter of canvas between lifts so each card reads as its own
-    // plane — the relationship-based spacing the design guide calls for.
-    gap: 12,
+    // 16, up from 12: each VoterCard carries a soft shadow, and the gutters
+    // have to stay wider than the shadow's falloff or consecutive lifts
+    // merge into one grey smear. 16 keeps a clear band of canvas between
+    // cards so each reads as its own plane.
+    gap: 16,
   },
   header: { gap: 8, marginBottom: 4 },
   gap: { gap: 8 },
@@ -770,4 +892,21 @@ const styles = StyleSheet.create({
   half: { flex: 1, minWidth: 0 },
   trailing: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   banner: { borderWidth: StyleSheet.hairlineWidth, borderRadius: 12, padding: 10 },
+  /** Back-to-top FAB — clear of the floating tab bar's dock (~96pt). */
+  toTop: {
+    position: 'absolute',
+    right: 20,
+    bottom: 112,
+    width: 44,
+    height: 44,
+    borderRadius: 999,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#0F1222',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.14,
+    shadowRadius: 12,
+    elevation: 5,
+  },
+  toTopPressed: { opacity: 0.7 },
 });

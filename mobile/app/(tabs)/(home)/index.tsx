@@ -46,6 +46,7 @@ import { useReference } from '@/providers/reference-provider';
 import { useRouter } from 'expo-router';
 import { CalendarPlus, Flag, TriangleAlert, Users } from 'lucide-react-native';
 import { useEffect, useMemo, useState } from 'react';
+import { Pressable } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import type { TranslationKey } from '@/i18n/locales/en';
 import type { ExpenseCategory, IssueCategory } from '@/lib/models';
@@ -190,8 +191,11 @@ export default function HomeScreen() {
           subtitle: t('dash.noCoordinator'),
           meta: reference.areaContext(booth?.areaId ?? ''),
           actionLabel: t('dash.assign'),
-          onPress: () => router.push('/(tabs)/booths'),
-          onAction: () => router.push('/(tabs)/booths'),
+          // To the booth REPORT, not the hidden Booths tab: the report
+          // derives its numbers from the roll bundle and always has data,
+          // while the tab's Firestore source was never seeded.
+          onPress: () => router.push('/(tabs)/reports'),
+          onAction: () => router.push('/(tabs)/reports'),
         };
       }
       if (item.kind === 'task') {
@@ -219,8 +223,8 @@ export default function HomeScreen() {
         subtitle: t(ISSUE_CAT_KEY[issue?.category ?? 'road']),
         meta: `${ago} · ${reference.areaContext(issue?.areaId ?? '')}`,
         actionLabel: t('dash.escalate'),
-        onPress: () => router.push('/(tabs)/more'),
-        onAction: () => router.push('/(tabs)/more'),
+        onPress: () => router.push('/(tabs)/more/issues'),
+        onAction: () => router.push('/(tabs)/more/issues'),
       };
     });
   }, [metrics, now, reference, tasks, issues, router, t, i18n.language]);
@@ -344,9 +348,11 @@ export default function HomeScreen() {
 
             <QuickActionsRow
               onNewTask={() => router.push('/(tabs)/more/tasks/new')}
-              onReportIssue={() => router.push('/(tabs)/more')}
+              onReportIssue={() => router.push('/(tabs)/more/issues/new')}
               onAddEvent={() => router.push('/(tabs)/more/calendar')}
-              onBoothIn={() => router.push('/(tabs)/booths')}
+              // The booth REPORT, not the hidden Booths tab — see the note in
+              // `attentionRows` above.
+              onBoothIn={() => router.push('/(tabs)/reports')}
             />
 
             <View style={{ gap: 8 }}>
@@ -359,6 +365,7 @@ export default function HomeScreen() {
                   label={t('dash.metricPendingTasks')}
                   series={metrics.series.tasks}
                   colorName='secondary'
+                  onPress={() => router.push('/(tabs)/more/tasks')}
                 />
                 <MetricTile
                   icon={TriangleAlert}
@@ -368,6 +375,7 @@ export default function HomeScreen() {
                   label={t('dash.metricOpenIssues')}
                   series={metrics.series.issues}
                   colorName='error'
+                  onPress={() => router.push('/(tabs)/more/issues')}
                 />
               </View>
               <View style={{ flexDirection: 'row', gap: 8 }}>
@@ -379,6 +387,7 @@ export default function HomeScreen() {
                   label={t('dash.metricMeetings')}
                   series={metrics.series.events}
                   colorName='primary'
+                  onPress={() => router.push('/(tabs)/more/calendar')}
                 />
                 <MetricTile
                   icon={Flag}
@@ -388,45 +397,54 @@ export default function HomeScreen() {
                   label={t('dash.metricExpenses')}
                   series={metrics.series.spend}
                   colorName='tertiary'
+                  onPress={() => router.push('/(tabs)/more/expenses')}
                 />
               </View>
             </View>
 
-            <Card>
-              {/* The account's own filled/edited counters (demand #6) —
-                  personal work, not campaign totals, so it sits directly
-                  under the metric grid where a karykarta looks first. */}
-              <FieldworkCard
-                stats={fieldwork.stats}
-                ratio={fieldwork.ratio}
-                queued={fieldwork.queued}
-                title={t('dash.fieldwork')}
-                coverageLabel={t('dash.fwCoverage', {
-                  done: fieldwork.stats.edited,
-                  total: fieldwork.stats.totalVoters,
-                })}
-                tiles={{
-                  edited: t('dash.fwEdited'),
-                  phones: t('dash.fwPhones'),
-                  photos: t('dash.fwPhotos'),
-                  voted: t('dash.fwVoted'),
-                }}
-                pendingLabel={t('dash.fwPending', { count: fieldwork.queued })}
-              />
-            </Card>
+            {/* Every card below is a door: tap it and you land on the screen
+                that owns the number, not on a dead surface. */}
+            <Pressable onPress={() => router.push('/(tabs)/voters')}>
+              <Card>
+                {/* The account's own filled/edited counters (demand #6) —
+                    personal work, not campaign totals, so it sits directly
+                    under the metric grid where a karykarta looks first. */}
+                <FieldworkCard
+                  stats={fieldwork.stats}
+                  ratio={fieldwork.ratio}
+                  queued={fieldwork.queued}
+                  title={t('dash.fieldwork')}
+                  coverageLabel={t('dash.fwCoverage', {
+                    done: fieldwork.stats.edited,
+                    total: fieldwork.stats.totalVoters,
+                  })}
+                  tiles={{
+                    edited: t('dash.fwEdited'),
+                    phones: t('dash.fwPhones'),
+                    photos: t('dash.fwPhotos'),
+                    voted: t('dash.fwVoted'),
+                  }}
+                  pendingLabel={t('dash.fwPending', { count: fieldwork.queued })}
+                />
+              </Card>
+            </Pressable>
 
-            <Card>
-              <TaskCompletionCard counts={metrics.completion30} buckets={buckets} />
-            </Card>
+            <Pressable onPress={() => router.push('/(tabs)/more/tasks')}>
+              <Card>
+                <TaskCompletionCard counts={metrics.completion30} buckets={buckets} />
+              </Card>
+            </Pressable>
 
-            <Card>
-              <CoverageCard
-                rails={reference.wardCoverage}
-                title={t('dash.coverage')}
-                subtitle={t('dash.coverageSub', { percent: 60 })}
-                hint={t('dash.wardsCount', { count: reference.wardCoverage.length })}
-              />
-            </Card>
+            <Pressable onPress={() => router.push('/(tabs)/voters')}>
+              <Card>
+                <CoverageCard
+                  rails={reference.wardCoverage}
+                  title={t('dash.coverage')}
+                  subtitle={t('dash.coverageSub', { percent: 60 })}
+                  hint={t('dash.wardsCount', { count: reference.wardCoverage.length })}
+                />
+              </Card>
+            </Pressable>
 
             <Card>
               <IssuesCard
@@ -434,7 +452,7 @@ export default function HomeScreen() {
                 subtitle={t('dash.issuesSub')}
                 totalLabel={t('dash.totalIssues')}
                 actionLabel={t('common.viewAll')}
-                onAction={() => router.push('/(tabs)/more')}
+                onAction={() => router.push('/(tabs)/more/issues')}
               />
             </Card>
 

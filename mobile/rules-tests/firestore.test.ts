@@ -338,6 +338,102 @@ describe('/users/{uid}', () => {
       })
     );
   });
+
+  // The "super admin creates someone ELSE's account" rule — the one
+  // `more/users/new.tsx` runs against. It had no coverage at all, and a
+  // malformed email check (`text(email, 3, 320)`, not a valid rules call)
+  // made every write through it fail evaluation. Karykarta was the loudest
+  // symptom because it is the form's default role.
+  describe('superAdmin creating another account', () => {
+    /** The exact key set `hooks/useCreateAccount.ts` writes. */
+    const newAccount = (over: Record<string, unknown>) => ({
+      email: 'newbie@example.com',
+      displayName: 'Newbie',
+      photoURL: null,
+      onboarded: true,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+      ...over,
+    });
+
+    it('creates a karykarta with a positive ward', async () => {
+      await assertSucceeds(
+        setDoc(
+          doc(alice(), 'users', 'uid-new-karykarta'),
+          newAccount({ role: 'karykarta', wardNo: ROLL_WARD })
+        )
+      );
+    });
+
+    it('creates an admin with NO ward', async () => {
+      await assertSucceeds(
+        setDoc(
+          doc(alice(), 'users', 'uid-new-admin'),
+          newAccount({ role: 'admin' })
+        )
+      );
+    });
+
+    it('rejects a karykarta without a ward', async () => {
+      await assertFails(
+        setDoc(
+          doc(alice(), 'users', 'uid-wardless'),
+          newAccount({ role: 'karykarta' })
+        )
+      );
+    });
+
+    it('rejects a karykarta with ward 0', async () => {
+      await assertFails(
+        setDoc(
+          doc(alice(), 'users', 'uid-zero-ward'),
+          newAccount({ role: 'karykarta', wardNo: 0 })
+        )
+      );
+    });
+
+    it('rejects an admin WITH a ward', async () => {
+      await assertFails(
+        setDoc(
+          doc(alice(), 'users', 'uid-scoped-admin'),
+          newAccount({ role: 'admin', wardNo: ROLL_WARD })
+        )
+      );
+    });
+
+    it('rejects creating your own account with a role', async () => {
+      await assertFails(
+        setDoc(
+          doc(alice(), 'users', ALICE),
+          newAccount({ role: 'superAdmin' })
+        )
+      );
+    });
+
+    it('rejects an admin and a karykarta trying to create accounts', async () => {
+      await assertFails(
+        setDoc(
+          doc(daksh(), 'users', 'uid-from-admin'),
+          newAccount({ role: 'karykarta', wardNo: ROLL_WARD })
+        )
+      );
+      await assertFails(
+        setDoc(
+          doc(bob(), 'users', 'uid-from-karykarta'),
+          newAccount({ role: 'karykarta', wardNo: ROLL_WARD })
+        )
+      );
+    });
+
+    it('rejects an email shorter than 3 characters', async () => {
+      await assertFails(
+        setDoc(
+          doc(alice(), 'users', 'uid-bad-email'),
+          newAccount({ email: 'a@', role: 'admin' })
+        )
+      );
+    });
+  });
 });
 
 describe('/users/{uid}/voterEdits — the account-private overlay sync', () => {
