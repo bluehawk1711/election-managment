@@ -3,7 +3,7 @@ import { View } from '@/components/ui/view';
 import { useKeyboardHeight } from '@/hooks/useKeyboardHeight'; // Make sure this path is correct
 import { useColor } from '@/hooks/useColor';
 import { BORDER_RADIUS } from '@/theme/globals';
-import React, { useEffect } from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
 import {
   Modal,
   ScrollView,
@@ -17,9 +17,42 @@ import {
   GestureHandlerRootView,
   type GestureType,
 } from 'react-native-gesture-handler';
-import Animated, { runOnJS, useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
-import { withSpring, withTiming } from '@/lib/anim-off';
+import Animated, {
+  Easing,
+  runOnJS,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+/**
+ * Open / re-snap spring — near-critically damped so a 0.9 snap travels the
+ * whole screen in ~300ms without a visible rebound at the end.
+ *
+ * Deliberately **not** imported from `lib/anim-off`. The app's
+ * animations-switched-off policy exists for list-scroll frame budgets: an
+ * overlay that *vanishes* on close is not "faster", it is broken — there is
+ * no half-finished state to protect, only one view. The sheet therefore keeps
+ * real motion, and this is the whole of its choreography:
+ *
+ * - open: this spring slides up, backdrop fades in over 200ms;
+ * - close: an accelerating slide-down (`Easing.in(cubic)` — gravity, not a
+ *   spring: a dismissed sheet must not bounce back up), backdrop fades out
+ *   first so the scrim never outlives the sheet;
+ * - the modal unmounts only when the *sheet* animation reports `finished`,
+ *   so teardown can never cut the exit off mid-flight.
+ */
+const SNAP_SPRING = { damping: 32, stiffness: 300, mass: 1 } as const;
+
+/** See SNAP_SPRING — the close choreography, in two halves. */
+const CLOSE_SHEET = { duration: 240, easing: Easing.in(Easing.cubic) } as const;
+const CLOSE_BACKDROP = {
+  duration: 180,
+  easing: Easing.out(Easing.quad),
+} as const;
+const OPEN_BACKDROP = { duration: 200 } as const;
 
 type BottomSheetContentProps = {
   children: React.ReactNode;
@@ -197,30 +230,75 @@ export function BottomSheet({
 
   const [modalVisible, setModalVisible] = React.useState(false);
 
+  /**
+   * Lifecycle flags, as refs rather than state: they are read from animation
+   * callbacks on the UI thread (`runOnJS`) where a stale render closure would
+   * otherwise decide whether to unmount.
+   *
+   * - `openedRef` — the sheet has been opened at least once, so the effect's
+   *   close branch cannot animate (and schedule the unmount of) a modal that
+   *   was never shown. Without it the very first render — `isVisible` false —
+   *   would run a full close cycle on mount.
+   * - `closingRef` — a close animation is in flight. `finishClose` honours it
+   *   *and* re-checks `isVisibleRef`: reopening mid-close cancels the sheet
+   *   animation (its callback then fires with `finished === false`, which is
+   *   already a no-op), and the ref check covers the last frame between a
+   *   reopen and that cancellation landing.
+   * - `isVisibleRef` — the prop's latest value, read fresh in `finishClose`.
+   */
+  const openedRef = useRef(false);
+  const closingRef = useRef(false);
+  const isVisibleRef = useRef(isVisible);
+
+  /**
+   * The single unmount point: reached only from the sheet slide-down's
+   * `finished === true` callback, i.e. only once the sheet has actually left
+   * the screen. The backdrop fade is shorter by design (CLOSE_BACKDROP), so
+   * the sheet animation is always the one holding the door.
+   */
+  const finishClose = useCallback(() => {
+    if (!closingRef.current || isVisibleRef.current) return;
+    closingRef.current = false;
+    openedRef.current = false;
+    setModalVisible(false);
+  }, []);
+
   // Effect to handle opening and closing the bottom sheet
   useEffect(() => {
+    isVisibleRef.current = isVisible;
+
     if (isVisible) {
+      closingRef.current = false;
+      openedRef.current = true;
       setModalVisible(true);
-      translateY.value = withSpring(defaultHeight, {
-        damping: 50,
-        stiffness: 400,
-      });
-      opacity.value = withTiming(1, { duration: 300 });
+      translateY.value = withSpring(defaultHeight, SNAP_SPRING);
+      opacity.value = withTiming(1, OPEN_BACKDROP);
       currentSnapIndex.value = 0;
-    } else {
-      translateY.value = withSpring(0, { damping: 50, stiffness: 400 });
-      opacity.value = withTiming(0, { duration: 300 }, (finished) => {
-        if (finished) {
-          runOnJS(setModalVisible)(false);
-        }
+    } else if (openedRef.current) {
+      closingRef.current = true;
+      translateY.value = withTiming(0, CLOSE_SHEET, (finished) => {
+        if (finished) runOnJS(finishClose)();
       });
+      opacity.value = withTiming(0, CLOSE_BACKDROP);
     }
-  }, [isVisible, defaultHeight]);
+  }, [isVisible, defaultHeight, finishClose]);
+
+  /**
+   * Every dismissal funnels through here — backdrop tap, Android hardware
+   * back, drag-past-the-close-threshold — and all it does is ask the parent
+   * to flip `isVisible`. The effect above owns the animation, so there is
+   * exactly one close path instead of three that can disagree about whether
+   * the sheet is on its way out. (`onClose` is wired to that flip by every
+   * call site: `useBottomSheet().close` / `setOpen(false)`.)
+   */
+  const requestClose = useCallback(() => {
+    onClose();
+  }, [onClose]);
 
   // Function to animate the sheet to a specific destination
   const scrollTo = (destination: number) => {
     'worklet';
-    translateY.value = withSpring(destination, { damping: 50, stiffness: 400 });
+    translateY.value = withSpring(destination, SNAP_SPRING);
   };
 
   // --- START: NEW KEYBOARD HANDLING LOGIC ---
@@ -274,16 +352,6 @@ export function BottomSheet({
     scrollTo(destination);
   };
 
-  const animateClose = () => {
-    'worklet';
-    translateY.value = withSpring(0, { damping: 50, stiffness: 400 });
-    opacity.value = withTiming(0, { duration: 300 }, (finished) => {
-      if (finished) {
-        runOnJS(onClose)();
-      }
-    });
-  };
-
   const gesture = Gesture.Pan()
     .onStart(() => {
       context.value = { y: translateY.value };
@@ -310,7 +378,10 @@ export function BottomSheet({
         currentY - snapY > screenHeight * 0.15 ||
         (velocity > 500 && currentY > snapY + screenHeight * 0.05)
       ) {
-        animateClose();
+        // Handed back to the JS thread so the close runs through the one
+        // funnel (`requestClose`) — the worklet only decides *that* it is a
+        // dismiss, the effect performs it.
+        runOnJS(requestClose)();
         return;
       }
 
@@ -335,7 +406,7 @@ export function BottomSheet({
 
   const handleBackdropPress = () => {
     if (enableBackdropDismiss) {
-      animateClose();
+      requestClose();
     }
   };
 
@@ -345,6 +416,11 @@ export function BottomSheet({
       transparent
       statusBarTranslucent
       animationType='none'
+      // Android: dismiss the sheet rather than letting the press fall
+      // through to the app behind it. Gated exactly like a backdrop tap.
+      onRequestClose={() => {
+        if (enableBackdropDismiss) requestClose();
+      }}
     >
       <GestureHandlerRootView style={{ flex: 1 }}>
         <Animated.View

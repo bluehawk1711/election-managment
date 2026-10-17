@@ -87,11 +87,19 @@ export async function openMaps(lat: number, lng: number): Promise<boolean> {
   return openExternal(mapsWebUrl(lat, lng));
 }
 
-/** Opens a URL, returning `false` when no app can handle it. */
+/** Opens a URL, returning `false` when no app can handle it.
+ *
+ * `Linking.openURL` **without** a `canOpenURL` pre-check, and that omission is
+ * load-bearing. On Android 11+ `canOpenURL` only answers `true` for schemes
+ * declared in the manifest's `<queries>` block — which this prebuild does not
+ * carry for `tel:` / `sms:` / `geo:` — so the old check-then-open flow
+ * returned `false` for perfectly dialable numbers: Call and Message looked
+ * dead on every modern Android. `openURL` itself is not subject to package
+ * visibility, and it throws when nothing handles the URL, which is exactly
+ * the signal `canOpenURL` was being asked for.
+ */
 export async function openExternal(url: string): Promise<boolean> {
   try {
-    const supported = await Linking.canOpenURL(url);
-    if (!supported) return false;
     await Linking.openURL(url);
     return true;
   } catch {

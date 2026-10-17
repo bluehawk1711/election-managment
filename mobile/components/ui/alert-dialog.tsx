@@ -112,6 +112,12 @@ export function AlertDialog({
       transparent
       statusBarTranslucent
       animationType='none'
+      // Android hardware back while the dialog is up: behave exactly like
+      // pressing Cancel — through the same funnel — rather than letting the
+      // press fall through to the screen behind the dialog.
+      onRequestClose={() => {
+        if (dismissible) handleCancel();
+      }}
     >
       <Animated.View
         style={[styles.backdrop, rBackdropStyle]}

@@ -26,10 +26,11 @@ import { StyleSheet } from 'react-native';
  * rendered without adding it there.
  *
  * The important case is Accounts. It is hidden entirely from anyone without
- * `accountManage` rather than shown and then refused — the route exists for
+ * `accountView` rather than shown and then refused — the route exists for
  * every signed-in user, so a visible-but-broken entry is worse than an absent
- * one. `firestore.rules` denies the `users` list to the same roles, so this is
- * a convenience over the real boundary, not a substitute for it.
+ * one. Viewing the roster is admin-and-above; the create button inside the
+ * screen is harder (`accountManage`), and `firestore.rules` matches both, so a
+ * grid entry can never promise a write the rules deny.
  */
 interface HubEntry {
   key: string;
@@ -85,11 +86,12 @@ export default function MoreScreen() {
     },
   ];
 
-  // `canVoters` rather than `accountManage` gates the two content modules: a
-  // user with no role at all should see Settings (to fix their language and
-  // read what is wrong) but not an empty Tasks list they cannot write to.
+  // `canVoters` for the content modules; `accountView` (admin and above) for
+  // Accounts: a user with no role at all should see Settings (to fix their
+  // language and read what is wrong) but not an empty Tasks list they cannot
+  // write to — and an admin should see the team roster a super admin created.
   const canVoters = can(role, 'voterRead');
-  const canAccounts = can(role, 'accountManage');
+  const canAccounts = can(role, 'accountView');
   const visible = entries.filter((entry) =>
     entry.key === 'accounts' ? canAccounts : entry.key === 'settings' || canVoters
   );

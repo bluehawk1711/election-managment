@@ -5,6 +5,7 @@ import { Text } from '@/components/ui/text';
 import { View } from '@/components/ui/view';
 import { useColor } from '@/hooks/useColor';
 import { formatDistance } from '@/lib/geo';
+import { rollPhotoAsset } from '@/lib/roll/photos';
 import type { Leaning, VoterView } from '@/lib/roll/types';
 import { CONTROL_RADIUS } from '@/theme/globals';
 import { UserX } from 'lucide-react-native';
@@ -22,6 +23,16 @@ type Props = {
    */
   meters?: number;
   onPress: () => void;
+  /**
+   * Enter selection on long-press (bulk actions, e.g. bulk phone update).
+   *
+   * Absent on cards rendered outside the list's selection-capable context,
+   * where a long press has nothing to do.
+   */
+  onLongPress?: () => void;
+  /** Whether this row is ticked in multi-select mode — renders the primary
+   *  border so the tap target's state is visible without a checkbox column. */
+  selected?: boolean;
 };
 
 /**
@@ -79,10 +90,11 @@ function leaningTone(leaning: Leaning): ChipTone {
  * photographed" are different states of fieldwork — and an absent image block
  * collapsed the card to a different height than a photographed one.
  */
-export function VoterCard({ voter, meters, onPress }: Props) {
+export function VoterCard({ voter, meters, onPress, onLongPress, selected = false }: Props) {
   const { t } = useTranslation();
   const card = useColor('card');
   const border = useColor('border');
+  const primary = useColor('primary');
   const muted = useColor('muted');
   const outline = useColor('outline');
   // Shadow tint — matched to the foreground ink so the drop shadow carries the
@@ -92,18 +104,33 @@ export function VoterCard({ voter, meters, onPress }: Props) {
 
   const e = voter.effective;
 
+  // Photo precedence: the user's own capture (overlay) first, then the
+  // bundled roll portrait (`assets/photos/`, keyed by voter id), then the
+  // placeholder — see lib/roll/photos.ts.
+  const bundledPhoto = rollPhotoAsset(voter);
+  const photoSource = voter.photoUrl
+    ? ({ uri: voter.photoUrl } as const)
+    : bundledPhoto;
+
   return (
     <Pressable
       onPress={onPress}
+      onLongPress={onLongPress}
+      delayLongPress={350}
       accessibilityRole='button'
       // The whole card is one hit target that opens the edit sheet, so the
       // label has to say that as well as who the voter is.
       accessibilityLabel={`${e.name}, ${t('voters.edit')}`}
+      accessibilityState={onLongPress ? { selected } : undefined}
       style={({ pressed }) => [
         styles.card,
         {
           backgroundColor: card,
-          borderColor: border,
+          // Selection is drawn with the primary border rather than a check
+          // mark: the card layout is shared with non-selecting contexts and
+          // a filled background would fight the chips below it.
+          borderColor: selected ? primary : border,
+          borderWidth: selected ? 1.5 : StyleSheet.hairlineWidth,
           // Layered lift: a soft ambient drop plus a faint deeper one, so the
           // card reads as sitting *above* the canvas instead of just being
           // outlined. Tinted with the foreground ink (house style), scaled
@@ -118,9 +145,9 @@ export function VoterCard({ voter, meters, onPress }: Props) {
       ]}
     >
       <View style={styles.head}>
-        {voter.photoUrl ? (
+        {photoSource ? (
           <Image
-            source={{ uri: voter.photoUrl }}
+            source={photoSource}
             width={PHOTO_WIDTH}
             height={PHOTO_HEIGHT}
             variant='default'
@@ -160,6 +187,18 @@ export function VoterCard({ voter, meters, onPress }: Props) {
           <Text variant='title' numberOfLines={1}>
             {e.name}
           </Text>
+          {/* The father/husband name rides directly under the name — the
+              single most-used way a karykarta identifies someone in the
+              field ("whose son/daughter?"). The roll's own relation label
+              (`पिता`/`पति`) prefixes it so the line reads the way the
+              speaking does; hidden entirely rather than shown as `—` when
+              the roll carries nothing (rare, but the CSVs do have blanks). */}
+          {e.fatherOrHusbandName ? (
+            <Text variant='caption' numberOfLines={1} style={{ color: outline }}>
+              {voter.relationLabel ? `${voter.relationLabel}: ` : ''}
+              {e.fatherOrHusbandName}
+            </Text>
+          ) : null}
           <Text variant='caption' numberOfLines={1} style={{ color: outline }}>
             {t('voters.serial', { no: voter.serialNo })} · {voter.epicId}
           </Text>

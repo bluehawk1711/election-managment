@@ -2,6 +2,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { ToastProvider } from '@/components/ui/toast';
 import { View } from '@/components/ui/view';
 import { useColorScheme } from '@/hooks/useColorScheme';
+import { useHardwareBackGuard } from '@/hooks/useHardwareBackGuard';
 import { prewarm } from '@/lib/cache/query-cache';
 import { cacheStorage, prewarm as prewarmRoll } from '@/lib/roll/cache';
 import '@/i18n';
@@ -45,6 +46,12 @@ SplashScreen.setOptions({
  */
 function RootNavigator() {
   const { user, profile, loading, profileLoading } = useAuth();
+
+  // Safety net for the Android hardware back button, always subscribed —
+  // before the loading gate below, so the listener set does not churn across
+  // boot states (which would shuffle the last-registered-first ordering the
+  // guard's docs rely on). See `hooks/useHardwareBackGuard.ts`.
+  useHardwareBackGuard();
 
   // `onAuthStateChanged` fires once after the SDK has finished reading
   // LargeSecureStore, which takes a beat. Rendering the navigator before it

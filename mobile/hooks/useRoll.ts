@@ -58,6 +58,7 @@ import {
 } from '@/lib/roll/overlay';
 import { buildIndex, type SearchIndex } from '@/lib/roll/search';
 import { getRollSource } from '@/lib/roll/source';
+import { syncVoterEdits } from '@/lib/roll/sync';
 import type {
   RollVoter,
   VoterOverlay,
@@ -121,6 +122,15 @@ export function useRoll(
 ): RollState {
   const source = useMemo(() => getRollSource(), []);
 
+  // Mirroring edits to the account (push queued + pull remote) is part of
+  // opening the roll, not a separate screen: every consumer of `useRoll`
+  // wants the rows as they exist on the account, including this device's
+  // own queued saves. Throttled/single-flighted inside `syncVoterEdits`, so
+  // list + sheet + report mounting together do not triple the round-trips.
+  useEffect(() => {
+    void syncVoterEdits();
+  }, []);
+
   /**
    * Aggregate screens pass `eager: true` and get every ward immediately.
    *
@@ -172,7 +182,14 @@ export function useRoll(
    * `rows` in its dependency array would re-run it on its own writes.
    */
   const rowsRef = useRef(rows);
-  rowsRef.current = rows;
+  // Written from an effect, not during render: `react-hooks/refs` (the
+  // Compiler rule) rejects render-phase ref writes, and effect bodies run in
+  // declaration order — the consumer effect below is declared after this one
+  // and still sees this commit's `rows`. The initial `useRef(rows)` covers
+  // the first pass, where nothing has run yet.
+  useEffect(() => {
+    rowsRef.current = rows;
+  });
 
   /**
    * Synchronous cache seed.
@@ -453,9 +470,18 @@ export function useRoll(
   // Switching ward starts the paging over. Without this, choosing "All" after
   // reading deep into the list would leave the previously-loaded slice in place
   // and silently show a different set of wards than the label claims.
-  useEffect(() => {
+  //
+  // React's documented "adjust state when a prop changes" render-phase
+  // pattern rather than an effect calling setState — `react-hooks/set-state-
+  // in-effect` rejects the effect version (cascading render), while the
+  // guarded render-phase version commits the reset in the same render pass
+  // and cannot loop: the guard makes the second evaluation a no-op.
+  const wardResetKey = `${String(wardNo)}:${attempt}`;
+  const [prevWardResetKey, setPrevWardResetKey] = useState(wardResetKey);
+  if (prevWardResetKey !== wardResetKey) {
+    setPrevWardResetKey(wardResetKey);
     setVisibleWards(WARD_BATCH);
-  }, [wardNo, attempt]);
+  }
 
   const totalWards = wards?.wards.length ?? 0;
   const hasMore = wardNo === null && !eager && visibleWards < totalWards;

@@ -2,6 +2,7 @@ import { ActivityCard, ActivityRow } from '@/components/dashboard/activity-card'
 import { AttentionCard, AttentionRow } from '@/components/dashboard/attention-card';
 import { CoverageCard } from '@/components/dashboard/coverage-card';
 import { DashboardHeader } from '@/components/dashboard/dashboard-header';
+import { FieldworkCard } from '@/components/dashboard/fieldwork-card';
 import { GreetingRow } from '@/components/dashboard/greeting-row';
 import { HeroCard } from '@/components/dashboard/hero-card';
 import { IssuesCard } from '@/components/dashboard/issues-card';
@@ -19,6 +20,7 @@ import { View } from '@/components/ui/view';
 import { useAuth } from '@/providers/auth-provider';
 import { useEvents } from '@/hooks/useEvents';
 import { useExpenses } from '@/hooks/useExpenses';
+import { useFieldwork } from '@/hooks/useFieldwork';
 import { useIssues } from '@/hooks/useIssues';
 import { useTasks } from '@/hooks/useTasks';
 import { addDays, daysBetween, startOfDay } from '@/lib/dates';
@@ -83,6 +85,7 @@ export default function HomeScreen() {
   const { issues, loading: issuesLoading } = useIssues();
   const { events, loading: eventsLoading } = useEvents();
   const { expenses, loading: expensesLoading } = useExpenses();
+  const fieldwork = useFieldwork();
 
   const loading =
     reference.loading || tasksLoading || issuesLoading || eventsLoading || expensesLoading;
@@ -388,6 +391,29 @@ export default function HomeScreen() {
                 />
               </View>
             </View>
+
+            <Card>
+              {/* The account's own filled/edited counters (demand #6) —
+                  personal work, not campaign totals, so it sits directly
+                  under the metric grid where a karykarta looks first. */}
+              <FieldworkCard
+                stats={fieldwork.stats}
+                ratio={fieldwork.ratio}
+                queued={fieldwork.queued}
+                title={t('dash.fieldwork')}
+                coverageLabel={t('dash.fwCoverage', {
+                  done: fieldwork.stats.edited,
+                  total: fieldwork.stats.totalVoters,
+                })}
+                tiles={{
+                  edited: t('dash.fwEdited'),
+                  phones: t('dash.fwPhones'),
+                  photos: t('dash.fwPhotos'),
+                  voted: t('dash.fwVoted'),
+                }}
+                pendingLabel={t('dash.fwPending', { count: fieldwork.queued })}
+              />
+            </Card>
 
             <Card>
               <TaskCompletionCard counts={metrics.completion30} buckets={buckets} />

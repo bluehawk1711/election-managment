@@ -41,6 +41,12 @@
  *   keeps importing `withRepeat` from Reanimated, so it keeps spinning.
  * - `components/ui/parallax-scrollview.tsx` — that transform is driven by the
  *   user's own scroll offset, not by a timer, so there is nothing to remove.
+ * - `components/ui/bottom-sheet.tsx` — an overlay whose exit animation is
+ *   removed is not a faster overlay, it is one that *vanishes*: there is no
+ *   long list behind that payoff, just one sheet view over one modal window.
+ *   It keeps real `withTiming` / `withSpring` from Reanimated so "close" reads
+ *   as a slide off the screen (and so the modal can unmount on the exit
+ *   animation's real `finished` callback rather than a synchronous one).
  * - React Navigation's screen transitions — those live in
  *   `react-native-screens`, not Reanimated; they are turned off with
  *   `animation: 'none'` in each `_layout.tsx`.

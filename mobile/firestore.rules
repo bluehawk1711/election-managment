@@ -184,6 +184,28 @@ service cloud.firestore {
              && callerProfile().data.role in ['superAdmin', 'developer'];
     }
 
+    /**
+     * Roster visibility — `accountView` in lib/roles.ts.
+     *
+     * Everything a super admin creates has to be *visible* to the people below
+     * them: an admin opens More → Accounts and sees who is on the team. So the
+     * `list` below reads through this helper, widened to `admin` — while every
+     * write path (create, role grant, delete) keeps `canManageAccounts`.
+     *
+     * Deliberately still one-way: a `get` of someone else's document stays
+     * owner-only, and a karykarta cannot list either. Widening *visibility* to
+     * admin must not widen write access by a single field — the two helpers
+     * exist separately so the one cannot drift into the other.
+     *
+     * Superset: every role in `canManageAccounts` is in this list, so a caller
+     * that may manage accounts can always list them too.
+     */
+    function canViewAccounts() {
+      return signedIn()
+             && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+             && callerProfile().data.role in ['admin', 'superAdmin', 'developer'];
+    }
+
     // ----- profile --------------------------------------------------------
 
     match /users/{userId} {
@@ -192,9 +214,12 @@ service cloud.firestore {
       allow get: if isOwner(userId);
 
       // Listing is an account-management capability, not a self-service one:
-      // it exposes every user's email and role. Only super admins and
-      // developers get it, and it is what `more/users` runs on.
-      allow list: if canManageAccounts();
+      // it exposes every user's email and role. Super admins and developers
+      // manage it; admins may READ the roster (they work with the team a super
+      // admin created) but every write path below still requires
+      // `canManageAccounts`. Karykarta and roleless accounts get neither —
+      // `more/users` runs against this rule.
+      allow list: if canViewAccounts();
 
       // `onboarded == false` on create means a client cannot sign up already
       // onboarded and skip the flow.
@@ -321,6 +346,69 @@ service cloud.firestore {
       // because the Auth record outlives the document otherwise, and the
       // `userId != request.auth.uid` guard keeps the two paths from overlapping.
       allow delete: if canManageAccounts() && userId != request.auth.uid;
+
+      // ----- fieldwork overlay (sync) ------------------------------------
+      //
+      // Everything a user edits about a voter, mirrored from the local
+      // overlay (`lib/roll/overlay.ts`) by `lib/roll/sync.ts` so the same
+      // account sees its edits on every device. PRIVATE by design: a doc
+      // lives under the editor's own `users/{uid}`, so a karykarta's
+      // fieldwork never leaks into anyone else's roll and no cross-user
+      // query shape exists to write rules for.
+      //
+      // The base `voters` collection stays read-only — this is the only
+      // path a client may store voter data through, and it is an overlay,
+      // never a roll row (plan-voters.md §4, "never mutate the base roll").
+      //
+      // `hasOnly` is the security boundary here: the political-profiling
+      // banlist (`party`, `support`, …) is enforced by omission — a write
+      // carrying `support` is rejected as an unknown key rather than stored
+      // because it slipped past a denylist. The key list below must mirror
+      // `PUSHED_KEYS` in `lib/roll/sync.ts` plus `wardNo`/`updatedAt`/
+      // `updatedBy`; `rules-tests/firestore.test.ts` pins both directions.
+      match /voterEdits/{voterId} {
+        // Own overlay only — `list` included, because the pull reads the
+        // whole collection in one query.
+        allow read: if isOwner(userId);
+
+        allow create, update: if isOwner(userId)
+          && request.resource.data.keys().hasOnly(
+               ['name', 'fatherOrHusbandName', 'houseNo', 'age', 'gender',
+                'locality', 'phone', 'jati', 'location', 'photoUrl',
+                'photoPublicId', 'voted', 'leaning', 'leaningNote', 'note',
+                'wardNo', 'updatedAt', 'updatedBy'])
+          // The three bookkeeping fields every pushed doc always carries —
+          // their absence means the writer bypassed `pushEdits`.
+          && request.resource.data.keys().hasAll(['wardNo', 'updatedAt', 'updatedBy'])
+          && request.resource.data.wardNo is int
+          && request.resource.data.wardNo > 0
+          && (request.resource.data.updatedAt is int
+              || request.resource.data.updatedAt is float)
+          && text(request.resource.data.updatedBy, 1, 128)
+          // Enum fields validated on the RESULTING doc via `get(field,
+          // default)` — rules `&&` does not short-circuit, so reading an
+          // absent field directly would be an evaluation error, not a deny.
+          // The defaults ('') are members of each list on purpose: an absent
+          // optional field passes, a typo (`voted: 'maybe'`) does not.
+          && request.resource.data.get('gender', '') in
+               ['', 'male', 'female', 'other']
+          && request.resource.data.get('voted', '') in
+               ['', 'unknown', 'voted', 'notVoted']
+          && request.resource.data.get('leaning', '') in
+               ['', 'unknown', 'right', 'centerRight', 'center',
+                'centerLeft', 'left']
+          && (request.resource.data.keys().hasAny(['age'])
+              ? request.resource.data.age is int
+              : true)
+          // No political profiling keys reach this collection either —
+          // `hasOnly` already rejects them; this says why, out loud.
+          && noPoliticalFields(request.resource.data);
+
+        // Deleting = "reset this device's/this account's edit", allowed for
+        // the owner of the overlay (Settings → reset local edits can mirror a
+        // clear to the account copy later; today the client only reads here).
+        allow delete: if isOwner(userId);
+      }
     }
 
     // ----- campaign -------------------------------------------------------
@@ -408,6 +496,20 @@ service cloud.firestore {
       allow delete: if canEditCampaign();
     }
 
+    /**
+     * `contactFinalize` in lib/roles.ts — super admin + developer.
+     *
+     * Deliberately its own helper rather than reusing `canManageAccounts`
+     * inline: the predicate is the same rank today, but writing voter-phone
+     * finalization in terms of *account management* is how a future reader
+     * ends up widening one and not the other.
+     */
+    function canFinalizeContact() {
+      return signedIn()
+             && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+             && callerProfile().data.role in ['superAdmin', 'developer'];
+    }
+
     // ----- voter roll -----------------------------------------------------
     //
     // `voters/{w{ward}-{serial}}`, seeded by scripts/seed-roll.mjs from the
@@ -426,6 +528,99 @@ service cloud.firestore {
       // today. When sync lands it writes to its own collection with its own
       // rule block, and this one stays as it is.
       allow create, update, delete: if false;
+    }
+
+    // ----- shared voter phone numbers ------------------------------------
+    //
+    // The roll carries no phone numbers (plan-voters.md §4). An account's own
+    // overlay number stayed in that account's private `voterEdits`, which meant
+    // a karykarta's number and a super admin's number could never appear
+    // together on one voter. This collection is the shared layer:
+    //
+    //   voterPhones/{voterId}                    the number in use (super admin's
+    //                                            choice — who chose it, when)
+    //   voterPhones/{voterId}/proposals/{uid}    one account's proposed number
+    //
+    // One proposal document per account, **keyed by the proposer's uid**, which
+    // makes "you may write only your own entry" a path check (`isOwner`) rather
+    // than a map-diff puzzle inside one document.
+    //
+    // Reads reuse `canReadVoter` — every document here carries `wardNo`, so a
+    // karykarta's list is scoped per returned row exactly like the roll itself.
+    // The `resource == null` branch exists because a GET of a not-yet-existing
+    // document still evaluates the rule, and without it the editor of a voter
+    // nobody has proposed a number for would get PERMISSION_DENIED instead of
+    // "no numbers yet". That branch carries no ward membership: there is no
+    // document on that path, so the only thing it can reveal is that a doc id
+    // does not exist — a fact already known from the roll row itself.
+
+    match /voterPhones/{voterId} {
+      allow read: if (resource == null && canReadVoters())
+                  || (resource != null && canReadVoter(resource.data));
+
+      // Finalizing (and clearing) is `contactFinalize`: super admin +
+      // developer, mirrored by `lib/roles.ts`. The whole document is written
+      // each time (create and update share this rule), so `exactKeys` holds on
+      // the RESULT — a partial merge that missed a key would be rejected.
+      allow create, update: if canFinalizeContact()
+        && exactKeys(request.resource.data,
+             ['wardNo', 'finalPhone', 'finalizedBy', 'finalizedName', 'finalizedAt'])
+        && request.resource.data.wardNo is int
+        && request.resource.data.wardNo > 0
+        // The shared board may only speak about a REAL roll row, at that row's
+        // own ward — otherwise any id could be pre-planted with numbers from
+        // another ward. `get()` on `voters` bypasses that path's access rules
+        // (rules reads are not permission-checked), and a voterId that is not
+        // in the roll at all errors here, which denies it — the client only
+        // ever passes ids from a loaded roll, so that error is unreachable
+        // through the app.
+        && get(/databases/$(database)/documents/voters/$(voterId)).data.wardNo
+             == request.resource.data.wardNo
+        // `''` is the cleared state; anything else is a real number in the
+        // same shape the proposals use.
+        && request.resource.data.finalPhone.matches('^$|^[+]?[0-9]{6,15}$')
+        && text(request.resource.data.finalPhone, 0, 20)
+        && text(request.resource.data.finalizedBy, 0, 128)
+        && text(request.resource.data.finalizedName, 0, 160)
+        && (request.resource.data.finalizedAt == null
+            || request.resource.data.finalizedAt is int
+            || request.resource.data.finalizedAt is float)
+        && noPoliticalFields(request.resource.data);
+
+      allow delete: if canFinalizeContact();
+
+      match /proposals/{proposerId} {
+        allow read: if (resource == null && canReadVoters())
+                    || (resource != null && canReadVoter(resource.data));
+
+        // Proposing is `voterEdit` — every role that can read the roll may add
+        // a number — but only onto your own document (`isOwner(proposerId)`)
+        // and only inside your own ward: a karykarta writing ward 9 would be
+        // smuggling data into a ward they cannot read back, and the ward check
+        // on `wardNo` is what rules enforce that a UI toggle cannot.
+        allow create, update: if canReadVoters()
+          && isOwner(proposerId)
+          && exactKeys(request.resource.data,
+               ['phone', 'authorName', 'wardNo', 'updatedAt'])
+          && request.resource.data.phone.matches('^[+]?[0-9]{6,15}$')
+          && text(request.resource.data.authorName, 1, 160)
+          && request.resource.data.wardNo is int
+          && request.resource.data.wardNo > 0
+          // Tied to the roll row itself, as on the parent above: a proposal
+          // exists for a real voter, filed at that voter's own ward.
+          && get(/databases/$(database)/documents/voters/$(voterId)).data.wardNo
+               == request.resource.data.wardNo
+          && (canSeeAllWards()
+              || (callerProfile().data.role == 'karykarta'
+                  && callerProfile().data.wardNo == request.resource.data.wardNo))
+          && requiredMillis(request.resource.data.updatedAt)
+          && noPoliticalFields(request.resource.data);
+
+        // Withdrawing your own proposal is a normal edit, not a privilege —
+        // "this number was wrong" comes from the person who entered it far
+        // more often than from anyone else.
+        allow delete: if isOwner(proposerId);
+      }
     }
 
     // ----- team -----------------------------------------------------------

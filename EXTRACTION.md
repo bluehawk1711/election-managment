@@ -166,6 +166,44 @@ booth_address, pdf_pages`.
 
 ---
 
+## Step 7 — Voter photos from `data/VeerNagar-photos.pdf` (`tools/extract_roll/photos_by_epic.py`)
+
+The photos PDF (346 pages) repeats the same record layout but draws a real
+portrait (146×182 px) in every cell instead of the "Photo is Available" text.
+Photos are named by EPIC ID via three identification tiers:
+
+1. **Geometry + EPIC text** (7080 files): the EPIC token from the raw layer in
+   the *same column* nearest by centre-y — photo centre sits ~32.8 pt below
+   its record's EPIC-line centre (observed 32.79–32.87 pt over the whole doc;
+   row pitch ≈ 72.35 pt, `MAX_ROW_DIST = 40`).
+2. **Ward + serial fallback**: rows on supplement/new-voter pages (29, 65, 139,
+   140, 175, 193, 211, 228, 242, 243, 285, 286, 317, 343) have an **empty EPIC
+   line in the source** (no text, no ink — verified with a dark-pixel probe).
+   Their serial is still on line 1 (centre ≈ photo_top − 4.4 pt) and the page
+   header has the ward, so `(ward, serial)` is looked up in `records_final.json`.
+3. **`ward{W}-serial{S}.{ext}`**: rows whose serial is also beyond the older
+   roll's range (new voters in this edition) — EPIC unrecoverable anywhere in
+   the repo, file named by official coordinates instead (137 files).
+
+Other image kinds: 107 × 106×76 px stamps in record cells' text area (kept as
+`<EPIC>_pNNN.<ext>`, never shadowing the portrait) and 13 × 565×800 full-page
+cover scans (excluded, listed as `leftovers`). Old-format EPIC
+`RJ/24/185/…` → filename `RJ-24-185-….png`. Duplicate EPIC occurrences (109
+tokens printed on two pages) → `<EPIC>.png` + `<EPIC>_pNNN.png`.
+
+Outputs: `data/photos/` (7217 files + `manifest.json` with per-file provenance,
+leftovers and validation counters).
+
+Validation: cross-check photo→identity against `(ward, serial)` on the known
+roll — **7063 agree / 17 beyond-known-roll / 0 disagree**; printed EPIC vs
+known roll — **6964 agree / 17 out-of-range / 0 disagree**; every plain
+`<EPIC>.<ext>` file verified to be a 146×182 portrait; manifest ↔ directory
+symmetric difference 0. 8 EPIC tokens have no photo drawn at all
+(`AVX3780418, IYN1301571, JHP2010262, JHP2013563, TNM1438811, UQP2295814,
+WEE2101913, WLK3063823`).
+
+---
+
 ## Validation (all PASSED — re-run these after any change)
 
 1. **Count** per ward == cover-page अंतिम count → 13/13 wards, 6855/6855 rows.

@@ -215,6 +215,56 @@ function stripUndefined<T extends object>(value: T): Partial<T> {
   return out;
 }
 
+/**
+ * Applies a remote overlay set for one ward (the pull half of sync).
+ *
+ * Conflict rule: **last writer wins, per voter** — the incoming remote overlay
+ * replaces the local one only when its `updatedAt` is strictly newer, so
+ * re-pulling what this device just pushed is a no-op (no listener churn, no
+ * phantom "pending" badge) and an edit made on a second device lands here.
+ *
+ * Whole-overlay, not per-field: a merged per-field result would need a
+ * timestamp per field, and the queue this store maintains only records which
+ * keys moved, not when each one did. Two devices offline-editing the SAME
+ * voter before either syncs is the one case this loses a field for the other
+ * side — pull-before-edit (sync runs at every screen mount, before the sheet
+ * opens) makes that rare, and the edit that survives is the newer one.
+ */
+export async function mergeRemoteWard(
+  storage: OverlayStorage,
+  wardNo: number,
+  remote: Record<string, VoterOverlay>
+): Promise<boolean> {
+  const local = { ...(await loadWardOverlay(storage, wardNo)) };
+  let changed = false;
+
+  for (const [voterId, incoming] of Object.entries(remote)) {
+    const mine = local[voterId];
+    if (!mine || incoming.updatedAt > mine.updatedAt) {
+      local[voterId] = incoming;
+      changed = true;
+    }
+  }
+  if (!changed) return false;
+
+  cache.set(wardNo, local);
+  await storage.setItem(overlayKey(wardNo), JSON.stringify(local));
+  notify();
+  return true;
+}
+
+/** Removes one voter's entry after a successful push (sync success path). */
+export async function removeFromQueue(
+  storage: OverlayStorage,
+  voterId: string
+): Promise<void> {
+  const current = await loadQueue(storage);
+  if (!current.some((entry) => entry.voterId === voterId)) return;
+  queue = current.filter((entry) => entry.voterId !== voterId);
+  await storage.setItem(QUEUE_KEY, JSON.stringify(queue));
+  notify();
+}
+
 /** Drops every edit and queued change — Settings → “reset local edits”. */
 export async function clearOverlay(storage: OverlayStorage): Promise<void> {
   const keys = await storage.getItem(QUEUE_KEY);

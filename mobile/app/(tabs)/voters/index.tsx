@@ -15,6 +15,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { Text } from '@/components/ui/text';
 import { useToast } from '@/components/ui/toast';
 import { useColor } from '@/hooks/useColor';
+import { Icon } from '@/components/ui/icon';
 import { useRoll } from '@/hooks/useRoll';
 import { useAuth } from '@/providers/auth-provider';
 import { can, canReadWard } from '@/lib/roles';
@@ -28,10 +29,10 @@ import type { VoterView } from '@/lib/roll/types';
 import { FlashList } from '@shopify/flash-list';
 import * as Location from 'expo-location';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { ShieldAlert, Users } from 'lucide-react-native';
+import { Phone, ShieldAlert, Users } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 type StatusFilter = 'all' | 'voted' | 'unvoted' | 'edited';
 
@@ -173,6 +174,15 @@ export default function VotersScreen() {
   /** Origin for nearest-voter mode; `null` means the feature is off. */
   const [origin, setOrigin] = useState<LatLng | null>(null);
   const [locating, setLocating] = useState(false);
+  /**
+   * Rows ticked for bulk actions. A long press on a card enters/toggles
+   * selection (it cannot collide with navigation — `onPress` opens the sheet
+   * only while this set is empty, and otherwise toggles too). Empty set =
+   * normal mode; the bar above the list renders off `size`, so there is no
+   * separate mode flag to get out of sync with it.
+   */
+  const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
+  const selecting = selected.size > 0;
 
   const allWardNumbers = useMemo(
     () => (roll.wards?.wards ?? []).map((ward) => ward.wardNo),
@@ -453,6 +463,16 @@ export default function VotersScreen() {
     setQuery('');
   };
 
+  /** Ticks/unticks one row — the only mutation selection mode needs. */
+  const toggleSelected = (id: string) => {
+    setSelected((current) => {
+      const next = new Set(current);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
   /**
    * A tap opens the edit sheet directly.
    *
@@ -466,12 +486,20 @@ export default function VotersScreen() {
     <VoterCard
       voter={item}
       meters={located?.get(item.id)}
-      onPress={() =>
+      selected={selected.has(item.id)}
+      onLongPress={() => toggleSelected(item.id)}
+      onPress={() => {
+        // Selection mode: a tap ticks instead of navigating, so a whole row
+        // of people can be ticked with one thumb without leaving the list.
+        if (selecting) {
+          toggleSelected(item.id);
+          return;
+        }
         router.push({
           pathname: '/(tabs)/voters/edit',
           params: { id: item.id, ward: String(item.wardNo) },
-        })
-      }
+        });
+      }}
     />
   );
 
@@ -503,6 +531,37 @@ export default function VotersScreen() {
         }
         ListHeaderComponent={
           <View style={styles.header}>
+            {/* Bulk-action bar: appears the moment the first row is
+                long-pressed and carries its own count + exit, so selection
+                never leaves the user guessing which mode a tap is in. */}
+            {selecting ? (
+              <View style={styles.selectBar}>
+                <Text variant='subtitle'>
+                  {t('voters.selectedCount', { count: selected.size })}
+                </Text>
+                <View style={styles.trailing}>
+                  <Button
+                    size='sm'
+                    icon={Phone}
+                    onPress={() =>
+                      router.push({
+                        pathname: '/(tabs)/voters/bulk',
+                        params: { ids: [...selected] },
+                      })
+                    }
+                  >
+                    {t('voters.bulkPhone')}
+                  </Button>
+                  <Button
+                    size='sm'
+                    variant='outline'
+                    onPress={() => setSelected(new Set())}
+                  >
+                    {t('common.cancel')}
+                  </Button>
+                </View>
+              </View>
+            ) : null}
             {/* Area above search: the widest scope of the selector stack
                 (area → ward → query). One 36pt pill so the header keeps the
                 height the de-cluttering won back. */}
@@ -511,6 +570,23 @@ export default function VotersScreen() {
                 {t('areas.label')}:
               </Text>
               <AreaSelect value={area} onChange={setArea} />
+              <View style={styles.spacer} />
+              {/* Bulk phone entry when nothing is ticked — the paste-list and
+                  help modes live behind it (long-press selection feeds the
+                  same screen with the ticked ids). */}
+              {!selecting ? (
+                <Pressable
+                  onPress={() =>
+                    router.push({ pathname: '/(tabs)/voters/bulk' })
+                  }
+                  hitSlop={8}
+                  accessibilityRole='button'
+                  accessibilityLabel={t('voters.bulkPhone')}
+                  style={styles.bulkButton}
+                >
+                  <Icon name={Phone} size={16} color={outline} />
+                </Pressable>
+              ) : null}
             </View>
             <SearchInput
               value={query}
@@ -669,6 +745,21 @@ const styles = StyleSheet.create({
   },
   header: { gap: 8, marginBottom: 4 },
   gap: { gap: 8 },
+  /** Bulk-action bar — count on the left, actions on the right. */
+  selectBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+    paddingVertical: 4,
+  },
+  spacer: { flex: 1 },
+  bulkButton: {
+    width: 30,
+    height: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   /** Inline "Search in:" label + scrolling scope chips — one 34pt row. */
   scopeRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   scopeChips: { flex: 1, minWidth: 0 },

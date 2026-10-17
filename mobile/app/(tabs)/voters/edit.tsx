@@ -1,5 +1,7 @@
 import { DetailRow } from '@/components/roll/detail-row';
+import { ContactActions } from '@/components/roll/contact-actions';
 import { Chip, type ChipTone } from '@/components/campaign/chip';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Icon } from '@/components/ui/icon';
@@ -12,26 +14,25 @@ import { useToast } from '@/components/ui/toast';
 import { View } from '@/components/ui/view';
 import { useColor } from '@/hooks/useColor';
 import { useRoll } from '@/hooks/useRoll';
+import { useVoterContacts } from '@/hooks/useVoterContacts';
 import {
   compressForUpload,
   isCloudinaryConfigured,
   savePhotoLocally,
   uploadPhoto,
 } from '@/lib/cloudinary';
-import {
-  openExternal,
-  openMaps,
-  smsUrl,
-  telUrl,
-  whatsappUrl,
-} from '@/lib/contact';
-import { formatDateTime } from '@/lib/format';
+import { openMaps } from '@/lib/contact';
+import { formatDateTime, formatDurationLong } from '@/lib/format';
+import { isValidPhone, type PhoneGroup } from '@/lib/roll/contacts';
+import { writeProposal } from '@/lib/roll/contacts-store';
 import {
   loadQueue,
   overlayStorage,
   patchVoter,
   putOverlay,
 } from '@/lib/roll/overlay';
+import { rollPhotoAsset } from '@/lib/roll/photos';
+import { pushEdits } from '@/lib/roll/sync';
 import type {
   Gender,
   Leaning,
@@ -52,12 +53,10 @@ import {
   Circle,
   Crosshair,
   MapPin,
-  MessageCircle,
-  Phone,
   UserX,
   XCircle,
 } from 'lucide-react-native';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Alert, Pressable, StyleSheet } from 'react-native';
 
@@ -265,6 +264,7 @@ export default function EditVoterScreen() {
       voter={voter}
       wardNo={wardNo}
       onSaved={roll.refresh}
+      rows={roll.voters}
     />
   );
 }
@@ -280,15 +280,19 @@ function EditForm({
   voter,
   wardNo,
   onSaved,
+  rows,
 }: {
   voter: VoterView;
   wardNo: number;
   onSaved: () => void;
+  /** The ward's loaded rows — whatever search scope the list screen had,
+   *  used only to count house-mates for the whole-house phone action. */
+  rows: VoterView[];
 }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const router = useRouter();
   const toast = useToast();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const outline = useColor('outline');
   const muted = useColor('muted');
   const border = useColor('border');
@@ -351,6 +355,13 @@ function EditForm({
 
   const uid = user?.uid ?? 'local';
 
+  /** Shared phone numbers — proposals from the whole team + the final choice. */
+  const contacts = useVoterContacts(voter.id, wardNo);
+  /** Render clock for the "Added by …" age lines; `Date.now()` in render is a purity violation. */
+  const [now] = useState(() => Date.now());
+  /** Attribution written onto every proposal this screen shares. */
+  const authorName = profile?.displayName || user?.email || 'Unknown';
+
   const parsedAge = Number(age.trim());
   const ageValid =
     age.trim() !== '' &&
@@ -387,6 +398,9 @@ function EditForm({
     try {
       await putOverlay(overlayStorage, { voterId: voter.id, wardNo, overlay, uid });
       onSaved();
+      // Mirror to the account right away — a fieldwork tap (voted/leaning/
+      // photo/location) is a deliberate act worth surviving a lost phone.
+      void pushEdits();
     } catch {
       toast.error(t('common.errorTitle'));
     } finally {
@@ -401,6 +415,73 @@ function EditForm({
    * is new on every render of the list, and depending on it both re-runs this
    * on every pass and defeats the React Compiler's memoisation.
    */
+  /**
+   * How many OTHER voters live at this same house, in this ward — everything
+   * but the person on screen. Household phone numbers are the common case in
+   * the field (one landline per family), so entering the number once on any
+   * member can stamp the whole house rather than being typed N times.
+   *
+   * Matched on `effective.houseNo`, not the base row: a corrected house
+   * number on another member still counts as the same house.
+   */
+  const houseMates = useMemo(() => {
+    const house = houseNo.trim();
+    if (!house) return [];
+    return rows.filter(
+      (row) =>
+        row.wardNo === voter.wardNo &&
+        row.id !== voter.id &&
+        row.effective.houseNo.trim() === house
+    );
+    // `houseNo` is the staged value — the button applies exactly what is
+    // typed in the phone field together with what is shown in the house one.
+  }, [rows, voter.wardNo, voter.id, houseNo]);
+
+  /** Writes the staged phone number to this row and every house-mate row. */
+  const applyToHouse = async () => {
+    const value = phone.trim();
+    if (!value) return;
+    setBusy('house');
+    try {
+      for (const mate of houseMates) {
+        await patchVoter(overlayStorage, {
+          voterId: mate.id,
+          wardNo: mate.wardNo,
+          uid,
+          patch: { phone: value },
+        });
+      }
+      await patchVoter(overlayStorage, {
+        voterId: voter.id,
+        wardNo,
+        uid,
+        patch: { phone: value },
+      });
+      // Share every number written above — one proposal per mate, keyed by
+      // this account server-side — after the local save has already landed.
+      if (isValidPhone(value)) {
+        for (const mate of houseMates) {
+          void writeProposal({
+            voterId: mate.id,
+            wardNo: mate.wardNo,
+            phone: value,
+            authorName,
+            role: profile?.role ?? null,
+            myWardNo: profile?.wardNo ?? null,
+          }).catch(() => undefined);
+        }
+        void contacts.propose(value, wardNo).catch(() => undefined);
+      }
+      void pushEdits();
+      onSaved();
+      toast.success(t('voters.bulkApplied', { count: houseMates.length + 1 }));
+    } catch {
+      toast.error(t('common.errorTitle'));
+    } finally {
+      setBusy(null);
+    }
+  };
+
   const pending = voter.pending;
   const [queueSize, setQueueSize] = useState(0);
   useEffect(() => {
@@ -442,6 +523,19 @@ function EditForm({
           ...((voter.overlay.note ?? '') !== note ? { note } : {}),
         },
       });
+      void pushEdits();
+      // Mirror the number to the team's shared layer, best-effort: the local
+      // overlay write above IS the save, and a rejected share reports rather
+      // than rolls back. Shapes `firestore.rules` would refuse are never
+      // attempted, and unchanged digits are skipped inside `propose`.
+      if (isValidPhone(phone)) {
+        void contacts
+          .propose(phone, wardNo)
+          .then((shared) => {
+            if (!shared) toast.error(t('common.errorTitle'));
+          })
+          .catch(() => toast.error(t('common.errorTitle')));
+      }
       onSaved();
       toast.success(t('voters.savedLocally'));
       router.back();
@@ -488,6 +582,7 @@ function EditForm({
           overlay: { photoUrl: uploaded.secureUrl, photoPublicId: uploaded.publicId },
           uid,
         });
+        void pushEdits();
         onSaved();
       } else {
         const localUri = await savePhotoLocally(compressed.base64, voter.id);
@@ -499,6 +594,7 @@ function EditForm({
           overlay: { photoUrl: localUri },
           uid,
         });
+        void pushEdits();
         onSaved();
         toast.success(t('voters.photoSavedLocally'));
       }
@@ -522,11 +618,11 @@ function EditForm({
       }
       await putOverlay(overlayStorage, {
         voterId: voter.id,
-        wardNo,
-        overlay: { location },
-        uid,
-      });
-      onSaved();
+        wardNo,          overlay: { location },
+          uid,
+        });
+        void pushEdits();
+        onSaved();
     } catch {
       toast.error(t('voters.locationFailed'));
     } finally {
@@ -534,10 +630,30 @@ function EditForm({
     }
   };
 
-  const openLink = async (url: string | null, failed: string) => {
-    if (!url) return;
-    const ok = await openExternal(url);
-    if (!ok) toast.error(failed);
+  /** Super admin: put this team-proposed number in use for everyone.
+   *
+   * Named `chooseNumber`, not `useNumber`: a component-scope function whose
+   * name starts with `use` is treated as a React Hook, and calling it from an
+   * onPress callback is a rules-of-hooks error — which lint caught on the
+   * first pass.
+   */
+  const chooseNumber = async (group: PhoneGroup) => {
+    try {
+      await contacts.finalize(group, wardNo);
+      toast.success(t('common.savedToast'));
+    } catch {
+      toast.error(t('common.errorTitle'));
+    }
+  };
+
+  /** Super admin: take the current number back out of use. */
+  const stopUsing = async () => {
+    try {
+      await contacts.clearFinalize(wardNo);
+      toast.success(t('common.savedToast'));
+    } catch {
+      toast.error(t('common.errorTitle'));
+    }
   };
 
   const showMaps = async () => {
@@ -573,23 +689,36 @@ function EditForm({
               { backgroundColor: muted, borderColor: border },
             ]}
           >
-            {voter.photoUrl ? (
-              <Image
-                source={{ uri: voter.photoUrl }}
-                width={PHOTO_SIZE}
-                height={PHOTO_SIZE}
-                variant='default'
-                showLoadingIndicator={false}
-                containerStyle={styles.photoFill}
-              />
-            ) : (
-              <>
-                <Icon name={UserX} size={20} color={outline} />
-                <Text variant='caption' style={[styles.placeholderText, { color: outline }]}>
-                  {t('voters.noPhoto')}
-                </Text>
-              </>
-            )}
+            {(() => {
+              // Same precedence as the list card: the user's own photo first,
+              // then the bundled roll portrait (`assets/photos/`, keyed by
+              // voter id), then the placeholder. Computed here rather than
+              // hoisted so the picker box reads exactly what it displays
+              // without a second look-up drifting from it.
+              const userPhoto = voter.photoUrl ? { uri: voter.photoUrl } : null;
+              const bundled = rollPhotoAsset(voter);
+              const source = userPhoto ?? bundled;
+              return source ? (
+                <Image
+                  source={source}
+                  width={PHOTO_SIZE}
+                  height={PHOTO_SIZE}
+                  variant='default'
+                  showLoadingIndicator={false}
+                  containerStyle={styles.photoFill}
+                />
+              ) : (
+                <>
+                  <Icon name={UserX} size={20} color={outline} />
+                  <Text
+                    variant='caption'
+                    style={[styles.placeholderText, { color: outline }]}
+                  >
+                    {t('voters.noPhoto')}
+                  </Text>
+                </>
+              );
+            })()}
             {busy === 'photo' ? (
               <View style={styles.photoBusy}>
                 <Spinner size='sm' variant='circle' />
@@ -710,38 +839,111 @@ function EditForm({
           placeholder={t('voters.phoneHint')}
         />
 
-        {/* Call / message, next to the number they act on rather than in a
-            separate card further down. Disabled until there is a number — the
-            roll carries none, so on first open all three would be dead. */}
-        <View style={styles.actions}>
+        {/* One number, whole house. Rendered only when the house actually has
+            other members in the loaded roll — a button offering to update
+            zero people is noise — and only from an enabled input, since an
+            empty phone has nothing to apply. */}
+        {houseMates.length > 0 ? (
           <Button
             size='sm'
             variant='outline'
-            icon={Phone}
-            disabled={!phone}
-            onPress={() => void openLink(telUrl(phone), t('voters.noPhone'))}
+            loading={busy === 'house'}
+            disabled={busy !== null || !phone.trim()}
+            onPress={() => void applyToHouse()}
           >
-            {t('voters.call')}
+            {t('voters.applyToHouse', { count: houseMates.length + 1 })}
           </Button>
-          <Button
-            size='sm'
-            variant='outline'
-            icon={MessageCircle}
-            disabled={!phone}
-            onPress={() => void openLink(smsUrl(phone), t('voters.noPhone'))}
-          >
-            {t('voters.message')}
-          </Button>
-          <Button
-            size='sm'
-            variant='outline'
-            icon={MessageCircle}
-            disabled={!phone}
-            onPress={() => void openLink(whatsappUrl(phone), t('voters.noPhone'))}
-          >
-            {t('voters.whatsapp')}
-          </Button>
-        </View>
+        ) : null}
+
+        {/* Themed trio — each service keeps its own identity (dial green,
+            WhatsApp brand green, SMS blue). It dials whatever is typed above,
+            falling back to the super admin's chosen number so an untouched
+            voter still has working buttons. */}
+        <ContactActions
+          phone={phone.trim() || contacts.finalPhone}
+          onFail={() => toast.error(t('voters.noPhone'))}
+        />
+        {!phone.trim() && contacts.finalPhone ? (
+          <Text variant='caption' style={{ color: outline }}>
+            {t('voters.dialingChosen')}
+          </Text>
+        ) : null}
+
+        {/* The shared number board: every distinct number the team proposed,
+            who added each and when, and the one a super admin put in use.
+            Every row is directly dialable — this is where the karykarta's
+            number and the super admin's number finally live side by side. */}
+        <Card style={styles.card}>
+          <Text variant='subtitle'>{t('voters.phoneNumbers')}</Text>
+          <Text variant='caption' style={{ color: outline }}>
+            {t('voters.phoneNumbersHint')}
+          </Text>
+          {contacts.loading ? (
+            <Text variant='caption' style={{ color: outline }}>
+              {t('common.loading')}
+            </Text>
+          ) : contacts.groups.length === 0 ? (
+            <Text variant='caption' style={{ color: outline }}>
+              {t('voters.noNumbers')}
+            </Text>
+          ) : (
+            contacts.groups.map((group) => (
+              <View
+                key={group.key}
+                style={[styles.numberBlock, { borderTopColor: border }]}
+              >
+                <View style={styles.numberHead}>
+                  <Text variant='subtitle' selectable>
+                    {group.phone}
+                  </Text>
+                  {group.isFinal ? (
+                    <Badge variant='secondary'>{t('voters.numberInUse')}</Badge>
+                  ) : null}
+                </View>
+                {group.authors.map((author) => (
+                  <Text
+                    key={author.uid}
+                    variant='caption'
+                    style={{ color: outline }}
+                  >
+                    {t('voters.numberAddedBy', { name: author.authorName })} ·{' '}
+                    {t('common.ago', {
+                      time: formatDurationLong(
+                        Math.max(0, now - author.updatedAt),
+                        i18n.language
+                      ),
+                    })}
+                  </Text>
+                ))}
+                {group.isFinal && contacts.finalized ? (
+                  <Text variant='caption' style={{ color: outline }}>
+                    {t('voters.chosenBy', {
+                      name: contacts.finalized.finalizedName,
+                    })}
+                  </Text>
+                ) : null}
+                <View style={styles.numberActions}>
+                  <ContactActions
+                    compact
+                    phone={group.phone}
+                    onFail={() => toast.error(t('voters.noPhone'))}
+                  />
+                  {contacts.canFinalize ? (
+                    group.isFinal ? (
+                      <Button size='sm' variant='ghost' onPress={() => void stopUsing()}>
+                        {t('voters.stopUsingNumber')}
+                      </Button>
+                    ) : (
+                      <Button size='sm' variant='outline' onPress={() => void chooseNumber(group)}>
+                        {t('voters.useNumber')}
+                      </Button>
+                    )
+                  ) : null}
+                </View>
+              </View>
+            ))
+          )}
+        </Card>
 
         <Input
           label={t('voters.jati')}
@@ -1026,6 +1228,25 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   actions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  numberBlock: {
+    gap: 4,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    paddingTop: 10,
+    marginTop: 2,
+  },
+  numberHead: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  numberActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+    marginTop: 4,
+  },
   headRow: {
     flexDirection: 'row',
     alignItems: 'center',

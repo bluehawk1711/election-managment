@@ -33,6 +33,34 @@ describe('can()', () => {
     expect(can('developer', 'accountManage')).toBe(true);
   });
 
+  it('lets admin-and-above view the roster without managing it', () => {
+    // The roster split: everything a super admin creates must be visible to
+    // the people below them, while create/role-grant stay super-admin-only.
+    // Widened visibility must never widen write access — the rules mirror the
+    // same two helpers (canViewAccounts / canManageAccounts).
+    expect(can('karykarta', 'accountView')).toBe(false);
+    expect(can(null, 'accountView')).toBe(false);
+    expect(can('root', 'accountView')).toBe(false);
+    expect(can('admin', 'accountView')).toBe(true);
+    expect(can('superAdmin', 'accountView')).toBe(true);
+    expect(can('developer', 'accountView')).toBe(true);
+    // Manage ⊆ view, always.
+    for (const role of APP_ROLES) {
+      if (can(role, 'accountManage')) expect(can(role, 'accountView')).toBe(true);
+    }
+  });
+
+  it('restricts putting a phone number in use to superAdmin and developer', () => {
+    // Proposing a number is `voterEdit` (every role); the CHOICE of which
+    // number the team dials is a super admin's — a wrong "in use" number
+    // silently misdirects every call the app makes.
+    expect(can('karykarta', 'contactFinalize')).toBe(false);
+    expect(can('admin', 'contactFinalize')).toBe(false);
+    expect(can('superAdmin', 'contactFinalize')).toBe(true);
+    expect(can('developer', 'contactFinalize')).toBe(true);
+    expect(can(null, 'contactFinalize')).toBe(false);
+  });
+
   it('restricts data tools to developer', () => {
     expect(APP_ROLES.filter((role) => can(role, 'dataTools'))).toEqual([
       'developer',

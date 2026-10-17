@@ -252,10 +252,15 @@ describe('/users/{uid}', () => {
     await assertFails(getDoc(doc(anon(), 'users', ALICE)));
   });
 
-  it('allows a superAdmin to list users, and nobody else', async () => {
+  it('lets superAdmin and admin list users, but not karykarta or a roleless account', async () => {
     // The list exposes every account's email and role, so it is an
-    // account-management capability — not something a karykarta gets.
+    // account-management capability — never something a karykarta or a
+    // freshly roleless account gets. Admin reads it because everything a
+    // super admin creates has to be visible to the people below them
+    // (`canViewAccounts` / `accountView`); creating and re-roling still goes
+    // through `canManageAccounts`, asserted under "role assignment" below.
     await assertSucceeds(getDocs(collection(alice(), 'users')));
+    await assertSucceeds(getDocs(collection(daksh(), 'users')));
     await assertFails(getDocs(collection(bob(), 'users')));
     await assertFails(getDocs(collection(cara(), 'users')));
     await assertFails(getDocs(collection(anon(), 'users')));
@@ -332,6 +337,96 @@ describe('/users/{uid}', () => {
         updatedAt: serverTimestamp(),
       })
     );
+  });
+});
+
+describe('/users/{uid}/voterEdits — the account-private overlay sync', () => {
+  /** The shape `lib/roll/sync.ts::remotePayload` writes for a changed voter. */
+  const pushed = (extra: Record<string, unknown> = {}) => ({
+    wardNo: ROLL_WARD,
+    updatedAt: 1_770_000_000_000,
+    updatedBy: ALICE,
+    phone: '9876543210',
+    ...extra,
+  });
+
+  const edit = (db: Firestore, voterId = `w${ROLL_WARD}-1`) =>
+    doc(db, 'users', ALICE, 'voterEdits', voterId);
+
+  it('lets the owner write and read their own edits', async () => {
+    await assertSucceeds(setDoc(edit(alice()), pushed()));
+    await assertSucceeds(getDoc(edit(alice())));
+    // The pull is one list over the whole subcollection — it must be allowed,
+    // or sync would push fine and never read anything back on a new device.
+    await assertSucceeds(getDocs(collection(alice(), 'users', ALICE, 'voterEdits')));
+  });
+
+  it('is invisible to every other account — push and pull alike', async () => {
+    await assertSucceeds(setDoc(edit(alice()), pushed()));
+
+    // The privacy property the user asked for: same login, any device =
+    // their edits; anybody else = nothing, not even a list of doc ids.
+    await assertFails(getDoc(edit(bob())));
+    await assertFails(getDocs(collection(bob(), 'users', ALICE, 'voterEdits')));
+    await assertFails(
+      setDoc(edit(bob()), pushed({ updatedBy: BOB }), { merge: true })
+    );
+    await assertFails(getDoc(edit(anon())));
+  });
+
+  it('rejects a document missing the bookkeeping fields', async () => {
+    // `pushEdits` always writes all three; a client that bypasses it writes
+    // an un-attributable, un-orderable overlay — hasAll is what says no.
+    await assertFails(setDoc(edit(alice()), { phone: '9876543210' }));
+    await assertFails(
+      setDoc(edit(alice()), { wardNo: ROLL_WARD, updatedAt: 1, phone: '9' })
+    );
+
+    // …and with all three present the doc is legal even carrying no edit
+    // fields — bookkeeping-only is harmless (an empty overlay), so this
+    // asserts the OTHER direction: the failures above are `hasAll` firing,
+    // not some blanket rule rejecting every minimal write.
+    await assertSucceeds(
+      setDoc(edit(alice()), {
+        wardNo: ROLL_WARD,
+        updatedAt: 1,
+        updatedBy: ALICE,
+      })
+    );
+  });
+
+  it('rejects political profiling and unknown keys', async () => {
+    // `support` (with us / against us) sits on the product's hard banlist in
+    // every other collection; here it is rejected by omission — not on the
+    // allowlist — and the tests pin both its spellings.
+    await assertFails(setDoc(edit(alice()), pushed({ support: 'opponent' })));
+    await assertFails(setDoc(edit(alice()), pushed({ party: 'x' })));
+    await assertFails(setDoc(edit(alice()), pushed({ votedFor: 'us' })));
+    // An unknown key is a rejected write, never silently stored data.
+    await assertFails(setDoc(edit(alice()), pushed({ nickname: 'x' })));
+  });
+
+  it('rejects illegal ward, gender, voted and leaning values', async () => {
+    await assertFails(setDoc(edit(alice()), pushed({ wardNo: -1 })));
+    await assertFails(setDoc(edit(alice()), pushed({ wardNo: 'one' })));
+    await assertFails(setDoc(edit(alice()), pushed({ voted: 'maybe' })));
+    await assertFails(setDoc(edit(alice()), pushed({ leaning: 'up' })));
+    await assertFails(setDoc(edit(alice()), pushed({ gender: 'unknown' })));
+    await assertFails(setDoc(edit(alice()), pushed({ updatedAt: null })));
+    await assertFails(setDoc(edit(alice()), pushed({ updatedBy: '' })));
+
+    // …and accepts the legal enums, so the denials above are the enum check
+    // firing rather than some other clause failing every write here.
+    await assertSucceeds(
+      setDoc(edit(alice()),
+        pushed({ gender: 'female', voted: 'voted', leaning: 'center' }))
+    );
+  });
+
+  it('lets the owner delete, and only the owner', async () => {
+    await assertSucceeds(setDoc(edit(alice()), pushed()));
+    await assertFails(deleteDoc(edit(bob())));
+    await assertSucceeds(deleteDoc(edit(alice())));
   });
 });
 
@@ -534,6 +629,47 @@ describe('role assignment', () => {
     await assertFails(updateDoc(doc(bob(), 'users', CARA), { role: 'superAdmin' }));
   });
 
+  it('denies an admin managing accounts — view does not imply manage', async () => {
+    // `accountView` lets an admin READ the roster; every write path is
+    // `canManageAccounts`. This is the assertion that keeps the widened list
+    // rule from ever drifting into create/role-grant territory.
+    await assertFails(
+      updateDoc(doc(daksh(), 'users', CARA), { role: 'superAdmin' })
+    );
+    const NEW = 'uid-made-by-admin';
+    const newbie = testEnv.authenticatedContext(NEW).firestore();
+    // A client cannot create its own fresh profile through this context —
+    // the sign-up path is the owner-create rule (onboarded === false, no role),
+    // which fails here because the caller's own document does not exist yet
+    // for the role lookup… and creating somebody ELSE's profile with a role
+    // attached is the super-admin create rule, which an admin must not pass.
+    await assertFails(
+      setDoc(doc(newbie, 'users', NEW), {
+        email: 'made@example.com',
+        displayName: 'Made',
+        photoURL: null,
+        onboarded: true,
+        role: 'karykarta',
+        wardNo: ROLL_WARD,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      })
+    );
+    await assertFails(
+      setDoc(doc(daksh(), 'users', NEW), {
+        email: 'made@example.com',
+        displayName: 'Made',
+        photoURL: null,
+        onboarded: true,
+        role: 'karykarta',
+        wardNo: ROLL_WARD,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      })
+    );
+    await assertFails(deleteDoc(doc(daksh(), 'users', CARA)));
+  });
+
   it('denies a self-promotion through the role rule', async () => {
     // The grant rule excludes `userId == request.auth.uid`. Without it, a super
     // admin editing their own profile could hand themselves a role they do not
@@ -683,6 +819,141 @@ describe('/booths and /teamMembers', () => {
     await assertSucceeds(
       updateDoc(doc(alice(), 'booths', BOOTH_ID), { coordinatorId: 'member-ravi' })
     );
+  });
+});
+
+describe('/voterPhones — shared team numbers + the super admin’s choice', () => {
+  const proposalOf = (db: Firestore, voterId: string, uid: string) =>
+    doc(db, 'voterPhones', voterId, 'proposals', uid);
+  // Default to the ward's first roll row: these cases assert role and shape
+  // rules, so the voterId itself is incidental.
+  const boardOf = (db: Firestore, voterId = `w${ROLL_WARD}-1`) =>
+    doc(db, 'voterPhones', voterId);
+
+  const validProposal = (
+    wardNo: number = ROLL_WARD,
+    extra: Record<string, unknown> = {}
+  ) => ({
+    phone: '9876543210',
+    authorName: 'Bob',
+    wardNo,
+    updatedAt: 1_770_000_000_000,
+    ...extra,
+  });
+
+  const validFinal = (extra: Record<string, unknown> = {}) => ({
+    wardNo: ROLL_WARD,
+    finalPhone: '9876543210',
+    finalizedBy: ALICE,
+    finalizedName: 'Alice',
+    finalizedAt: 1_770_000_000_000,
+    ...extra,
+  });
+
+  it('lets a karykarta propose a number in their own ward', async () => {
+    await assertSucceeds(
+      setDoc(proposalOf(bob(), `w${ROLL_WARD}-1`, BOB), validProposal())
+    );
+  });
+
+  it('refuses a proposal filed outside a karykarta’s ward', async () => {
+    // ward 7 exists with a real roll row, so this fails on the *scope* check,
+    // not on the roll-row lookup below it.
+    await assertFails(setDoc(proposalOf(bob(), 'w7-1', BOB), validProposal(7)));
+    // …and a mismatched ward number fails the roll-row equality even for an
+    // unrestricted role: the board may only speak at a row’s own ward.
+    await assertFails(
+      setDoc(proposalOf(alice(), `w${ROLL_WARD}-1`, ALICE), validProposal(7))
+    );
+  });
+
+  it('refuses a proposal for an id that is not a roll row', async () => {
+    // `get(voters/$(voterId))` has no row to read — the board cannot collect
+    // numbers against made-up ids. (A missing document here evaluates as an
+    // error rather than a clean false; the assertion only cares that it
+    // fails, because the app only ever passes ids from a loaded roll.)
+    await assertFails(
+      setDoc(proposalOf(alice(), 'w99999-1', ALICE), validProposal())
+    );
+  });
+
+  it('keeps writes to your own proposal document', async () => {
+    await assertSucceeds(setDoc(proposalOf(bob(), 'w3-1', BOB), validProposal()));
+    // Another account cannot edit or replace someone else's entry — the doc
+    // id IS the proposer's uid, so this is a path check.
+    await assertFails(
+      setDoc(proposalOf(alice(), 'w3-1', BOB), validProposal(ROLL_WARD, { authorName: 'Alice' }))
+    );
+    await assertFails(deleteDoc(proposalOf(alice(), 'w3-1', BOB)));
+    // …while the owner can update and withdraw their own.
+    await assertSucceeds(
+      updateDoc(proposalOf(bob(), 'w3-1', BOB), {
+        phone: '9811112222',
+        updatedAt: 1_770_000_100_000,
+      })
+    );
+    await assertSucceeds(deleteDoc(proposalOf(bob(), 'w3-1', BOB)));
+  });
+
+  it('applies the same exact key set and phone shape as the rules', async () => {
+    await assertFails(setDoc(proposalOf(bob(), 'w3-1', BOB), validProposal(ROLL_WARD, { nickname: 'x' })));
+    const { updatedAt: _dropped, ...missing } = validProposal();
+    await assertFails(setDoc(proposalOf(bob(), 'w3-1', BOB), missing));
+    await assertFails(setDoc(proposalOf(bob(), 'w3-1', BOB), validProposal(ROLL_WARD, { phone: 'call me' })));
+    await assertFails(setDoc(proposalOf(bob(), 'w3-1', BOB), validProposal(ROLL_WARD, { phone: '123' })));
+    await assertFails(setDoc(proposalOf(bob(), 'w3-1', BOB), validProposal(ROLL_WARD, { updatedAt: 'yesterday' })));
+    // …and a well-formed one passes, so the denials above are those checks.
+    await assertSucceeds(setDoc(proposalOf(bob(), 'w3-1', BOB), validProposal()));
+  });
+
+  it('denies a roleless account the board entirely — read and write', async () => {
+    await assertFails(setDoc(proposalOf(cara(), 'w3-1', CARA), validProposal()));
+    await assertFails(getDocs(collection(cara(), 'voterPhones', 'w3-1', 'proposals')));
+    await assertFails(getDoc(doc(cara(), 'voterPhones', 'w3-1')));
+  });
+
+  it('scopes reads to the ward, like the roll itself', async () => {
+    await assertSucceeds(setDoc(proposalOf(alice(), 'w7-1', ALICE), validProposal(7)));
+    // The karykarta of ward 3 cannot see ward 7's board, proposal by proposal.
+    await assertFails(getDoc(proposalOf(bob(), 'w7-1', ALICE)));
+    await assertFails(getDocs(collection(bob(), 'voterPhones', 'w7-1', 'proposals')));
+    // Their own ward reads fine, as do admin and super admin anywhere.
+    await assertSucceeds(setDoc(proposalOf(bob(), 'w3-1', BOB), validProposal()));
+    await assertSucceeds(getDoc(proposalOf(bob(), 'w3-1', BOB)));
+    await assertSucceeds(getDocs(collection(daksh(), 'voterPhones', 'w3-1', 'proposals')));
+    await assertSucceeds(getDoc(doc(bob(), 'voterPhones', 'w3-1')));
+  });
+
+  it('lets only a superAdmin put a number in use — and take it back out', async () => {
+    // The choice every call button dials from then on: super admin +
+    // developer only. Admin can READ the board (`accountView`'s cousin) but
+    // the choice is not theirs — `contactFinalize` in lib/roles.ts.
+    await assertSucceeds(setDoc(boardOf(alice()), validFinal()));
+    // The cleared state: same five keys, empty phone, null timestamp.
+    await assertSucceeds(
+      setDoc(boardOf(alice()),
+        validFinal({ finalPhone: '', finalizedBy: '', finalizedName: '', finalizedAt: null }))
+    );
+    await assertFails(setDoc(boardOf(daksh()), validFinal({ finalizedBy: DAKSH })));
+    await assertFails(setDoc(boardOf(bob()), validFinal({ finalizedBy: BOB })));
+    await assertFails(setDoc(boardOf(cara()), validFinal({ finalizedBy: CARA })));
+    // Shape: a phone that is not a number, and a missing key, both refuse.
+    await assertFails(setDoc(boardOf(alice()), validFinal({ finalPhone: 'nope' })));
+    await assertFails(
+      setDoc(boardOf(alice()), { wardNo: ROLL_WARD, finalPhone: '9876543210' })
+    );
+    // …and the super admin's own ward number must be the roll row's ward.
+    await assertFails(setDoc(boardOf(alice()), validFinal({ wardNo: 7 })));
+    await assertFails(deleteDoc(boardOf(daksh())));
+    await assertSucceeds(deleteDoc(boardOf(alice())));
+  });
+
+  it('denies the board to a signed-out client', async () => {
+    await assertFails(getDoc(doc(anon(), 'voterPhones', 'w3-1')));
+    await assertFails(
+      setDoc(proposalOf(anon(), 'w3-1', 'anyone'), validProposal())
+    );
+    await assertFails(setDoc(boardOf(anon()), validFinal()));
   });
 });
 

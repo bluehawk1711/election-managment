@@ -5,14 +5,17 @@ import { BORDER_RADIUS, CORNERS } from '@/theme/globals';
 import {
   Image as ExpoImage,
   ImageProps as ExpoImageProps,
-  ImageSource,
 } from 'expo-image';
 import { forwardRef, useState } from 'react';
 import { ActivityIndicator, StyleSheet } from 'react-native';
 
 export interface ImageProps extends Omit<ExpoImageProps, 'style'> {
   variant?: 'rounded' | 'circle' | 'default';
-  source: ImageSource;
+  // `ExpoImageProps['source']` (URL/object/require()-number), NOT the bare
+  // `ImageSource` object type this used to restate: restating it silently
+  // narrowed expo-image's own union and rejected every `require(...)`
+  // asset — which the bundled roll portraits (`lib/roll/photos.ts`) pass.
+  source: ExpoImageProps['source'];
   style?: ExpoImageProps['style'];
   containerStyle?: any;
   showLoadingIndicator?: boolean;

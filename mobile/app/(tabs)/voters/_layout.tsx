@@ -18,6 +18,7 @@ export default function VotersLayout() {
       screens={[
         { name: 'index', title: t('voters.title') },
         { name: 'edit', title: t('voters.edit'), presentation: 'modal' },
+        { name: 'bulk', title: t('voters.bulkPhone'), presentation: 'modal' },
       ]}
     />
   );

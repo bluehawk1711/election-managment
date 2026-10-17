@@ -36,9 +36,15 @@ const toProfile = (doc: QueryDocumentSnapshot<DocumentData>): Profile | null =>
  * "did my change to someone's role land?", and a screen that needs a manual
  * reload to answer that invites the reader to reload manually.
  *
- * `firestore.rules` denies the `users` list to anyone without `accountManage`,
+ * `firestore.rules` denies the `users` list to anyone without `accountView`,
  * so the gate below is a convenience: it stops a karykarta opening a screen
  * that could only ever error, and lets it say why rather than show a red box.
+ *
+ * **View vs manage.** The roster is viewable by `accountView` (admin upward) —
+ * an admin has to be able to see the team a super admin created — while the
+ * Create button demands `accountManage` (super admin upward), matching the two
+ * rule helpers. An admin therefore reads this screen in full and simply has no
+ * create button; nothing hidden-but-broken.
  *
  * Sorted in memory rather than with `orderBy`: `displayName` is optional, and
  * Firestore drops documents missing an ordered field — so `orderBy('displayName')`
@@ -51,12 +57,13 @@ export default function UsersScreen() {
   const router = useRouter();
   const { profile } = useAuth();
 
-  const allowed = can(profile?.role ?? null, 'accountManage');
+  const canView = can(profile?.role ?? null, 'accountView');
+  const canManage = can(profile?.role ?? null, 'accountManage');
 
   const { docs, loading, error } = useCollection<Profile | null>(
     COLLECTIONS.users,
     toProfile,
-    { enabled: allowed }
+    { enabled: canView }
   );
 
   const profiles = useMemo(
@@ -71,13 +78,22 @@ export default function UsersScreen() {
     [docs]
   );
 
-  if (!allowed) {
+  if (!canView) {
     return (
       <View style={styles.centered}>
         <Card style={styles.denied}>
           <ShieldOff size={28} />
           <Text variant='subtitle'>{t('accounts.superAdminOnly')}</Text>
           <Text variant='caption'>{t('accounts.listDenied')}</Text>
+          {/* The single most-asked question behind "account creation is
+              broken": WHICH role am I actually signed in as? Fresh accounts
+              are roleless by design, and a roleless admin sees this same
+              screen with no hint that the fix is a role grant, not a bug. */}
+          <Text variant='caption'>
+            {t('accounts.yourRole', {
+              role: t(roleLabelKey(profile?.role ?? null)),
+            })}
+          </Text>
         </Card>
       </View>
     );
@@ -91,9 +107,13 @@ export default function UsersScreen() {
         contentContainerStyle={styles.content}
         ListHeaderComponent={
           <View style={styles.header}>
-            <Button icon={UserCog} onPress={() => router.push('/(tabs)/more/users/new')}>
-              {t('accounts.create')}
-            </Button>
+            {/* Create is managed, not viewed: an admin reads the roster and
+                has no create button — the same split as the rules. */}
+            {canManage ? (
+              <Button icon={UserCog} onPress={() => router.push('/(tabs)/more/users/new')}>
+                {t('accounts.create')}
+              </Button>
+            ) : null}
             {error ? <Text variant='caption'>{error}</Text> : null}
           </View>
         }

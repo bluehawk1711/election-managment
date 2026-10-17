@@ -93,6 +93,13 @@ export default function NewAccountScreen() {
       <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.denied}>
         <Card style={styles.deniedCard}>
           <Text variant='subtitle'>{t('accounts.superAdminOnly')}</Text>
+          {/* Why the create button “does nothing”: the caller's role, named.
+              See users/index.tsx — a fresh account is roleless by design. */}
+          <Text variant='caption'>
+            {t('accounts.yourRole', {
+              role: t(roleLabelKey(profile?.role ?? null)),
+            })}
+          </Text>
         </Card>
       </ScrollView>
     );
