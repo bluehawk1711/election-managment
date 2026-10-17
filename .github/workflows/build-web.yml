@@ -85,7 +85,8 @@ jobs:
         with:
           name: web-export-${{ github.sha }}
           path: mobile/dist
-          retention-days: 7
+          # Free-tier artifact storage (500 MB) is shared account-wide.
+          retention-days: 3
           if-no-files-found: error
 
       - name: Build summary

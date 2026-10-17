@@ -226,7 +226,8 @@ jobs:
           name: ${{ steps.build-vars.outputs.artifact_name }}-${{ github.sha }}
           path: |
             ${{ steps.build-vars.outputs.signed == 'true' && format('{0}/export/*.ipa', runner.temp) || format('{0}/app-dev.zip', runner.temp) }}
-          retention-days: 14
+          # Free-tier artifact storage (500 MB) is shared account-wide.
+          retention-days: 7
           if-no-files-found: warn
 
       # ── Cleanup keychain ───────────────────────────────────────────────

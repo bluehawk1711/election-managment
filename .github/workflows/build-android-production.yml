@@ -244,7 +244,9 @@ jobs:
         with:
           name: app-production-bundle-${{ github.sha }}
           path: ${{ steps.find-aab.outputs.aab_path }}
-          retention-days: 30
+          # Production AABs are the biggest artifact we produce; the free tier
+          # shares 500 MB across the whole account, so keep the window tight.
+          retention-days: 14
           if-no-files-found: error
 
       # ── Summary ────────────────────────────────────────────────────────

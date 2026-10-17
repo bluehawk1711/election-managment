@@ -469,7 +469,9 @@ jobs:
                 || 'app-dev-debug'
             }}-${{ github.sha }}
           path: ${{ steps.find-apk.outputs.apk_path }}
-          retention-days: 14
+          # The free tier shares 500 MB of artifact storage across every repo
+          # in the account — keep these short so old APKs cannot eat the quota.
+          retention-days: 7
           if-no-files-found: error
 
       # ── Summary ────────────────────────────────────────────────────────
