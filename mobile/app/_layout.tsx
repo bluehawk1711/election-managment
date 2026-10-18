@@ -9,6 +9,7 @@ import '@/i18n';
 import { AuthProvider, useAuth } from '@/providers/auth-provider';
 import { ReferenceProvider } from '@/providers/reference-provider';
 import { ThemeProvider } from '@/providers/theme-provider';
+import { VersionGate } from '@/components/update-gate';
 import { Colors } from '@/theme/colors';
 import { FONT_ASSETS } from '@/theme/typography';
 import * as NavigationBar from 'expo-navigation-bar';
@@ -201,7 +202,13 @@ export default function RootLayout() {
 
         <AuthProvider>
           <ToastProvider>
-            <RootNavigator />
+            {/* Outermost gate: an outdated build (below
+                appConfig/general.requiredVersion) renders the update lock
+                INSTEAD of everything below — including sign-in — while a
+                fetch failure fails open (see lib/app-config.ts). */}
+            <VersionGate>
+              <RootNavigator />
+            </VersionGate>
           </ToastProvider>
         </AuthProvider>
       </ThemeProvider>

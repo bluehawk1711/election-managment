@@ -493,7 +493,11 @@ function EditForm({
   }, [pending]);
 
   const submit = async () => {
-    if (!ageValid) {
+    // The age check gates only an age the USER moved. A roll row with a
+    // missing or junk age must not hold every other edit (phone, name,
+    // locality) hostage behind a Save button that always bounces — which
+    // is exactly the "I submitted and nothing changed" complaint.
+    if (age.trim() !== String(base.age ?? '') && !ageValid) {
       setShowErrors(true);
       return;
     }
@@ -864,53 +868,118 @@ function EditForm({
           onChangeText={setLocality}
           placeholder={t('voters.locality')}
         />
-        <Input
-          label={t('common.phone')}
-          value={phone}
-          onChangeText={setPhone}
-          keyboardType='phone-pad'
-          placeholder={t('voters.phoneHint')}
-        />
-
-        {/* One number, whole house. Rendered only when the house actually has
-            other members in the loaded roll — a button offering to update
-            zero people is noise — and only from an enabled input, since an
-            empty phone has nothing to apply. */}
-        {houseMates.length > 0 ? (
-          <Button
-            size='sm'
-            variant='outline'
-            loading={busy === 'house'}
-            disabled={busy !== null || !phone.trim()}
-            onPress={() => void applyToHouse()}
-          >
-            {t('voters.applyToHouse', { count: houseMates.length + 1 })}
-          </Button>
-        ) : null}
-
-        {/* Themed trio — each service keeps its own identity (dial green,
-            WhatsApp brand green, SMS blue). It dials whatever is typed above,
-            falling back to the super admin's chosen number so an untouched
-            voter still has working buttons. */}
-        <ContactActions
-          phone={phone.trim() || contacts.finalPhone}
-          onFail={() => toast.error(t('voters.noPhone'))}
-        />
-        {!phone.trim() && contacts.finalPhone ? (
-          <Text variant='caption' style={{ color: outline }}>
-            {t('voters.dialingChosen')}
-          </Text>
-        ) : null}
-
-        {/* The shared number board: every distinct number the team proposed,
-            who added each and when, and the one a super admin put in use.
-            Every row is directly dialable — this is where the karykarta's
-            number and the super admin's number finally live side by side. */}
+        {/* ---- Mobile number: everything phone-related in ONE card ----
+            The old layout spread it across the general form, an orphan
+            "apply to house" button and a board further down the scroll —
+            users could not find their number again after saving, and
+            "delete it" was select-all-and-delete in a text field. Now:
+            type → Save number (writes through instantly, like the Voted
+            segments), Remove erases it, the team board sits below the
+            divider in the same card. */}
         <Card style={styles.card}>
+          <Text variant='subtitle'>{t('voters.phoneCardTitle')}</Text>
+          <Text variant='caption' style={{ color: outline }}>
+            {t('voters.phoneCardHint')}
+          </Text>
+
+          <Input
+            label={t('common.phone')}
+            value={phone}
+            onChangeText={setPhone}
+            keyboardType='phone-pad'
+            placeholder={t('voters.phoneHint')}
+            error={
+              phone.trim() !== '' && !isValidPhone(phone)
+                ? t('voters.phoneInvalid')
+                : undefined
+            }
+          />
+
+          {/* Save & Remove write through IMMEDIATELY — same one-tap contract
+              as the Voted/Support/Leaning segments below, so a phone edit
+              never depends on the pinned Save button (and its whole-form
+              validation) being reachable. Remove is a button rather than
+              select-all-and-delete, which is what "there is no delete
+              option" looked like from the field. */}
+          <View style={styles.phoneRow}>
+            <Button
+              size='sm'
+              variant='outline'
+              loading={busy === 'phone'}
+              disabled={
+                busy !== null ||
+                phone.trim() === (base.phone ?? '') ||
+                !isValidPhone(phone)
+              }
+              onPress={() => void saveNow({ phone: phone.trim() }, 'phone')}
+            >
+              {t('voters.savePhone')}
+            </Button>
+            {(base.phone ?? '') !== '' ? (
+              <Button
+                size='sm'
+                variant='ghost'
+                disabled={busy !== null}
+                onPress={() => {
+                  setPhone('');
+                  void saveNow({ phone: '' }, 'phone');
+                }}
+              >
+                {t('voters.removePhone')}
+              </Button>
+            ) : null}
+            {/* State in words, so "did my edit stick?" has an answer that
+                does not require scrolling or memory. */}
+            <Text variant='caption' style={{ color: outline }}>
+              {phone.trim() === (base.phone ?? '')
+                ? phone.trim()
+                  ? t('voters.phoneSaved')
+                  : t('voters.phoneEmpty')
+                : t('voters.phoneUnsaved')}
+            </Text>
+          </View>
+
+          {/* One number, whole house. Rendered only when the house actually has
+              other members in the loaded roll — a button offering to update
+              zero people is noise — and only from an enabled input, since an
+              empty phone has nothing to apply. */}
+          {houseMates.length > 0 ? (
+            <Button
+              size='sm'
+              variant='outline'
+              loading={busy === 'house'}
+              disabled={busy !== null || !phone.trim()}
+              onPress={() => void applyToHouse()}
+            >
+              {t('voters.applyToHouse', { count: houseMates.length + 1 })}
+            </Button>
+          ) : null}
+
+          {/* Themed trio — each service keeps its own identity (dial green,
+              WhatsApp brand green, SMS blue). It dials whatever is typed above,
+              falling back to the super admin's chosen number so an untouched
+              voter still has working buttons. */}
+          <ContactActions
+            phone={phone.trim() || contacts.finalPhone}
+            onFail={() => toast.error(t('voters.noPhone'))}
+          />
+          {!phone.trim() && contacts.finalPhone ? (
+            <Text variant='caption' style={{ color: outline }}>
+              {t('voters.dialingChosen')}
+            </Text>
+          ) : null}
+
+          <View style={[styles.divider, { backgroundColor: border }]} />
+
+          {/* The shared number board: every distinct number the team proposed,
+              who added each and when, and the one a super admin put in use.
+              Every row is directly dialable — this is where the karykarta's
+              number and the super admin's number finally live side by side. */}
           <Text variant='subtitle'>{t('voters.phoneNumbers')}</Text>
           <Text variant='caption' style={{ color: outline }}>
             {t('voters.phoneNumbersHint')}
           </Text>
+
           {contacts.loading ? (
             <Text variant='caption' style={{ color: outline }}>
               {t('common.loading')}
@@ -1314,6 +1383,12 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     gap: 8,
     marginTop: 4,
+  },
+  phoneRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flexWrap: 'wrap',
   },
   headRow: {
     flexDirection: 'row',

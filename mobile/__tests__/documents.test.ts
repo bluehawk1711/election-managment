@@ -146,6 +146,13 @@ describe('profileFromDoc', () => {
       onboarded: true,
       role: null,
       wardNo: null,
+      // Per-device lock fields — absent from this doc, so every one reads
+      // as its documented default (never bound, unlocked, never stamped).
+      device: null,
+      locked: false,
+      lockedReason: null,
+      lockedAt: null,
+      lockedBy: null,
       createdAt: 1000,
       updatedAt: null,
     });

@@ -16,6 +16,11 @@ part-1 / part-2 roll PDF.
 Ward CSV columns: `serial_no, epic_id, name, relation, father_or_husband_name,
 house_no, age, gender, locality, pdf_page`.
 
+`house_no` follows the **house policy** (see Step 5b): 1..6 digits, nothing
+else — text with a number in it keeps its number (`जे-36` → `36`), and a
+record whose printed `मकान संख्या:` cell carries no number is stored EMPTY
+(listed in `verification.md` §D, the rows awaiting a manual read).
+
 ---
 
 ## Why not plain text extraction?
@@ -54,6 +59,7 @@ sources can be merged by position.
   | `slice_ocr.py` | 4a 4-band re-OCR repair → `ocr_tsv2/` |
   | `cell_ocr.py`, `repair_mata.py` | 4b single-cell re-OCR repairs |
   | `fix_final.py` | 5 corrections + `verification.md` + `records_final.json` |
+  | `align_houses.py` | 5b the house policy — digits-or-empty, cell-OCR ground truth for disagreements (`जे-36` → `36`, no number → empty) |
   | `write_csv.py` | 6 per-ward CSVs |
   | `records_v4c.json` | pre-fix snapshot (source of the “was” values in `verification.md`) |
   | `problems.json` | rows that still miss a field after step 3 (repair input) |
@@ -158,6 +164,30 @@ Two targeted re-OCR passes, both driven by `tools/extract_roll/problems.json`
   (OCR; word-level crop OCR used where full-page OCR disagreed).
 * Writes `verification.md` (sections A–M) and `records_final.json`.
 
+## Step 5b — the house-number policy (`tools/extract_roll/align_houses.py`)
+
+`house_no` is normalised to one rule: **the printed cell either carries a
+number or it does not.**
+
+* Value has a 1…6-digit run → the digits, text around them dropped
+  (`34,प्रेम नागर` → `34`, `B-25 परसवानाथ` → `25`, `जे-36` → `36`).
+* A 7+-digit run is never a house number — those are EPIC-digit / age-column
+  merges from earlier bad passes (`4946992` = the EPIC's own digits).
+* Unsettled rows (a partial earlier pass touched them, or no run survives)
+  are re-read from the **single house cell** — cropped from the PDF at
+  900/1800 dpi, OCR'd with a digit whitelist, majority-voted across variants.
+  The raw text layer is deliberately NOT consulted here: `cell_fixes.json`
+  § `sample_mismatches` shows it decodes the printed `| … |` rules around
+  the number as a leading `1` (raw `128` where the print says `28`).
+* No digits anywhere → EMPTY. Nothing is silently kept as text — OCR
+  garbage (`az`, `rfe`, `के`, `पलाट नं.`) and genuine but numberless
+  entries (`जे सेकंड फ्लोर`) both end up in §D for a human to read.
+
+The pass finishes by syncing `records_final.json`'s `house` back FROM the
+CSVs and rebuilding `verification.md` §D as the list of numberless rows — so
+`validate.py`'s CSV-vs-records parity and its strict house check
+(`^\d{1,6}$` or empty) describe the same data.
+
 ## Step 6 — Write CSVs (`tools/extract_roll/write_csv.py`)
 
 One CSV per ward sorted by `serial_no`, plus `wards-summary.csv` with
@@ -211,8 +241,9 @@ WEE2101913, WLK3063823`).
 3. **EPIC IDs**: `^[A-Z]{3}\d{7}$` (6802) + old `RJ/\d{2}/\d{3}/\d{6}` (53) — 100%.
 4. **Gender**: per-ward पुरूष/स्त्री totals match the cover table **exactly** on all
    13 wards — this proves every cell was read from the correct grid line.
-5. **Core fields** (name, gender, age, house) non-empty on all 6855 rows.
-6. **Age/house vs raw text layer** — 0 remaining mismatches.
+5. **Core fields** (name, gender, age) non-empty on all 6855 rows; `house_no`
+   is `^\d{1,6}$` or empty (the house policy — empty rows are §D).
+6. **Age vs raw text layer** — 0 remaining mismatches.
 7. No label residue (`पिता का नाम:` etc.) left inside any value column.
 
 ## What is *not* fully machine-verified
@@ -225,7 +256,7 @@ listed in `verification.md` for human checking:
 |---|---|
 | A / C / C2 | values auto-corrected (age, house, name) — check the “was” value |
 | B | ages outside 18–100 |
-| D | non-numeric house values (kept as-is) |
+| D | rows with NO house number — kept empty per the house policy (digits-only rule) |
 | E / F | names / father names with OCR-artifact characters |
 | G | `माता का नाम` rows (relation + 6 recovered mother names) |
 | I | locality headers per ward |

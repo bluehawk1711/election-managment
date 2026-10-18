@@ -5,18 +5,17 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { MediaPicker, type MediaAsset } from '@/components/ui/media-picker';
-import { Progress } from '@/components/ui/progress';
 import { ScrollView } from '@/components/ui/scroll-view';
 import { Text } from '@/components/ui/text';
 import { useToast } from '@/components/ui/toast';
 import { View } from '@/components/ui/view';
-import { useAvatarUpload } from '@/hooks/useAvatarUpload';
+import { useColor } from '@/hooks/useColor';
 import { useLanguage } from '@/hooks/useLanguage';
 import { useModeToggle } from '@/hooks/useModeToggle';
 import { useProfile } from '@/hooks/useProfile';
 import { messageFor } from '@/lib/errors';
 import { auth } from '@/lib/firebase';
+import { APP_VERSION } from '@/lib/app-config';
 import { roleLabelKey } from '@/lib/roles';
 import { useAuth } from '@/providers/auth-provider';
 import { sendEmailVerification } from 'firebase/auth';
@@ -55,10 +54,16 @@ export default function SettingsScreen() {
   const { t } = useTranslation();
   const { user, profile } = useAuth();
   const { update, saving } = useProfile();
-  const { upload, uploading, progress } = useAvatarUpload();
   const { language, languages, setLanguage } = useLanguage();
   const { mode, setMode } = useModeToggle();
   const toast = useToast();
+  // Theme tokens for the segmented controls — the stylesheet used to
+  // hardcode a blue (#2563EB) and a grey border, which fought the dark
+  // theme and drifted from the rest of the app's primary colour.
+  const primary = useColor('primary');
+  const primaryFg = useColor('primaryForeground');
+  const border = useColor('border');
+  const outline = useColor('outline');
 
   const [displayName, setDisplayName] = useState(profile?.displayName ?? '');
   const [sendingVerification, setSendingVerification] = useState(false);
@@ -66,24 +71,6 @@ export default function SettingsScreen() {
   const [confirmingDelete, setConfirmingDelete] = useState(false);
 
   const providerId = user?.providerData[0]?.providerId;
-
-  const changeAvatar = async (assets: MediaAsset[]) => {
-    const asset = assets[0];
-    if (!asset) return;
-
-    const url = await upload(asset);
-    if (!url) {
-      toast.error(
-        'Could not upload',
-        'Check storage.rules — the path has to start with your own uid.'
-      );
-      return;
-    }
-
-    if (await update({ photoURL: url })) {
-      toast.success('Avatar updated');
-    }
-  };
 
   const saveName = async () => {
     if (await update({ displayName: displayName.trim() || null })) {
@@ -151,22 +138,10 @@ export default function SettingsScreen() {
           </View>
         </View>
 
-        <MediaPicker
-          mediaType='image'
-          variant='outline'
-          size='sm'
-          buttonText={t('settings.changePhoto')}
-          showPreview={false}
-          disabled={uploading || saving}
-          onSelectionChange={changeAvatar}
-          onError={(message) => toast.error('Picker error', message)}
-        />
-
-        {uploading && (
-          <View style={{ alignSelf: 'stretch' }}>
-            <Progress value={progress * 100} />
-          </View>
-        )}
+        {/* Profile photo upload was removed on purpose — the campaign does
+            not use profile photos yet, and the picker + upload path was dead
+            weight on a screen whose real job is identity and preferences. An
+            EXISTING photo (set elsewhere) still renders above. */}
       </Card>
 
       {/* Firebase signs a user in whether or not they have confirmed their
@@ -235,7 +210,8 @@ export default function SettingsScreen() {
                 onPress={() => setMode(value)}
                 style={({ pressed }) => [
                   styles.segment,
-                  active && styles.segmentActive,
+                  { borderColor: border },
+                  active && { backgroundColor: primary, borderColor: primary },
                   pressed && styles.pressed,
                 ]}
                 accessibilityRole='radio'
@@ -243,7 +219,7 @@ export default function SettingsScreen() {
               >
                 <Text
                   variant='caption'
-                  style={active ? styles.segmentTextActive : undefined}
+                  style={active ? { color: primaryFg, fontWeight: '600' } : undefined}
                 >
                   {t(`settings.mode.${value}`)}
                 </Text>
@@ -267,7 +243,8 @@ export default function SettingsScreen() {
                 onPress={() => setLanguage(code)}
                 style={({ pressed }) => [
                   styles.segment,
-                  active && styles.segmentActive,
+                  { borderColor: border },
+                  active && { backgroundColor: primary, borderColor: primary },
                   pressed && styles.pressed,
                 ]}
                 accessibilityRole='radio'
@@ -275,7 +252,7 @@ export default function SettingsScreen() {
               >
                 <Text
                   variant='caption'
-                  style={active ? styles.segmentTextActive : undefined}
+                  style={active ? { color: primaryFg, fontWeight: '600' } : undefined}
                 >
                   {LANGUAGE_NAMES[code] ?? code}
                 </Text>
@@ -306,6 +283,25 @@ export default function SettingsScreen() {
         </Button>
       </Card>
 
+      {/* ── About ───────────────────────────────────────────────────────
+          The build's own version, baked in at compile time. The REQUIRED
+          version lives in the admin panel's Settings page and is enforced by
+          the update gate on launch — showing the local build here is what
+          lets a user read the number off a modal that is blocking them. */}
+      <Text variant='caption' style={styles.sectionHeading}>
+        {t('settings.about')}
+      </Text>
+
+      <Card style={{ gap: 6 }}>
+        <View style={styles.aboutRow}>
+          <Text variant='caption' style={{ color: outline }}>
+            {t('settings.version')}
+          </Text>
+          <Text variant='caption'>{APP_VERSION}</Text>
+        </View>
+        <Text variant='caption'>{t('app.tagline')}</Text>
+      </Card>
+
       {/* A modal, mounted permanently and toggled by `visible` — so the screen
           owns one boolean and none of the dialog's state. */}
       <DeleteAccountDialog
@@ -326,9 +322,13 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 999,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#8888',
+    // The border/active colours come from the theme at each call site — a
+    // hardcoded hex fought the dark theme.
   },
-  segmentActive: { backgroundColor: '#2563eb', borderColor: '#2563eb' },
-  segmentTextActive: { color: '#fff', fontWeight: '600' },
   pressed: { opacity: 0.7 },
+  aboutRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
 });

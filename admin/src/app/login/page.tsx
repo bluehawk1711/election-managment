@@ -10,10 +10,11 @@
  * is why this form calls the API and forgets it rather than routing itself.
  */
 import { motion } from 'motion/react';
-import { Eye, EyeOff, Loader2, Lock, Mail, Vote } from 'lucide-react';
+import { AlertTriangle, Eye, EyeOff, Loader2, Lock, Mail, Vote } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 import { signIn } from '@/lib/api';
+import { clearLockNotice, readLockNotice, type LockReason } from '@/lib/device-lock';
 import { messageFor } from '@/stores/toast';
 import { Button, Field, Input } from '@/components/ui/kit';
 
@@ -25,6 +26,15 @@ export default function LoginPage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [shakeKey, setShakeKey] = useState(0);
+  // Why the last session ended in a lock-out — written by the device-lock
+  // enforcement in lib/device-lock.ts across the sign-out it just performed,
+  // so the person who retries from this browser is told WHY it will fail
+  // instead of guessing. Read in the state INITIALIZER (one render, no
+  // effect — a setState inside an effect would re-render just to learn a
+  // value localStorage already had).
+  const [lockReason] = useState<LockReason | null>(() =>
+    typeof window === 'undefined' ? null : (readLockNotice()?.reason ?? null)
+  );
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
@@ -34,6 +44,10 @@ export default function LoginPage() {
 
     try {
       await signIn(email.trim(), password);
+      // The stale lockout is behind us — a SUCCESSFUL sign-in means the
+      // account is unbound/unlocked for this browser (otherwise the session
+      // effect locks it out again and rewrites the notice).
+      clearLockNotice();
       // The gate in providers.tsx takes over — it watches the session store.
       router.replace('/');
     } catch (caught) {
@@ -81,6 +95,23 @@ export default function LoginPage() {
         </div>
 
         <form onSubmit={submit} className="mt-7 space-y-4">
+          {lockReason ? (
+            <div className="rounded-lg border border-signal-rose/30 bg-signal-rose/10 p-3">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="size-4 shrink-0 text-signal-rose" />
+                <p className="text-xs font-semibold text-signal-rose">
+                  {lockReason === 'device_change'
+                    ? 'Account locked — opened on another device'
+                    : 'Account locked by an administrator'}
+                </p>
+              </div>
+              <p className="mt-1.5 text-[11px] leading-relaxed text-mist-400">
+                {lockReason === 'device_change'
+                  ? 'This account is bound to one browser/device. Opening the console from a second one locked it. The super admin must unlock it — the binding is then cleared and this browser re-binds on the next sign-in.'
+                  : 'A super admin locked this account. Only they can unlock it, so contact your administrator before retrying.'}
+              </p>
+            </div>
+          ) : null}
           <Field label="Email">
             <div className="relative">
               <Mail className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-mist-600" />
@@ -149,7 +180,7 @@ export default function LoginPage() {
 
         <p className="mt-6 text-center text-[11px] leading-relaxed text-mist-600">
           No account? A super admin invites you from <strong>Accounts</strong> in this console —
-          or from the mobile app's More → Accounts screen.
+          or from the mobile app&apos;s More → Accounts screen.
         </p>
       </motion.div>
     </div>

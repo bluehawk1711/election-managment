@@ -24,6 +24,7 @@ import {
   deleteDoc,
   deleteField,
   doc,
+  getDoc,
   getDocs,
   onSnapshot,
   query,
@@ -46,7 +47,16 @@ import {
 import { initializeApp as initSecondaryApp } from 'firebase/app';
 import { app, auth, db } from '@/lib/firebase';
 import { phoneKey, type FinalizedContact } from '@/lib/contacts';
-import type { Profile, Task, TaskStatus, VoterRow } from '@/lib/types';
+import type {
+  AccountVault,
+  AppConfig,
+  AuthAccountDetail,
+  Profile,
+  Task,
+  TaskStatus,
+  VoterRow,
+} from '@/lib/types';
+import { hashPassword } from '@/lib/vault';
 import type { AppRole } from '@/lib/roles';
 
 // ------------------------------------------------------------------
@@ -71,6 +81,13 @@ export function buildUsersQuery(): Query {
 
 export function buildTasksQuery(): Query {
   return query(collection(db, 'tasks'));
+}
+
+/** Tasks assigned to one account — the "current load" line in the details dialog. */
+export function buildAssignedTasksQuery(uid: string): Query {
+  // Single-field equality — served by the automatic index (see
+  // buildVotersQuery on why that matters here).
+  return query(collection(db, 'tasks'), where('assigneeId', '==', uid));
 }
 
 /** The signed-in account's own voter edits — the overlay the drawer merges. */
@@ -304,6 +321,107 @@ export async function deleteAccount(targetUid: string): Promise<void> {
   await deleteDoc(doc(db, 'users', targetUid));
 }
 
+// ----------------------------------------------------------- app config --
+
+/** `appConfig/general`, or null before anyone has saved it. */
+export async function readAppConfig(): Promise<AppConfig | null> {
+  const snapshot = await getDoc(doc(db, 'appConfig', 'general'));
+  if (!snapshot.exists()) return null;
+  const data = snapshot.data() as Partial<AppConfig>;
+  return {
+    latestVersion: typeof data.latestVersion === 'string' ? data.latestVersion : '',
+    requiredVersion:
+      typeof data.requiredVersion === 'string' ? data.requiredVersion : '',
+    supportPhone: typeof data.supportPhone === 'string' ? data.supportPhone : '',
+    updatedAt: typeof data.updatedAt === 'number' ? data.updatedAt : 0,
+    updatedBy: typeof data.updatedBy === 'string' ? data.updatedBy : '',
+  };
+}
+
+/**
+ * Saves the release gate — the WHOLE document every time (`exactKeys` in
+ * rules), with client-side millis rather than `serverTimestamp()` because
+ * the rule accepts a timestamp but the mapper reads plain numbers, and one
+ * consistent shape beats two sources of "when".
+ */
+export async function saveAppConfig(
+  config: Pick<AppConfig, 'latestVersion' | 'requiredVersion' | 'supportPhone'>,
+  editorUid: string
+): Promise<void> {
+  await setDoc(doc(db, 'appConfig', 'general'), {
+    ...config,
+    updatedAt: Date.now(),
+    updatedBy: editorUid,
+  });
+}
+
+// ------------------------------------------------- lock / unlock + vault --
+
+/**
+ * Locks an account from the panel — `lockedReason: 'admin'` so the sign-out
+ * screen and the row badge can say "an administrator did this", unlike the
+ * `'device_change'` self-lock a foreign sign-in writes through the OWNER
+ * path in firestore.rules.
+ *
+ * The caller's uid travels as `lockedBy`: the reason the rules only accept
+ * this write at all is the `canManageAccounts` clause — this is a super
+ * admin or developer session, verified on every document the rules touch.
+ */
+export async function lockAccount(
+  targetUid: string,
+  managerUid: string
+): Promise<void> {
+  await updateDoc(doc(db, 'users', targetUid), {
+    locked: true,
+    lockedReason: 'admin',
+    lockedAt: Date.now(),
+    lockedBy: managerUid,
+  });
+}
+
+/**
+ * Unlocks AND drops the device binding — one write, on purpose:
+
+ * after an unlock there must be no stale fingerprint left to fight with, so
+ * whoever signs in next (the phone the account really lives on) becomes the
+ * bound device. `deleteField()` is the only way a rules-validated result can
+ * REMOVE `device`; `{device: null}` would leave the key present and
+ * `validDevice` would accept it as… null — but the owner half then never
+ * gets its first-bind back, so clearing rather than nulling is what keeps
+ * the cycle closed.
+ *
+ * Rules: the manage-clause update, the only path where `locked` may become
+ * `false` ("only super admin can unlock" — mobile's auth provider refuses
+ * the same flip through the owner path).
+ */
+export async function unlockAccount(targetUid: string): Promise<void> {
+  await updateDoc(doc(db, 'users', targetUid), {
+    locked: false,
+    lockedReason: '',
+    lockedAt: null,
+    lockedBy: '',
+    device: deleteField(),
+  });
+}
+
+/** Reads the password vault for one account, or null when none exists. */
+export async function readVault(targetUid: string): Promise<AccountVault | null> {
+  const snapshot = await getDoc(doc(db, 'accountSecrets', targetUid));
+  if (!snapshot.exists()) return null;
+  const data = snapshot.data() as Partial<AccountVault>;
+  return {
+    uid: targetUid,
+    email: typeof data.email === 'string' ? data.email : '',
+    password: typeof data.password === 'string' ? data.password : '',
+    updatedAt: typeof data.updatedAt === 'number' ? data.updatedAt : 0,
+    updatedBy: typeof data.updatedBy === 'string' ? data.updatedBy : '',
+  };
+}
+
+async function writeVault(vault: AccountVault): Promise<void> {
+  await setDoc(doc(db, 'accountSecrets', vault.uid), vault);
+}
+
 // ---------------------------------------------------------- auth helpers --
 
 export async function signIn(email: string, password: string): Promise<void> {
@@ -402,12 +520,97 @@ export async function createAccount(input: NewAccount): Promise<void> {
 
     await setDoc(doc(db, 'users', created.uid), payload);
 
+    // The password vault — `accountSecrets/{uid}`. Without a Cloud Function
+    // this is the ONLY place the credential stays recoverable (Firebase Auth
+    // itself stores just a scrypt hash), and it is what lets the Accounts
+    // page reveal a password and rotate one without the owner present.
+    // `auth.currentUser` here is the signed-in super admin doing the
+    // creating, which is the `updatedBy` the rules require.
+    const manager = auth.currentUser?.uid;
+    if (!manager) {
+      throw new Error(
+        'Sign in first — the password vault records which account set the password.'
+      );
+    }
+    await writeVault({
+      uid: created.uid,
+      email: input.email,
+      // Hashed at write time — the vault never stores the password itself
+      // (lib/vault.ts documents the key-in-code trade).
+      password: await hashPassword(input.password),
+      updatedAt: Date.now(),
+      updatedBy: manager,
+    });
+
     // Park the new profile doc so callers can invalidate immediately.
   } catch (error) {
-    // Undo the Auth record so a retry starts clean (see header).
-    if (created) await deleteUser(created).catch(() => undefined);
+    // Undo both writes so a retry starts clean (see header): the profile
+    // document first (deleting only the Auth record would strand it), then
+    // the Auth record itself.
+    if (created) {
+      await deleteDoc(doc(db, 'users', created.uid)).catch(() => undefined);
+      await deleteUser(created).catch(() => undefined);
+    }
     throw error;
   }
+}
+
+/**
+ * Rotates an account's REAL Firebase Auth password WITHOUT needing the old
+ * one, then refreshes the vault with a HASH of the new value.
+ *
+ * The no-old-password half runs through `/api/account/password` — a
+ * local API route that uses the **Admin SDK**'s `updateUser(uid,
+ * {password})`, which has no re-authentication requirement at all. The
+ * client SDK's `updatePassword` can only ever act on a freshly-signed-in
+ * user, so every client-side alternative degraded into "sign in as them
+ * first, and that needs their current password" — which is exactly the
+ * dependency this route removes.
+ *
+ * The vault half closes the loop so "check the password" keeps answering
+ * after a rotation: it stores `sha256(new + key)` (lib/vault.ts), never the
+ * plaintext, and the panel verifies a typed candidate against that hash.
+ */
+export async function changeAccountPassword(args: {
+  targetUid: string;
+  email: string;
+  newPassword: string;
+  managerUid: string;
+}): Promise<void> {
+  const response = await fetch('/api/account/password', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ uid: args.targetUid, password: args.newPassword }),
+  });
+  const payload = (await response.json().catch(() => ({}))) as {
+    ok?: boolean;
+    error?: string;
+  };
+  if (!response.ok || payload.ok !== true) {
+    throw new Error(payload.error ?? 'The password change was refused.');
+  }
+
+  await updateVaultPassword(args);
+}
+
+/**
+ * Writes the vault entry for a ROTATED password — hash on the way in, so the
+ * document never carries the plaintext. Also the migration target for a
+ * legacy plaintext entry that just verified as a candidate.
+ */
+export async function updateVaultPassword(args: {
+  targetUid: string;
+  email: string;
+  newPassword: string;
+  managerUid: string;
+}): Promise<void> {
+  await writeVault({
+    uid: args.targetUid,
+    email: args.email,
+    password: await hashPassword(args.newPassword),
+    updatedAt: Date.now(),
+    updatedBy: args.managerUid,
+  });
 }
 
 /** Reads a whole collection once — used for export-style pages only. */
@@ -419,4 +622,30 @@ export async function fetchCollectionOnce<T>(
   return snapshot.docs.map((entry) =>
     map({ id: entry.id, data: () => entry.data() as Record<string, unknown> })
   );
+}
+
+/**
+ * The Auth-side facts for one account — `/api/account/detail` (Admin SDK).
+ *
+ * Returns `null` — never throws — for every "cannot look up" case: the route
+ * is local-dev only (403 on a shared build), the uid has no Auth record, or
+ * the fetch itself fails. The details dialog then omits the Auth section
+ * instead of turning one unavailable panel into a broken dialog; the
+ * Firestore-side profile is displayed either way.
+ */
+export async function fetchAccountDetail(
+  uid: string
+): Promise<AuthAccountDetail | null> {
+  let response: Response;
+  try {
+    response = await fetch(`/api/account/detail?uid=${encodeURIComponent(uid)}`);
+  } catch {
+    return null; // route not present in this build
+  }
+  const payload = (await response.json().catch(() => ({}))) as {
+    ok?: boolean;
+    detail?: AuthAccountDetail;
+  };
+  if (!response.ok || payload.ok !== true || !payload.detail) return null;
+  return payload.detail;
 }

@@ -10,9 +10,12 @@ Checks:
   3. serials continuous 1..N per ward, no duplicates
   4. EPIC format (counts new/old format; old listed in section K)
   5. gender tallies per ward == wards-summary.csv (cover-page truth)
-  6. core fields present (name, gender, age, house) on every row
+  6. core fields present (name, gender, age) on every row; house follows
+     the house policy — 1..6 digits (align_houses.py) or EMPTY when the
+     printed `मकान संख्या:` cell carries no number
   7. ages digits 18..100
-  8. house non-empty; numeric houses are 1..6 digits
+  8. house is `^\d{1,6}$` or empty — no text, no label residue, no 7-digit
+     EPIC/age-column merges
   9. no suspicious label residue left in name/father (e.g. 'नाम:', 'Photo')
  10. verification.md exists and its section counts match fresh recomputation
 Exits non-zero with a failure list if anything is violated.
@@ -103,7 +106,7 @@ for r in recs:
             old_fmt += 1
         else:
             fail.append('%s: bad epic %r' % (tag, r['epic']))
-    if not (r['name'] and r['gender'] and r['age'] and r['house']):
+    if not (r['name'] and r['gender'] and r['age']):
         fail.append('%s: empty core field' % tag)
     if r['gender'] not in ('पुरूष', 'स्त्री', 'तृतीयलिंग'):
         fail.append('%s: bad gender %r' % (tag, r['gender']))
@@ -111,10 +114,12 @@ for r in recs:
     if not (str(a).isdigit() and 18 <= int(a) <= 100):
         fail.append('%s: age %r outside 18..100' % (tag, a))
     h = r['house'] or ''
-    if not h:
-        fail.append('%s: empty house' % tag)
-    if h and not re.fullmatch(r'\d{1,6}', h) and len(h) > 60:
-        fail.append('%s: absurd house %r' % (tag, h))
+    # House policy (tools/extract_roll/align_houses.py): digits only or
+    # empty. A record with no printed number legitimately has none (section
+    # D lists them); anything else — text, label fragments, 7-digit merges —
+    # is exactly what that pass removed, so it must never come back.
+    if h and not re.fullmatch(r'\d{1,6}', h):
+        fail.append('%s: house %r not ^\\d{1,6}$ or empty' % (tag, h))
     for field in ('name', 'father'):
         v = r[field] or ''
         if re.search(r'नाम\s*[:：]|का\s*नाम|पिता\s*का|पति\s*का|माता\s*का|'

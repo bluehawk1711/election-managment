@@ -2,12 +2,14 @@ import { AuthScreen } from '@/components/auth/auth-screen';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/toast';
+import { type LockNotice, readLockNotice } from '@/lib/device';
 import { messageFor } from '@/lib/errors';
 import { auth } from '@/lib/firebase';
 import { router } from 'expo-router';
 import { signInWithEmailAndPassword } from 'firebase/auth';
-import { Lock, Mail } from 'lucide-react-native';
-import { useState } from 'react';
+import { AlertTriangle, Lock, Mail } from 'lucide-react-native';
+import { useEffect, useState } from 'react';
+import { StyleSheet, Text, View } from 'react-native';
 
 /** Email link sign-in only works once a link domain is configured. */
 const emailLinkEnabled = Boolean(process.env.EXPO_PUBLIC_FIREBASE_LINK_URL);
@@ -17,6 +19,21 @@ export default function SignInScreen() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const toast = useToast();
+
+  // Why the LAST session ended in a lock-out — left on disk by
+  // providers/auth-provider.tsx across the sign-out it performed, so the
+  // screen a locked-out user lands on can say what happened instead of
+  // silently accepting credentials it is going to refuse again.
+  const [notice, setNotice] = useState<LockNotice | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    readLockNotice().then((value) => {
+      if (!cancelled) setNotice(value);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const signIn = async () => {
     setLoading(true);
@@ -42,6 +59,23 @@ export default function SignInScreen() {
 
   return (
     <AuthScreen title='Welcome back' subtitle='Sign in to continue.'>
+      {notice ? (
+        <View style={styles.lockedBanner}>
+          <View style={styles.lockedHeading}>
+            <AlertTriangle size={16} color='#F87171' />
+            <Text style={styles.lockedTitle}>
+              {notice.reason === 'device_change'
+                ? 'Account locked — opened on another device'
+                : 'Account locked by an administrator'}
+            </Text>
+          </View>
+          <Text style={styles.lockedBody}>
+            {notice.reason === 'device_change'
+              ? 'This account is bound to one device. Signing in from a second device locked it. Ask the super admin to unlock it — this device then re-binds on the next sign-in.'
+              : 'A super admin locked this account. Only they can unlock it — contact your administrator to get access back.'}
+          </Text>
+        </View>
+      ) : null}
       {/* ── Not shipping yet ──────────────────────────────────────────────
           Both footer entry points are commented out for now.
 
@@ -112,3 +146,18 @@ export default function SignInScreen() {
     </AuthScreen>
   );
 }
+
+const styles = StyleSheet.create({
+  lockedBanner: {
+    borderRadius: 12,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: '#F87171',
+    backgroundColor: 'rgba(248, 113, 113, 0.08)',
+    padding: 12,
+    gap: 6,
+    marginBottom: 4,
+  },
+  lockedHeading: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  lockedTitle: { flex: 1, fontSize: 13, fontWeight: '600', color: '#F87171' },
+  lockedBody: { fontSize: 12, lineHeight: 17, color: '#9CA3AF' },
+});

@@ -359,8 +359,6 @@ export default function HomeScreen() {
               <View style={{ flexDirection: 'row', gap: 8 }}>
                 <MetricTile
                   icon={CalendarPlus}
-                  chipLabel={t('dash.chipActive')}
-                  chipTone='success'
                   value={String(metrics.pendingTasks)}
                   label={t('dash.metricPendingTasks')}
                   series={metrics.series.tasks}
@@ -369,8 +367,6 @@ export default function HomeScreen() {
                 />
                 <MetricTile
                   icon={TriangleAlert}
-                  chipLabel={t('dash.chipCritical')}
-                  chipTone={metrics.openIssues > 0 ? 'danger' : 'default'}
                   value={String(metrics.openIssues)}
                   label={t('dash.metricOpenIssues')}
                   series={metrics.series.issues}
@@ -381,8 +377,6 @@ export default function HomeScreen() {
               <View style={{ flexDirection: 'row', gap: 8 }}>
                 <MetricTile
                   icon={Users}
-                  chipLabel={t('dash.chipSynced')}
-                  chipTone='default'
                   value={String(metrics.weekEventCount)}
                   label={t('dash.metricMeetings')}
                   series={metrics.series.events}
@@ -391,8 +385,6 @@ export default function HomeScreen() {
                 />
                 <MetricTile
                   icon={Flag}
-                  chipLabel={t('dash.chipAudit')}
-                  chipTone='default'
                   value={formatCompactCurrency(metrics.expenseTotal, i18n.language)}
                   label={t('dash.metricExpenses')}
                   series={metrics.series.spend}

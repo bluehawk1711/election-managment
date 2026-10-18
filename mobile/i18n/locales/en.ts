@@ -27,6 +27,21 @@ export const en = {
   'areas.label': 'Area',
   'areas.veernagar': 'Veernagar',
 
+  // Update gate — the full-screen lock rendered when this build's
+  // `app.json → version` compares below `appConfig/general.requiredVersion`.
+  'update.title': 'App update required',
+  'update.body':
+    'This app version ({version}) is older than the required {required}. Please update to continue — your data stays safe.',
+  'update.yourVersion': 'Your version',
+  'update.requiredVersion': 'Required',
+  'update.cta': 'Ask for the update on WhatsApp',
+  'update.whatsappMessage':
+    'Hi, I need the new update of the app (latest version {version}).',
+  'update.noContact':
+    'No support number configured yet — contact your super admin for the update.',
+  'update.retry': 'Check again',
+  'update.checking': 'Checking…',
+
   'common.clear': 'Clear',
   'common.apply': 'Apply',
   'common.reset': 'Reset',
@@ -162,10 +177,6 @@ export const en = {
   'dash.reportIssue': 'Report Issue',
   'dash.addEvent': 'Add Event',
   'dash.boothIn': 'Booth report',
-  'dash.chipActive': 'Active',
-  'dash.chipCritical': 'Critical',
-  'dash.chipSynced': 'Synced',
-  'dash.chipAudit': 'Audit OK',
   'dash.metricPendingTasks': 'Pending tasks',
   'dash.metricOpenIssues': 'Open civic issues',
   'dash.metricMeetings': 'Meetings this week',
@@ -363,6 +374,17 @@ export const en = {
   'voters.phoneHint': 'The roll carries no phone numbers — add one here.',
   'voters.addPhone': 'Add phone number',
   'voters.changePhone': 'Change phone number',
+  // The consolidated "Mobile number" card on the edit screen: title, hint,
+  // inline validation, the instant Save/Remove pair and its state line.
+  'voters.phoneCardTitle': 'Mobile number',
+  'voters.phoneCardHint':
+    'Type a number and tap Save — it saves instantly for this voter. Remove erases it.',
+  'voters.phoneInvalid': 'Enter a valid mobile number (6–15 digits)',
+  'voters.savePhone': 'Save number',
+  'voters.removePhone': 'Remove',
+  'voters.phoneSaved': 'Number saved for this voter.',
+  'voters.phoneUnsaved': 'Unsaved changes — tap Save number.',
+  'voters.phoneEmpty': 'No number saved yet.',
   // Shared phone numbers — proposals from the whole team, with the super
   // admin's chosen number marked "In use" (the one the action buttons dial).
   'voters.phoneNumbers': 'Phone numbers',
@@ -512,6 +534,156 @@ export const en = {
   'more.clearCacheHint': 'Downloaded voter roll. Your own edits are kept.',
   'more.cacheCleared': 'Cached roll cleared',
   'more.signOut': 'Sign out',
+
+  // ── More hub: Help ────────────────────────────────────────────────────
+  // The in-app manual. One section open at a time; every answer is written
+  // for field use and mirrored key-for-key in hi.ts.
+  'more.help': 'Help & guides',
+  'more.helpHint': 'How everything works, in full',
+  'help.intro':
+    'Tap a section to open it. Every answer is written for field use — if something is still unclear, use the button at the bottom.',
+  'help.start': 'Getting started',
+  'help.roll': 'The voter roll',
+  'help.edit': 'Editing a voter',
+  'help.phones': 'Phone numbers',
+  'help.fieldwork': 'Fieldwork on the voter card',
+  'help.tasks': 'Tasks',
+  'help.events': 'Calendar & events',
+  'help.issues': 'Issues',
+  'help.expenses': 'Expenses',
+  'help.team': 'Team & roles',
+  'help.sync': 'Sync, offline & devices',
+  'help.trouble': 'Troubleshooting',
+  'help.privacy': 'Your data & privacy',
+  'help.contact': 'Still stuck?',
+  'help.contactBody':
+    'Message the campaign support team on WhatsApp — the number is set by the team admin, so it always reaches the right person.',
+  'help.contactAction': 'Open WhatsApp support',
+
+  'help.q.start.1': 'How do I sign in?',
+  'help.a.start.1':
+    'Use the email and password your super admin created for you. There is no self sign-up — if you do not have an account yet, ask your super admin to create one; they choose the password and hand it to you.',
+  'help.q.start.2': 'What does my role decide?',
+  'help.a.start.2':
+    'Karykarta: the voters of your assigned ward, their edits, tasks and fieldwork.\nAdmin: everything a karykarta sees, plus issues, expenses and the team roster.\nSuper admin: all of it, plus creating accounts, changing roles, locking accounts and resetting passwords.\nDeveloper: full access, for technical setup.',
+  'help.q.start.3': 'What should I do first?',
+  'help.a.start.3':
+    'Open Settings (More tab) and check your language and appearance. Then open Voters and search for one person you know — that single search teaches you the roll. The dashboard tiles all lead somewhere: tap any of them.',
+
+  'help.q.roll.1': 'What exactly is the roll?',
+  'help.a.roll.1':
+    'The official voter list for the panchayat — every voter with serial number, EPIC id, name, relation, house number, age, gender and locality, bundled inside the app itself. Because it lives on your phone, it works with no internet at all. The roll is read-only: your corrections are stored as edits on top of it, never by changing the original rows.',
+  'help.q.roll.2': 'How do I find someone quickly?',
+  'help.a.roll.2':
+    'Voters tab → search field. Switch the mode chip to Name, Father/Husband name or Locality — the same three ways you would ask about a person in the field. Type part of the word; spelling does not have to be exact. The EPIC number also matches if you have the card in hand.',
+  'help.q.roll.3': 'What do the chips on a voter card mean?',
+  'help.a.roll.3':
+    'With us / Against us is that voter\u2019s support. The leaning chip is where they sit on the political spectrum. "Voted" means their turnout is confirmed. "Pending sync" means this voter has edits still waiting to upload from your device — they are safe locally.',
+
+  'help.q.edit.1': "How do I correct someone's details?",
+  'help.a.edit.1':
+    'Tap the voter\u2019s card — the edit screen opens. Fix the name, house number, age, gender, locality or notes, then press Save at the bottom. The change is stored on your device instantly ("Saved on this device") and then mirrored to your account so your other devices see it.',
+  'help.q.edit.2': 'Why is the mobile number in its own card?',
+  'help.a.edit.2':
+    'Because it is the field most people came for. The Mobile number card has its own Save number and Remove buttons that take effect immediately — they do not wait for the main Save. The main Save can be blocked by an invalid age on the roll row; the phone card never is.',
+  'help.q.edit.3': 'I edited offline — did it save?',
+  'help.a.edit.3':
+    'Yes. Everything is written to the device first. A "Pending sync" chip on the card and a queue counter under the Save button show how many changes are waiting; they upload by themselves the next time you have internet.',
+
+  'help.q.phones.1': 'The roll has no numbers — how do I add one?',
+  'help.a.phones.1':
+    'Open the voter, type the number in the Mobile number card, tap Save number. If the same number belongs to the whole family, the card offers "Apply to house" — one tap writes it to every member with the same house number in your ward.',
+  'help.q.phones.2': 'What is the team numbers board?',
+  'help.a.phones.2':
+    'Below the input, every number ANY team member proposed for this voter appears with who added it and when — your number and a super admin\u2019s sit side by side instead of overwriting each other. Each row dials directly. A super admin can mark one number "In use": that is what the dial buttons use by default.',
+  'help.q.phones.3': 'How do I update many numbers at once?',
+  'help.a.phones.3':
+    'Voters tab → long-press a card to start ticking, tick everyone sharing the number, then "Bulk phone". Or choose the paste option and drop in "EPIC, phone" lines — one per line — and every matching voter is updated together.',
+
+  'help.q.fieldwork.1': 'Voted, Support and Leaning — how do they save?',
+  'help.a.fieldwork.1':
+    'One tap, saved immediately — no Save button needed. Voted records turnout (voted / not voted / unknown). Support says with us or against us and colours the card. Leaning places the voter on the five-step spectrum. Tapping the already-selected option leaves it as it is.',
+  'help.q.fieldwork.2': 'How do I attach a photo?',
+  'help.a.fieldwork.2':
+    'On the edit screen the empty photo box opens the gallery — pick a picture (with the person\u2019s consent). An existing photo opens full-screen on tap; the caption below it replaces it. Photos stay on your device first, so they work offline.',
+  'help.q.fieldwork.3': 'How does location work?',
+  'help.a.fieldwork.3':
+    'The Location card on the edit screen has an "Add location" button that captures your current GPS position with its accuracy and time — meant for marking a booth, a household or a meeting point. Once captured it shows the coordinates and an "Open maps" link.',
+
+  'help.q.tasks.1': 'How do I create a task?',
+  'help.a.tasks.1':
+    'More → Tasks → New. Give it a title and description, pick who it is assigned to, optionally the ward, area or booth, and a due date. It appears on the assignee\u2019s dashboard immediately.',
+  'help.q.tasks.2': 'What do the statuses mean?',
+  'help.a.tasks.2':
+    'Pending — created, not started. In progress — being worked on. Completed — done (the dashboard\u2019s 30-day chart counts these). Issue — blocked; the report field is where you say what is blocking it.',
+  'help.q.tasks.3': 'Who sees my task?',
+  'help.a.tasks.3':
+    'The person you assigned it to, plus admins and super admins. A karykarta only sees tasks in their own ward, so assign accordingly.',
+
+  'help.q.events.1': 'How do events work?',
+  'help.a.events.1':
+    'More → Calendar → New event: a meeting, rally, door-to-door round or the polling day itself. Every upcoming event appears on the dashboard schedule card, and the days-to-polling countdown comes from the election date set on the campaign.',
+  'help.q.events.2': 'Can events sync to my phone calendar?',
+  'help.a.events.2':
+    'The dashboard shows whether calendar sync is connected. When it is, adding an event also writes it to your phone\u2019s calendar; when it is not, events live in the app only.',
+
+  'help.q.issues.1': 'How do I report an issue?',
+  'help.a.issues.1':
+    'More → Issues → New issue. Pick the category — road, water, electricity, drainage, streetlight or sanitation — say what is wrong and where. It lands on the dashboard\u2019s open-issues count and category breakdown straight away.',
+  'help.q.issues.2': 'How does an issue get closed?',
+  'help.a.issues.2':
+    'Anyone with access can move it to resolved; the dashboard tracks the resolution rate, so closing issues is how the campaign sees progress.',
+
+  'help.q.expenses.1': 'How do I record an expense?',
+  'help.a.expenses.1':
+    'More → Expenses → New expense: amount, category (travel, fuel, materials, printing, food, venue or other), a note and the date. Totals roll up onto the dashboard tile and its seven-day sparkline.',
+  'help.q.expenses.2': 'Who can see expenses?',
+  'help.a.expenses.2':
+    'Everyone who can see the module sees the campaign total; recording here rather than on paper is what makes the whole team\u2019s spending add up in one place.',
+
+  'help.q.team.1': 'Who can create accounts?',
+  'help.a.team.1':
+    'Only a super admin (More → Accounts → New account). Only super admins and developers can change roles, lock accounts or reset passwords. Admins can view the roster but not change it.',
+  'help.q.team.2': 'What does the ward restriction mean?',
+  'help.a.team.2':
+    'A karykarta is assigned one ward: they read and edit only that ward\u2019s voters, tasks and field data. This is enforced by the database rules themselves, not just by hiding buttons.',
+  'help.q.team.3': 'My colleague forgot their password — now what?',
+  'help.a.team.3':
+    'A super admin opens Accounts, finds the person and uses the key icon: they can check the stored password or set a new one on the spot, without knowing the old one. The new password works at the next sign-in on every device.',
+
+  'help.q.sync.1': 'Does the app work without internet?',
+  'help.a.sync.1':
+    'Yes — the roll, your edits, photos and locations all live on the phone. Tasks, issues and expenses you create are queued and upload when you are back online. "Pending sync" chips mark exactly what is waiting.',
+  'help.q.sync.2': 'Why did my account lock itself?',
+  'help.a.sync.2':
+    'One account works on one device. If the same account signs in somewhere else, the first device is locked out automatically (the "device change" lock) — it protects voter data on a lost or shared phone. A super admin unlocks it and the rightful device binds again at sign-in.',
+  'help.q.sync.3': 'What is the "Update required" screen?',
+  'help.a.sync.3':
+    'The team admin sets a minimum app version in the admin panel. When your installed version is older, the app opens locked behind that screen until you update — the Update button opens WhatsApp to the support number with a ready message.',
+  'help.q.sync.4': 'The pending counter will not clear.',
+  'help.a.sync.4':
+    'It needs internet once: open the app with a connection and the queue uploads on its own. If it stays after that, note the number and message support — your edits are safe on the device either way.',
+
+  'help.q.trouble.1': 'I cannot sign in.',
+  'help.a.trouble.1':
+    'Check the email and password exactly as they were given. If it still fails, the account may be locked (device change) — only a super admin can unlock it. Self sign-up does not exist; an account must be created for you.',
+  'help.q.trouble.2': 'A screen is empty or missing things.',
+  'help.a.trouble.2':
+    'That is almost always your role: a karykarta sees their ward only, and someone with no role yet sees almost nothing. Settings shows your current role and ward; ask a super admin to correct them if they are wrong.',
+  'help.q.trouble.3': 'Saving fails or a button does nothing.',
+  'help.a.trouble.3':
+    'A locked account cannot write anything — admins see the lock on the Accounts list. Otherwise retry once with internet; if it persists, the error text is what support needs.',
+  'help.q.trouble.4': 'The roll itself has a mistake.',
+  'help.a.trouble.4':
+    'The imported roll is read-only on purpose — it mirrors the official list. Correct the person through their edit screen so the fix travels with your account, and report the discrepancy to the team.',
+
+  'help.q.privacy.1': 'Where does my data live?',
+  'help.a.privacy.1':
+    'The roll is bundled inside the app. Everything you record — edits, photos, locations, tasks, expenses — goes to the campaign\u2019s own Firebase project, attached to your account, so admins can audit who recorded what.',
+  'help.q.privacy.2': 'What should never be recorded?',
+  'help.a.privacy.2':
+    'Phone numbers only with the voter\u2019s consent, and photos the person is comfortable with. The app deliberately stores no religion, caste or party-affiliation fields — if you think a field asks for too much, tell support before filling it in.',
+
   'settings.title': 'Settings',
   'settings.account': 'Account',
   'settings.preferences': 'Preferences',
@@ -525,7 +697,11 @@ export const en = {
   'settings.displayNameHint': 'Shown next to anything you record in the field.',
   'settings.identity': 'Signed in',
   'settings.noDisplayName': 'No display name',
-  'settings.changePhoto': 'Change photo',
+  // About card — the build's own version (Settings screen shows it next to
+  // the update gate's requirement; photo upload was removed, so its old
+  // 'changePhoto' key is gone with it).
+  'settings.about': 'About',
+  'settings.version': 'App version',
   'settings.signedInWith': 'Signed in with {{method}}',
   'settings.verifyTitle': 'Verify your email',
   'settings.verifyBody':

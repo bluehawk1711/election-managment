@@ -144,6 +144,98 @@ export interface Profile {
   wardNo?: number | null;
   /** Firestore Timestamp or null on fresh docs. */
   createdAt?: unknown;
+  /**
+   * The account's bound device — one per account, written by that device's
+   * first sign-in and only ever changed by a super-admin unlock (which drops
+   * it). `null` = never bound from a device yet.
+   */
+  device: DeviceBinding | null;
+  /** Account lock. `true` zeroes every capability in firestore.rules. */
+  locked: boolean;
+  /** `'device_change'` (self-locked by a foreign sign-in) or `'admin'`. */
+  lockedReason: 'device_change' | 'admin' | null;
+  /** Epoch millis of the lock, or null when unlocked. */
+  lockedAt: number | null;
+  /** The super admin who locked it, or `'system'` for a device lock. */
+  lockedBy: string | null;
+}
+
+/**
+ * The FIREBASE AUTH side of an account — fetched live from
+ * `/api/account/detail` (Admin SDK `getUser`) for the details dialog.
+ *
+ * Everything here is unreachable from Firestore by design: the profile
+ * document holds the app's own facts (role, device, lock), while the login
+ * record holds creation/sign-in timestamps, verification, the disabled flag
+ * and providers. The dialog joins the two.
+ */
+export interface AuthAccountDetail {
+  uid: string;
+  email: string | null;
+  emailVerified: boolean;
+  disabled: boolean;
+  /** Epoch millis of the Auth record's creation. */
+  createdAt: number | null;
+  /** Epoch millis of the most recent sign-in, null if never. */
+  lastSignInAt: number | null;
+  phone: string | null;
+  /** e.g. `['password']`. */
+  providers: string[];
+}
+
+/** What the panel renders under "Device" — mirrors `users/{uid}.device`. */
+export interface DeviceBinding {
+  id: string;
+  name: string;
+  platform: string;
+  lastActiveAt: number;
+}
+
+/**
+ * `accountSecrets/{uid}` — the password vault.
+ *
+ * Firebase Auth stores only a scrypt hash, so a password an admin set can
+ * never be read back out of it; this document (readable only by
+ * `canManageAccounts` — super admin + developer) is what makes "does this
+ * password match" and "rotate it right now" answerable from the panel.
+ *
+ * `password` is a SHA-256 HASH (peppered — lib/vault.ts), never plaintext:
+ * the panel checks a typed candidate against the hash instead of showing a
+ * credential, and a super-admin rotation needs no old password at all (the
+ * local Admin-SDK route sets the new one directly).
+ */
+export interface AccountVault {
+  /** The target uid — mirrors the Auth record, not the caller. */
+  uid: string;
+  email: string;
+  password: string;
+  /** Epoch millis. */
+  updatedAt: number;
+  /** The account manager who last wrote it. */
+  updatedBy: string;
+}
+
+// ------------------------------------------------------------ app config ----
+
+/**
+ * `appConfig/general` — the release gate the mobile app reads on launch.
+ *
+ * `requiredVersion` is the hard line: a build whose own `expoConfig.version`
+ * compares BELOW it is locked behind the update modal (wa.me link pointed at
+ * `supportPhone`). `latestVersion` is informational — shown in this panel
+ * and offered as "an update exists" to newer-but-not-newest builds.
+ */
+export interface AppConfig {
+  /** Newest published app version, e.g. `1.2.0`. */
+  latestVersion: string;
+  /** Oldest build still allowed to work, e.g. `1.1.0`. */
+  requiredVersion: string;
+  /** WhatsApp support line, digits only (country code, no `+`), `''` = unset. */
+  supportPhone: string;
+  /** Epoch millis of the last save. */
+  updatedAt: number;
+  /** Who saved it. */
+  updatedBy: string;
 }
 
 // ---------------------------------------------------------------- tasks ----

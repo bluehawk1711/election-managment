@@ -104,15 +104,38 @@ service cloud.firestore {
      * `exists()` rather than a field read, so a missing document or an
      * unparseable one denies by default instead of erroring the whole query.
      */
+    /**
+     * `true` when an admin has locked this account (or it locked itself by
+     * being opened on a device the account is not bound to).
+     *
+     * A lock is a hard gate, not a UI flag: every capability helper below
+     * ANDs it in, so a locked account reads ZERO voters, cannot edit campaign
+     * content, cannot list the roster and cannot manage accounts — while its
+     * own `users/{uid}` document stays readable (isOwner) so the app can show
+     * WHY it is locked before signing the session out.
+     *
+     * `get('locked', false)` rather than `locked` because every profile
+     * written before this field existed has none, and rules `&&`/`||` do not
+     * short-circuit — an absent-field read is an evaluation error, not a
+     * false. Missing profile → `exists()` false → not locked (the other
+     * helpers' own `exists()` gates then deny anyway).
+     */
+    function isLocked() {
+      return signedIn()
+             && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+             && callerProfile().data.get('locked', false) == true;
+    }
+
     function canReadVoters() {
-      return signedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+      return signedIn() && !isLocked()
+             && exists(/databases/$(database)/documents/users/$(request.auth.uid))
              && callerProfile().data.role in
                   ['karykarta', 'admin', 'superAdmin', 'developer'];
     }
 
     /** Roles that see the whole roll, not one ward. */
     function canSeeAllWards() {
-      return signedIn()
+      return signedIn() && !isLocked()
              && exists(/databases/$(database)/documents/users/$(request.auth.uid))
              && callerProfile().data.role in ['admin', 'superAdmin', 'developer'];
     }
@@ -158,6 +181,28 @@ service cloud.firestore {
     }
 
     /**
+     * The bound-device map on `users/{uid}`: exactly the four keys the panel
+     * and the app render, with sane types. `null`/absent is always fine — an
+     * account with no bound device is the normal state before first launch
+     * and after an unlock (which clears the binding).
+     *
+     * Written against the RESULTING document, so it validates a bind, a
+     * rejected shape AND `deleteField()` (null → true) with one expression.
+     */
+    function validDevice(value) {
+      return value == null
+          || (value is map
+              && exactKeys(value,
+                   ['id', 'name', 'platform', 'lastActiveAt'])
+              && text(value.get('id', ''), 8, 128)
+              && text(value.get('name', ''), 1, 120)
+              && value.get('platform', '') in
+                   ['ios', 'android', 'web', 'windows', 'macos', 'unknown']
+              && (value.get('lastActiveAt', null) is int
+                  || value.get('lastActiveAt', null) is float));
+    }
+
+    /**
      * The product boundary, server-side.
      *
      * A denylist rather than an allowlist because the collections a client may
@@ -179,7 +224,7 @@ service cloud.firestore {
 
     /** Accounts, roles and ward assignment — `accountManage` in lib/roles.ts. */
     function canManageAccounts() {
-      return signedIn()
+      return signedIn() && !isLocked()
              && exists(/databases/$(database)/documents/users/$(request.auth.uid))
              && callerProfile().data.role in ['superAdmin', 'developer'];
     }
@@ -201,7 +246,7 @@ service cloud.firestore {
      * that may manage accounts can always list them too.
      */
     function canViewAccounts() {
-      return signedIn()
+      return signedIn() && !isLocked()
              && exists(/databases/$(database)/documents/users/$(request.auth.uid))
              && callerProfile().data.role in ['admin', 'superAdmin', 'developer'];
     }
@@ -276,12 +321,94 @@ service cloud.firestore {
                             && !request.resource.data.keys().hasAny(['wardNo'])))
                     && noPoliticalFields(request.resource.data);
 
-      // Self-service update: the profile fields and nothing else. `email` is
-      // absent on purpose — it mirrors the Firebase Auth record.
+      // Self-service update: the profile fields plus the device binding and
+      // the lock itself, and nothing else. `email` is absent on purpose — it
+      // mirrors the Firebase Auth record. `role`/`wardNo` are absent so this
+      // path can never grant privilege (the role-grant clause below is the
+      // only one that mentions them).
+      //
+      // Device binding: a profile may carry ONE bound device — the install
+      // the account belongs to. The client writes it on first sign-in, and a
+      // sign-in from a different device writes `locked: true` through THIS
+      // clause (see the constraint on the result below) before signing its
+      // own session out. `validDevice` keeps the map to the four keys the
+      // panel renders; an owner write cannot smuggle anything else through
+      // the `device` hole.
+      //
+      // The unlock asymmetry — the single most important line here:
+      //
+      //     resource.data.get('locked', false) == false   (was unlocked)
+      //     || request.resource.data.get('locked', null) == true  (stays/is locked)
+      //
+      // lets an owner flip the lock ON (a foreign-device sign-in locks
+      // itself, with nobody else around to do it) but NEVER flip it OFF.
+      // Unlocking is exclusively the super-admin clause below. Both `.get()`
+      // calls have defaults because rules `&&`/`||` do not short-circuit and
+      // reading an absent field directly is an evaluation error, not a false.
       allow update: if isOwner(userId)
                     && resource != null
                     && request.resource.data.diff(resource.data).affectedKeys()
-                         .hasOnly(['displayName', 'photoURL', 'onboarded', 'updatedAt']);
+                         .hasOnly(['displayName', 'photoURL', 'onboarded',
+                                   'updatedAt', 'device', 'locked',
+                                   'lockedReason', 'lockedAt', 'lockedBy'])
+                    && validDevice(request.resource.data.get('device', null))
+                    // A device write is legal only as a FIRST bind: result
+                    // has a `device`, document had none. An existing binding
+                    // can be neither modified nor removed by its owner —
+                    // otherwise "delete the binding, re-add mine" would be a
+                    // two-write bypass of the whole per-device lock, and
+                    // refreshing the bound device is precisely the super
+                    // admin's unlock (which drops the key) + rebind. Pure
+                    // `diff`/`keys` reads on both sides — no absent-field
+                    // error, no short-circuit dependency.
+                    && (!request.resource.data.diff(resource.data).affectedKeys()
+                             .hasAny(['device'])
+                        || (!resource.data.keys().hasAny(['device'])
+                            && request.resource.data.keys().hasAny(['device'])))
+                    && (resource.data.get('locked', false) == false
+                        || request.resource.data.get('locked', null) == true)
+                    // When the result IS locked, it must carry a legal reason
+                    // and a real stamp — a bare `locked: true` with no
+                    // context is exactly the state the panel cannot explain.
+                    && (request.resource.data.get('locked', null) == true
+                        ? (request.resource.data.get('lockedReason', '') in
+                              ['', 'device_change', 'admin']
+                           && (request.resource.data.get('lockedAt', null) is int
+                               || request.resource.data.get('lockedAt', null) is float)
+                           && text(request.resource.data.get('lockedBy', ''), 1, 128))
+                        : true);
+
+      // Locking, unlocking and clearing the device binding — account
+      // management (`accountManage`: super admin + developer, and only while
+      // the caller is not locked themselves).
+      //
+      // This is the ONLY path in the whole rules file where `locked` may end
+      // up `false` over a document where it was `true` — "only super admin can
+      // unlock" lives here, and the owner clause above refuses the same
+      // three-key flip. `userId != request.auth.uid` keeps a super admin from
+      // unlocking themselves out of a self-imposed lock through this path —
+      // they get out by signing in from the device their account is bound to
+      // after another super admin clears it.
+      //
+      // Unlocking also DROPS the device binding (`device` absent via
+      // deleteField()): whoever signs in next becomes the bound device. That
+      // is what makes recovery deterministic — after an unlock there is no
+      // stale fingerprint left to fight with on the phone the account really
+      // lives on.
+      allow update: if canManageAccounts()
+                    && resource != null
+                    && userId != request.auth.uid
+                    && request.resource.data.diff(resource.data).affectedKeys()
+                         .hasOnly(['locked', 'lockedReason', 'lockedAt',
+                                   'lockedBy', 'device'])
+                    && request.resource.data.get('locked', null) is bool
+                    && request.resource.data.get('lockedReason', '') in
+                         ['', 'device_change', 'admin']
+                    && (request.resource.data.get('lockedAt', null) == null
+                        || request.resource.data.get('lockedAt', null) is int
+                        || request.resource.data.get('lockedAt', null) is float)
+                    && text(request.resource.data.get('lockedBy', ''), 0, 128)
+                    && validDevice(request.resource.data.get('device', null));
 
       // Granting or changing a role is a separate, explicit path — otherwise
       // "update your display name" and "promote yourself to superAdmin" would be
@@ -362,10 +489,16 @@ service cloud.firestore {
       //
       // Everything a user edits about a voter, mirrored from the local
       // overlay (`lib/roll/overlay.ts`) by `lib/roll/sync.ts` so the same
-      // account sees its edits on every device. PRIVATE by design: a doc
-      // lives under the editor's own `users/{uid}`, so a karykarta's
-      // fieldwork never leaks into anyone else's roll and no cross-user
-      // query shape exists to write rules for.
+      // account sees its edits on every device. Writes stay owner-only: a
+      // karykarta's fieldwork can never be injected by anyone else.
+      //
+      // READS are widened to `canViewAccounts` on purpose — that is the
+      // "see which voter data changes each user made" surface: the panel
+      // lists a user's `voterEdits` (the overlay keys they touched, when) the
+      // same way an owner's own devices list them. Karykarta and roleless
+      // accounts still see only their own documents (`canViewAccounts` starts
+      // at admin), so widening visibility to the roster does not widen it to
+      // the team.
       //
       // The base `voters` collection stays read-only — this is the only
       // path a client may store voter data through, and it is an overlay,
@@ -378,11 +511,13 @@ service cloud.firestore {
       // `PUSHED_KEYS` in `lib/roll/sync.ts` plus `wardNo`/`updatedAt`/
       // `updatedBy`; `rules-tests/firestore.test.ts` pins both directions.
       match /voterEdits/{voterId} {
-        // Own overlay only — `list` included, because the pull reads the
-        // whole collection in one query.
-        allow read: if isOwner(userId);
+        // The owner, or an account manager auditing whose hands touched which
+        // voter (`list` included — the pull AND the audit page both read the
+        // whole collection in one query).
+        allow read: if isOwner(userId) || canViewAccounts();
 
         allow create, update: if isOwner(userId)
+          && !isLocked()
           && request.resource.data.keys().hasOnly(
                ['name', 'fatherOrHusbandName', 'houseNo', 'age', 'gender',
                 'locality', 'phone', 'jati', 'location', 'photoUrl',
@@ -418,14 +553,89 @@ service cloud.firestore {
         // Deleting = "reset this device's/this account's edit", allowed for
         // the owner of the overlay (Settings → reset local edits can mirror a
         // clear to the account copy later; today the client only reads here).
-        allow delete: if isOwner(userId);
+        allow delete: if isOwner(userId) && !isLocked();
       }
+    }
+
+    // ----- account password vault ----------------------------------------
+    //
+    // Firebase Auth stores only a scrypt HASH of every password — nobody can
+    // read a password back out of it, and there is no client API that could.
+    // Accounts here are CREATED by the super admin with a known temporary
+    // password (More → Accounts → New), so this vault is where that password
+    // stays recoverable: "what is Ramesh's password" and "give Ramesh a new
+    // one right now" are both answered from this document, by the same
+    // `canManageAccounts` tier that seeded it (super admin + developer, never
+    // admins, never the account's owner, never a signed-out client).
+    //
+    // `password` here is a SHA-256 HASH of the real password (peppered —
+    // lib/vault.ts keeps the key in the code, deliberately, for this
+    // prototype): the panel verifies a typed candidate against it instead of
+    // ever displaying a plaintext credential, and re-saves a legacy
+    // plaintext entry the moment one verifies. Rotations go through the
+    // local Admin-SDK route (/api/account/password), so the OLD password is
+    // never needed at all — this document is the record of what was last
+    // set, not the means of changing it.
+    //
+    // `{userId}` is the TARGET uid — the vault mirrors the Auth record, not
+    // the caller's.
+    match /accountSecrets/{userId} {
+      allow read, delete: if canManageAccounts();
+
+      allow create, update: if canManageAccounts()
+        && exactKeys(request.resource.data,
+             ['uid', 'email', 'password', 'updatedAt', 'updatedBy'])
+        && request.resource.data.uid == userId
+        && text(request.resource.data.email, 3, 320)
+        && text(request.resource.data.password, 6, 256)
+        && requiredMillis(request.resource.data.updatedAt)
+        && text(request.resource.data.updatedBy, 1, 128);
+    }
+
+    // ----- app config (version gate + support line) -----------------------
+    //
+    // One document, `appConfig/general`: the release version this build must
+    // meet (`requiredVersion`), the latest published one (`latestVersion`) and
+    // the WhatsApp number the app's "Update" button opens. The mobile app
+    // reads it BEFORE any sign-in state matters — an outdated build has to see
+    // the update lock even on the sign-in screen — hence `allow read: if`
+    // without authentication: version numbers and a support line are exactly
+    // the kind of config that is not a secret, and anything sensitive would
+    // be wrong to put here for that reason too.
+    //
+    // Writes are account management (`canManageAccounts`, itself lock-gated):
+    // raising `requiredVersion` locks every build below it, so it is a super
+    // admin's lever, not an admin's.
+    match /appConfig/{docId} {
+      allow read: if true;
+
+      allow create, update: if canManageAccounts()
+        && exactKeys(request.resource.data,
+             ['latestVersion', 'requiredVersion', 'supportPhone',
+              'updatedAt', 'updatedBy'])
+        // Loose semver: `1`, `1.0`, `1.0.2`, `1.0.2-beta` all legal — the
+        // client parses and compares, this only keeps garbage out.
+        && text(request.resource.data.latestVersion, 1, 24)
+        && request.resource.data.latestVersion.matches('^[0-9]+(\\.[0-9]+){0,3}([-.][A-Za-z0-9.-]+)?$')
+        && text(request.resource.data.requiredVersion, 1, 24)
+        && request.resource.data.requiredVersion.matches('^[0-9]+(\\.[0-9]+){0,3}([-.][A-Za-z0-9.-]+)?$')
+        && request.resource.data.requiredVersion.matches(
+             '^[0-9]+(\\.[0-9]+)*$'
+           )
+        // Digits only (wa.me expects a country-coded number, no plus),
+        // or empty = "no support line configured yet".
+        && request.resource.data.supportPhone.matches('^$|^[0-9]{6,15}$')
+        && (request.resource.data.updatedAt == null
+            || request.resource.data.updatedAt is timestamp)
+        && text(request.resource.data.updatedBy, 1, 128);
+
+      allow delete: if false;
     }
 
     // ----- campaign -------------------------------------------------------
 
     match /campaigns/{campaignId} {
-      allow read: if signedIn();
+      allow read: if signedIn() && !isLocked();
 
       allow create, update: if canEditCampaign()
         && noPoliticalFields(request.resource.data)
@@ -453,6 +663,11 @@ service cloud.firestore {
     //   wards/ward-<slug>  campaign geography, from scripts/seed.mjs
     //
     // Both are seeded data and both are denied to client writes below.
+    //
+    // `areas/{areaId}` is the top of the roll hierarchy (area → ward →
+    // voter). One area ships — `veernagar` — seeded by scripts/seed-roll.mjs
+    // and referenced by every roll ward's `areaId`, so "which area does this
+    // ward belong to" is answerable from data instead of a hard-coded label.
 
     match /constituencies/{docId} {
       allow read: if signedIn();
@@ -516,7 +731,7 @@ service cloud.firestore {
      * ends up widening one and not the other.
      */
     function canFinalizeContact() {
-      return signedIn()
+      return signedIn() && !isLocked()
              && exists(/databases/$(database)/documents/users/$(request.auth.uid))
              && callerProfile().data.role in ['superAdmin', 'developer'];
     }

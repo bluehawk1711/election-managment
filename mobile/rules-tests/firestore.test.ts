@@ -8,6 +8,7 @@ import {
   addDoc,
   collection,
   deleteDoc,
+  deleteField,
   doc,
   getDoc,
   getDocs,
@@ -468,6 +469,21 @@ describe('/users/{uid}/voterEdits — the account-private overlay sync', () => {
       setDoc(edit(bob()), pushed({ updatedBy: BOB }), { merge: true })
     );
     await assertFails(getDoc(edit(anon())));
+  });
+
+  it('lets account managers audit any account’s edits — and only them', async () => {
+    await assertSucceeds(setDoc(edit(alice()), pushed()));
+
+    // The "which voter changes did each user make" surface: a roster viewer
+    // (admin and up, `canViewAccounts`) reads the overlay — the keys that
+    // user touched and when — exactly like the owner's own devices do.
+    await assertSucceeds(getDoc(edit(daksh())));
+    await assertSucceeds(getDocs(collection(daksh(), 'users', ALICE, 'voterEdits')));
+
+    // Widening VISIBILITY to the roster must not widen it to the team:
+    // karykarta and roleless accounts still see only their own documents.
+    await assertFails(getDoc(edit(cara())));
+    await assertFails(getDocs(collection(cara(), 'users', ALICE, 'voterEdits')));
   });
 
   it('rejects a document missing the bookkeeping fields', async () => {
@@ -1050,6 +1066,352 @@ describe('/voterPhones — shared team numbers + the super admin’s choice', ()
       setDoc(proposalOf(anon(), 'w3-1', 'anyone'), validProposal())
     );
     await assertFails(setDoc(boardOf(anon()), validFinal()));
+  });
+});
+
+describe('per-device account lock', () => {
+  /** The exact four-key map `firestore.rules::validDevice` accepts. */
+  const device = (
+    id = '11111111-2222-3333-4444-555555555555',
+    over: Record<string, unknown> = {}
+  ) => ({
+    id,
+    name: 'Xiaomi Redmi Note 12',
+    platform: 'android',
+    lastActiveAt: 1_770_000_000_000,
+    ...over,
+  });
+
+  /** The owner's lock-ON write — the foreign-device sign-in flow. */
+  const selfLock = {
+    locked: true,
+    lockedReason: 'device_change',
+    lockedAt: 1_770_000_000_000,
+    lockedBy: 'system',
+  };
+
+  /** The super-admin unlock — clears every lock field AND the binding. */
+  const unlock = {
+    locked: false,
+    lockedReason: '',
+    lockedAt: null,
+    lockedBy: '',
+    device: deleteField(),
+  };
+
+  it('binds the device on first sign-in, then freezes the binding', async () => {
+    // First launch: no device key, any shape-valid map goes on. Role-less is
+    // deliberate — the binding happens at sign-in, before a role exists.
+    await assertSucceeds(
+      updateDoc(doc(cara(), 'users', CARA), {
+        device: device(),
+        updatedAt: serverTimestamp(),
+      })
+    );
+
+    // After that the owner can neither swap it (a second laptop's attempt),
+    // refresh it, nor drop it — "rebind" is exclusively the super-admin
+    // unlock below. A two-write "delete, then add mine" bypass is closed by
+    // the same first-bind-only clause on both writes.
+    await assertFails(
+      updateDoc(doc(cara(), 'users', CARA), {
+        device: device('99999999-8888-7777-6666-555555555555'),
+        updatedAt: serverTimestamp(),
+      })
+    );
+    await assertFails(
+      updateDoc(doc(cara(), 'users', CARA), {
+        device: device(device().id, { lastActiveAt: 1_770_000_000_999 }),
+        updatedAt: serverTimestamp(),
+      })
+    );
+    await assertFails(
+      updateDoc(doc(cara(), 'users', CARA), {
+        device: deleteField(),
+        updatedAt: serverTimestamp(),
+      })
+    );
+  });
+
+  it('rejects a malformed device map', async () => {
+    // Short id, missing keys, unknown platform, unknown extra key — four
+    // shapes, four refusals — while Bob still has no binding to test against.
+    await assertFails(
+      updateDoc(doc(bob(), 'users', BOB), {
+        device: device('short'),
+        updatedAt: serverTimestamp(),
+      })
+    );
+    await assertFails(
+      updateDoc(doc(bob(), 'users', BOB), {
+        device: { id: 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee' },
+        updatedAt: serverTimestamp(),
+      })
+    );
+    await assertFails(
+      updateDoc(doc(bob(), 'users', BOB), {
+        device: device('aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee', {
+          platform: 'blackberry',
+        }),
+        updatedAt: serverTimestamp(),
+      })
+    );
+    await assertFails(
+      updateDoc(doc(bob(), 'users', BOB), {
+        device: device('aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee', {
+          ip: '10.0.0.1',
+        }),
+        updatedAt: serverTimestamp(),
+      })
+    );
+  });
+
+  it('locks itself on a foreign device, and only a super admin unlocks', async () => {
+    // Bob binds his phone…
+    await assertSucceeds(
+      updateDoc(doc(bob(), 'users', BOB), {
+        device: device(),
+        updatedAt: serverTimestamp(),
+      })
+    );
+
+    // …a bare `locked: true` with no reason and no stamp is rejected BEFORE
+    // anything locks — the result must carry a legal reason and a real
+    // timestamp whenever it ends up locked.
+    await assertFails(
+      updateDoc(doc(bob(), 'users', BOB), {
+        locked: true,
+        updatedAt: serverTimestamp(),
+      })
+    );
+
+    // The app is next opened elsewhere: the OWNER path may flip the lock
+    // ON, with a reason and a stamp.
+    await assertSucceeds(
+      updateDoc(doc(bob(), 'users', BOB), {
+        ...selfLock,
+        updatedAt: serverTimestamp(),
+      })
+    );
+
+    // The asymmetry the product is built on: Bob can never unlock himself —
+    // not through the owner path (was locked, result not locked) …
+    await assertFails(
+      updateDoc(doc(bob(), 'users', BOB), {
+        ...unlock,
+        updatedAt: serverTimestamp(),
+      })
+    );
+    // …and through the manage path: Bob is not account management, so
+    // unlocking SOMEONE ELSE (Cara, currently unlocked) is refused too.
+    await assertFails(
+      updateDoc(doc(bob(), 'users', CARA), {
+        locked: false,
+        lockedReason: '',
+        lockedAt: null,
+        lockedBy: '',
+      })
+    );
+
+    // A super admin unlocks — lock fields cleared, device binding dropped in
+    // the SAME write, so the rightful phone re-binds on its next sign-in.
+    await assertSucceeds(updateDoc(doc(alice(), 'users', BOB), unlock));
+
+    // …and everything the lock took away comes back.
+    await assertSucceeds(votersInWard(bob(), ROLL_WARD));
+    await assertSucceeds(getDoc(doc(bob(), 'tasks', 'task-1')));
+  });
+
+  it('strips a locked account of every capability but its own profile', async () => {
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      await setDoc(
+        context.firestore().doc(`users/${BOB}`),
+        {
+          device: device(),
+          locked: true,
+          lockedReason: 'admin',
+          lockedAt: 1_770_000_000_000,
+          lockedBy: ALICE,
+        },
+        { merge: true }
+      );
+    });
+
+    // What still works is reading WHY the session is dead…
+    await assertSucceeds(getDoc(doc(bob(), 'users', BOB)));
+
+    // …and nothing else:
+    await assertFails(votersInWard(bob(), ROLL_WARD));
+    await assertFails(getDoc(ownWardVoter(bob())));
+    await assertFails(getDoc(doc(bob(), 'tasks', 'task-1')));
+    await assertFails(getDoc(doc(bob(), 'campaigns', 'active')));
+    await assertFails(getDocs(collection(bob(), 'users')));
+    await assertFails(getDocs(collection(bob(), 'tasks')));
+    await assertFails(
+      setDoc(doc(bob(), 'users', BOB, 'voterEdits', `w${ROLL_WARD}-1`), {
+        wardNo: ROLL_WARD,
+        updatedAt: 1,
+        updatedBy: BOB,
+        phone: '9876543211',
+      })
+    );
+
+    // Somebody else's lock must not touch anyone else: the unlocked super
+    // admin reads roll and campaign exactly as before.
+    await assertSucceeds(votersInWard(alice(), ROLL_WARD));
+    await assertSucceeds(getDoc(doc(alice(), 'tasks', 'task-1')));
+  });
+
+  it('only account management may lock or unlock ANOTHER account', async () => {
+    const adminLock = {
+      locked: true,
+      lockedReason: 'admin',
+      lockedAt: 1_770_000_000_000,
+      lockedBy: ALICE,
+    };
+
+    // A karykarta cannot lock the colleague whose password they share…
+    await assertFails(updateDoc(doc(bob(), 'users', CARA), adminLock));
+    // …a roleless account manages nothing…
+    await assertFails(updateDoc(doc(cara(), 'users', BOB), adminLock));
+    // …and an ADMIN — who sees the roster — still cannot flip a lock, in
+    // either direction. Lock/unlock sits with super admin + developer only.
+    await assertFails(updateDoc(doc(daksh(), 'users', CARA), adminLock));
+    await assertFails(
+      updateDoc(doc(daksh(), 'users', CARA), {
+        locked: false,
+        lockedReason: '',
+        lockedAt: null,
+        lockedBy: '',
+      })
+    );
+
+    // The super admin's write is the one that lands.
+    await assertSucceeds(updateDoc(doc(alice(), 'users', CARA), adminLock));
+  });
+
+  it('does not let a super admin unlock their own account', async () => {
+    // Alice locks herself (owner path allows lock-ON, whoever writes it)…
+    await assertSucceeds(
+      updateDoc(doc(alice(), 'users', ALICE), {
+        ...selfLock,
+        updatedAt: serverTimestamp(),
+      })
+    );
+
+    // …and gets out only through ANOTHER super admin: the owner path refuses
+    // every unlock, and the manage path requires `userId != request.auth.uid`.
+    await assertFails(
+      updateDoc(doc(alice(), 'users', ALICE), {
+        locked: false,
+        lockedReason: '',
+        lockedAt: null,
+        lockedBy: '',
+      })
+    );
+    // While locked, even reading the roster is gone (canViewAccounts is
+    // gated), so a locked super admin is inert except for their own doc.
+    await assertFails(getDocs(collection(alice(), 'users')));
+    await assertSucceeds(getDoc(doc(alice(), 'users', ALICE)));
+  });
+});
+
+describe('/accountSecrets — the password vault', () => {
+  const vault = (over: Record<string, unknown> = {}) => ({
+    uid: BOB,
+    email: 'bob@example.com',
+    password: 'temppass1',
+    updatedAt: 1_770_000_000_000,
+    updatedBy: ALICE,
+    ...over,
+  });
+
+  const secret = (db: Firestore, uid: string) => doc(db, 'accountSecrets', uid);
+
+  it('round-trips for a super admin: write, read, rotate, delete', async () => {
+    await assertSucceeds(setDoc(secret(alice(), BOB), vault()));
+    await assertSucceeds(getDoc(secret(alice(), BOB)));
+    await assertSucceeds(getDocs(collection(alice(), 'accountSecrets')));
+    await assertSucceeds(
+      updateDoc(secret(alice(), BOB), vault({ password: 'rotated42' }))
+    );
+    await assertSucceeds(deleteDoc(secret(alice(), BOB)));
+  });
+
+  it('is invisible to admins, karykarta, roleless and signed-out clients', async () => {
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      await setDoc(context.firestore().doc(`accountSecrets/${BOB}`), vault());
+    });
+
+    // canManageAccounts is the ONLY key: an admin reads the roster but never
+    // the credentials behind it.
+    await assertFails(getDoc(secret(daksh(), BOB)));
+    await assertFails(getDocs(collection(daksh(), 'accountSecrets')));
+    await assertFails(setDoc(secret(daksh(), BOB), vault({ password: 'mine999' })));
+    await assertFails(getDoc(secret(bob(), BOB)));
+    await assertFails(getDoc(secret(cara(), BOB)));
+    await assertFails(getDoc(secret(anon(), BOB)));
+    await assertSucceeds(getDoc(secret(alice(), BOB)));
+  });
+
+  it('rejects a vault that does not describe the document’s own uid', async () => {
+    await assertFails(setDoc(secret(alice(), BOB), vault({ uid: ALICE })));
+  });
+
+  it('rejects short passwords, missing keys and unknown keys', async () => {
+    // Auth's floor is 6 characters — a vault entry below it could never have
+    // been the real password.
+    await assertFails(setDoc(secret(alice(), BOB), vault({ password: 'abc' })));
+    const { password: _noPassword, ...missing } = vault();
+    await assertFails(setDoc(secret(alice(), BOB), missing));
+    await assertFails(setDoc(secret(alice(), BOB), vault({ mfaEnabled: true })));
+  });
+});
+
+describe('/appConfig — the release gate', () => {
+  const config = (over: Record<string, unknown> = {}) => ({
+    latestVersion: '1.2.0',
+    requiredVersion: '1.1.0',
+    supportPhone: '919876543210',
+    updatedAt: null,
+    updatedBy: 'alice@example.com',
+    ...over,
+  });
+
+  const general = (db: Firestore) => doc(db, 'appConfig', 'general');
+
+  it('is readable while signed out — an outdated build must see the lock', async () => {
+    await assertSucceeds(setDoc(general(alice()), config()));
+    await assertSucceeds(getDoc(general(anon())));
+    await assertSucceeds(getDoc(general(bob())));
+    await assertSucceeds(getDoc(general(daksh())));
+    await assertSucceeds(getDoc(general(cara())));
+  });
+
+  it('is written by a super admin and refused to everyone else', async () => {
+    await assertFails(setDoc(general(daksh()), config()));
+    await assertFails(setDoc(general(bob()), config()));
+    await assertFails(setDoc(general(cara()), config()));
+    await assertFails(setDoc(general(anon()), config()));
+    await assertSucceeds(setDoc(general(alice()), config()));
+  });
+
+  it('rejects garbage versions, phones and unknown keys', async () => {
+    // Semver shape — the client parses and compares; the rules only keep
+    // junk out (raising the floor to "soon" would lock every build forever).
+    await assertFails(setDoc(general(alice()), config({ requiredVersion: 'soon' })));
+    await assertFails(setDoc(general(alice()), config({ latestVersion: '' })));
+    // Support phone: digits only (wa.me), or empty = "not configured yet".
+    await assertFails(setDoc(general(alice()), config({ supportPhone: '+91 98765' })));
+    await assertSucceeds(setDoc(general(alice()), config({ supportPhone: '' })));
+    // Exact keys — a stray field (say, an API token someone pastes in)
+    // dies here rather than being stored next to the versions.
+    await assertFails(setDoc(general(alice()), config({ apiKey: 'x' })));
+  });
+
+  it('cannot be deleted — a stale build would otherwise lose its own gate', async () => {
+    await assertSucceeds(setDoc(general(alice()), config()));
+    await assertFails(deleteDoc(general(alice())));
   });
 });
 

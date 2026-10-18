@@ -16,9 +16,12 @@
 import { AnimatePresence, motion } from 'motion/react';
 import {
   ClipboardList,
+  Database,
+  History,
   LayoutDashboard,
   LogOut,
   PanelLeft,
+  Settings,
   UserCog,
   Users,
   Vote,
@@ -28,6 +31,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import type { ComponentType } from 'react';
 import { signOut } from '@/lib/api';
+import { can, type Capability } from '@/lib/roles';
 import { cn } from '@/lib/util';
 import { useSession } from '@/stores/session';
 import { useUi } from '@/stores/ui';
@@ -37,14 +41,33 @@ export interface NavItem {
   href: string;
   label: string;
   icon: ComponentType<{ className?: string }>;
+  /** Capability required to SEE the entry — mirrored from firestore.rules. */
+  cap?: Capability;
 }
 
 export const NAV: NavItem[] = [
   { href: '/', label: 'Overview', icon: LayoutDashboard },
   { href: '/voters', label: 'Voter roll', icon: Users },
   { href: '/tasks', label: 'Tasks', icon: ClipboardList },
-  { href: '/users', label: 'Accounts', icon: UserCog },
+  { href: '/users', label: 'Accounts', icon: UserCog, cap: 'accountView' },
+  // "Which voter data changes did each user make" — the per-account
+  // `voterEdits` audit, readable by the same roster tier that sees the
+  // accounts themselves (firestore.rules voterEdits read).
+  { href: '/changes', label: 'Voter changes', icon: History, cap: 'accountView' },
+  // Roll import + per-ward verification — developer-only, like every other
+  // `dataTools` surface. The import itself runs through a local API route
+  // that shells out to scripts/seed-roll.mjs with the Admin SDK.
+  { href: '/data', label: 'Roll import', icon: Database, cap: 'dataTools' },
+  // Release control: version gate + support WhatsApp number (`appConfig`) —
+  // raising `requiredVersion` locks every older build behind the update
+  // modal, so it sits with account management, not admin.
+  { href: '/settings', label: 'Settings', icon: Settings, cap: 'accountManage' },
 ];
+
+/** What THIS session may see in the nav — same capability words as rules. */
+export function visibleNav(role: string | null): NavItem[] {
+  return NAV.filter((item) => !item.cap || can(role, item.cap));
+}
 
 function isActive(pathname: string, href: string): boolean {
   return href === '/' ? pathname === '/' : pathname === href || pathname.startsWith(`${href}/`);
@@ -91,27 +114,33 @@ interface RailProps {
 export function Rail({ compact, onNavigate, overlay = false }: RailProps) {
   const pathname = usePathname();
   const collapse = useUi((s) => s.toggleSidebar);
+  const role = useSession((s) => s.role);
+  const items = visibleNav(role);
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex items-center justify-between pr-2">
+      {/* Collapsed, the brand icon packs away and this becomes the ONLY
+          way back to the expanded rail — so it renders in BOTH states (it
+          used to be `compact && 'hidden'`, which swallowed the very button
+          that un-collapses the sidebar). `rotate-180` in the compact state
+          says which direction the rail will move. */}
+      <div className={cn('flex items-center justify-between pr-2', compact && 'flex-col gap-2 pr-0')}>
         <Brand compact={compact} />
         {!overlay ? (
           <button
             onClick={collapse}
             aria-label={compact ? 'Expand sidebar' : 'Collapse sidebar'}
             className={cn(
-              'rounded-lg p-2 text-mist-600 transition-colors hover:bg-white/5 hover:text-mist-200',
-              compact && 'hidden'
+              'rounded-lg p-2 text-mist-600 transition-colors hover:bg-white/5 hover:text-mist-200'
             )}
           >
-            <PanelLeft className="size-4" />
+            <PanelLeft className={cn('size-4 transition-transform', compact && 'rotate-180')} />
           </button>
         ) : null}
       </div>
 
       <nav className="mt-4 flex flex-1 flex-col gap-1 px-3">
-        {NAV.map((item) => {
+        {items.map((item) => {
           const active = isActive(pathname, item.href);
           const Icon = item.icon;
           return (

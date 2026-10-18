@@ -12,6 +12,7 @@ import type {
   SelectHTMLAttributes,
   TextareaHTMLAttributes,
 } from 'react';
+import { ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/util';
 import { roleLabel } from '@/lib/roles';
 
@@ -183,15 +184,52 @@ export function Input({
   return <input className={cn(CONTROL, className)} {...props} />;
 }
 
+/**
+ * The premium select — still a native `<select>` under the hood.
+ *
+ * Native on purpose: keyboard, screen-reader and mobile-picker behaviour
+ * come free, and every existing `<Select><option …/></Select>` call site
+ * keeps working untouched. The premium part is the chrome around it:
+ *
+ * - a machined inner highlight (`inset 0 1px 0`) over a two-stop vertical
+ *   gradient, so the control reads as a physical slot rather than a flat box;
+ * - a chevron that lives OUTSIDE the select's own box (drawn as a sibling),
+ *   so it can transition colour and rotate independently of the OS-controlled
+ *   select rendering — the tint follows the hover/focus state of the wrapper;
+ * - a focus halo (`0 0 0 3px brand/15`) layered under the standard border
+ *   change, matching the panel's focus language elsewhere;
+ * - a hover lift on the border, so the control invites the click before the
+ *   pointer lands.
+ */
 export function Select({
   className,
   children,
   ...props
 }: SelectHTMLAttributes<HTMLSelectElement>) {
   return (
-    <select className={cn(CONTROL, 'appearance-none bg-ink-800', className)} {...props}>
-      {children}
-    </select>
+    <div className='group/select relative'>
+      <select
+        className={cn(
+          CONTROL,
+          'cursor-pointer appearance-none pr-10',
+          'bg-gradient-to-b from-ink-800 to-ink-900/90 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]',
+          'hover:border-line-strong hover:from-ink-800/80',
+          'focus:border-brand-400/60 focus:shadow-[inset_0_1px_0_rgba(255,255,255,0.05),0_0_0_3px_rgba(99,102,241,0.14)] focus:outline-none',
+          className
+        )}
+        {...props}
+      >
+        {children}
+      </select>
+      <ChevronDown
+        aria-hidden
+        className={cn(
+          'pointer-events-none absolute right-3.5 top-1/2 size-4 -translate-y-1/2',
+          'text-mist-500 transition-all duration-200',
+          'group-hover/select:text-brand-400 group-focus-within/select:text-brand-400 group-focus-within/select:rotate-180'
+        )}
+      />
+    </div>
   );
 }
 

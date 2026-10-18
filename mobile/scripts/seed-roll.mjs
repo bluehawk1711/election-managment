@@ -34,7 +34,7 @@
  * ceiling on a `setAll`-style batch, so writes go through `bulkWriter` at 500
  * per commit.
  */
-import { initializeApp, applicationDefault } from 'firebase-admin/app';
+import { applicationDefault, cert, initializeApp } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
@@ -64,8 +64,14 @@ const WARD_COUNT = 13;
 const BATCH_SIZE = 500;
 
 const CONSTITUENCY_ID = 'cons-jodhpur-jhanwar';
+// The area every roll ward belongs to — seeded into `areas` so the app's
+// area → ward → voter hierarchy is data instead of a hard-coded label
+// (`components/campaign/area-select.tsx` reads this collection and falls
+// back to the bundled Veernagar entry only when it is empty).
+const AREA_ID = 'veernagar';
 const WARDS_COLLECTION = 'wards';
 const VOTERS_COLLECTION = 'voters';
+const AREAS_COLLECTION = 'areas';
 
 // ---------------------------------------------------------------------------
 // Arguments and project resolution
@@ -190,6 +196,10 @@ function readWardFile(wardNo) {
     voters.push({
       id: `w${wardNo}-${serialNo}`,
       wardNo,
+      // Area categorisation travels ON the row as well as on the ward, so a
+      // roll segment (a second import for another area) can be told apart
+      // without joining through `wards` first.
+      areaId: AREA_ID,
       serialNo,
       epicId: at('epic_id'),
       name: at('name'),
@@ -337,16 +347,32 @@ async function main() {
     process.exit(1);
   }
 
-  if (!process.env.GOOGLE_APPLICATION_CREDENTIALS) {
+  // Preferred: FIREBASE_ADMIN_* env vars (same ones admin/.env.local sets —
+  // the admin panel's /api/roll/seed route passes them through). Fallback:
+  // GOOGLE_APPLICATION_CREDENTIALS pointing at a service-account JSON.
+  const adminKey =
+    process.env.FIREBASE_ADMIN_CLIENT_EMAIL && process.env.FIREBASE_ADMIN_PRIVATE_KEY
+      ? {
+          clientEmail: process.env.FIREBASE_ADMIN_CLIENT_EMAIL,
+          privateKey: process.env.FIREBASE_ADMIN_PRIVATE_KEY.replace(/\\n/g, '\n'),
+          projectId,
+        }
+      : null;
+
+  if (!adminKey && !process.env.GOOGLE_APPLICATION_CREDENTIALS) {
     console.error(
-      '✖ GOOGLE_APPLICATION_CREDENTIALS is not set.\n' +
-        '  Point it at a service-account JSON with Firestore write access:\n\n' +
-        '    export GOOGLE_APPLICATION_CREDENTIALS="/path/to/service-account.json"\n'
+      '✖ No Admin SDK credentials.\n' +
+        '  Either set FIREBASE_ADMIN_PROJECT_ID / FIREBASE_ADMIN_CLIENT_EMAIL /\n' +
+        '  FIREBASE_ADMIN_PRIVATE_KEY (see admin/.env.local), or point\n' +
+        '  GOOGLE_APPLICATION_CREDENTIALS at a service-account JSON.\n'
     );
     process.exit(1);
   }
 
-  initializeApp({ credential: applicationDefault(), projectId });
+  initializeApp({
+    credential: adminKey ? cert(adminKey) : applicationDefault(),
+    projectId,
+  });
   const db = getFirestore(FIRESTORE_DATABASE_ID);
 
   // 1. Refuse to overwrite an existing roll without --force. Re-running this
@@ -382,6 +408,7 @@ async function main() {
     writer.set(db.collection(WARDS_COLLECTION).doc(String(ward.wardNo)), {
       wardNo: ward.wardNo,
       name: `वार्ड ${ward.wardNo}`,
+      areaId: AREA_ID,
       voterCount: ward.voters,
       male: ward.male,
       female: ward.female,
@@ -394,6 +421,19 @@ async function main() {
       constituencyId: CONSTITUENCY_ID,
     });
   }
+
+  // 2b. The area the whole roll belongs to — `area → ward → voter`.
+  // Exactly the three keys firestore.rules' client-side `areas` rule
+  // validates (this write bypasses rules as Admin SDK, but matching them
+  // keeps the document legal for every reader): `wardId: 'all'` because this
+  // area spans every ward, and the mobile selector's `areaContext` falls
+  // back to the area name when no single ward matches. Queued on the SAME
+  // BulkWriter as the wards — its `close()` flushes both.
+  writer.set(db.collection(AREAS_COLLECTION).doc(AREA_ID), {
+    name: 'Veernagar',
+    wardId: 'all',
+    constituencyId: CONSTITUENCY_ID,
+  });
   await writer.close();
 
   // 3. Voters. `id` is stripped — it is the document id, and the client's

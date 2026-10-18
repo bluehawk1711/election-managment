@@ -10,8 +10,17 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 type Props = {
   icon: React.ComponentType<LucideProps>;
-  chipLabel: string;
-  chipTone: ChipTone;
+  /**
+   * Optional status chip — only when the tile has something REAL to say.
+   *
+   * These tiles used to carry a decorative chip each ("Active", "Critical",
+   * "Synced", "Audit OK") that repeated no data and described nothing: the
+   * pending-tasks tile said "Active" whether it held 0 or 40 tasks. The chip
+   * is now opt-in, and the dashboard passes none — the value, label and
+   * sparkline already say everything the badge pretended to.
+   */
+  chipLabel?: string;
+  chipTone?: ChipTone;
   value: string;
   label: string;
   series: number[];
@@ -23,8 +32,8 @@ type Props = {
   onPress?: () => void;
 };
 
-/** 2×2 dashboard metric tile — icon box + chip, big value, label, sparkline. */
-export function MetricTile({ icon, chipLabel, chipTone, value, label, series, colorName = 'primary', onPress }: Props) {
+/** 2×2 dashboard metric tile — icon box (± chip), big value, label, sparkline. */
+export function MetricTile({ icon, chipLabel, chipTone = 'default', value, label, series, colorName = 'primary', onPress }: Props) {
   const card = useColor('card');
   const border = useColor('border');
   const iconBg = useColor('muted');
@@ -48,7 +57,7 @@ export function MetricTile({ icon, chipLabel, chipTone, value, label, series, co
         <View style={[styles.iconBox, { backgroundColor: iconBg }]}>
           <Icon name={icon} size={16} />
         </View>
-        <Chip label={chipLabel} tone={chipTone} />
+        {chipLabel ? <Chip label={chipLabel} tone={chipTone} /> : null}
       </View>
       <Text style={[typeStyle('headlineXl'), styles.value]}>{value}</Text>
       <Text variant='caption' numberOfLines={1} style={{ color: outline }}>

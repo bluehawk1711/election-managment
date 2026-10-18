@@ -8,7 +8,13 @@
  * the panel shows is always something the rules already agreed to.
  */
 import type { DocumentData, QueryDocumentSnapshot } from 'firebase/firestore';
-import { TASK_STATUSES, type Task, type Profile, type TaskStatus } from '@/lib/types';
+import {
+  TASK_STATUSES,
+  type Task,
+  type Profile,
+  type TaskStatus,
+  type DeviceBinding,
+} from '@/lib/types';
 import type { VoterRow, WardMeta, Gender, Relation } from '@/lib/types';
 import type {
   FinalizedContact,
@@ -102,6 +108,31 @@ export const profileFromDoc = (doc: AnyDoc): Profile => {
     role: typeof data.role === 'string' ? data.role : null,
     wardNo: typeof data.wardNo === 'number' ? data.wardNo : null,
     createdAt: data.createdAt ?? null,
+    device: parseDeviceBinding(data.device),
+    locked: data.locked === true,
+    lockedReason:
+      data.lockedReason === 'device_change' || data.lockedReason === 'admin'
+        ? data.lockedReason
+        : null,
+    lockedAt: typeof data.lockedAt === 'number' ? data.lockedAt : null,
+    lockedBy: typeof data.lockedBy === 'string' ? data.lockedBy : null,
+  };
+};
+
+/**
+ * Defensive read of `users/{uid}.device` — same contract as `enumOf`:
+ * anything malformed reads as "no binding" (the first-bind state) rather
+ * than crashing the row that renders it.
+ */
+const parseDeviceBinding = (value: unknown): DeviceBinding | null => {
+  if (!value || typeof value !== 'object') return null;
+  const map = value as Record<string, unknown>;
+  if (typeof map.id !== 'string' || !map.id) return null;
+  return {
+    id: map.id,
+    name: typeof map.name === 'string' ? map.name : '',
+    platform: typeof map.platform === 'string' ? map.platform : '',
+    lastActiveAt: typeof map.lastActiveAt === 'number' ? map.lastActiveAt : 0,
   };
 };
 

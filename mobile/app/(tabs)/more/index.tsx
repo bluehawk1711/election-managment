@@ -9,6 +9,7 @@ import { useAuth } from '@/providers/auth-provider';
 import { useTranslation } from 'react-i18next';
 import {
   CalendarDays,
+  CircleHelp,
   ClipboardList,
   LucideProps,
   Receipt,
@@ -47,7 +48,8 @@ interface HubEntry {
     | '/(tabs)/more/users'
     | '/(tabs)/more/issues'
     | '/(tabs)/more/expenses'
-    | '/(tabs)/more/settings';
+    | '/(tabs)/more/settings'
+    | '/(tabs)/more/help';
 }
 
 export default function MoreScreen() {
@@ -102,6 +104,17 @@ export default function MoreScreen() {
       tone: 'warning',
       href: '/(tabs)/more/settings',
     },
+    {
+      // After Settings on purpose: help is the answer when settings did not
+      // fix it, and it is the ONE entry every role sees (a roleless account
+      // lands on Settings and this, nothing else).
+      key: 'help',
+      title: t('more.help'),
+      hint: t('more.helpHint'),
+      icon: CircleHelp,
+      tone: 'info',
+      href: '/(tabs)/more/help',
+    },
   ];
 
   // `canVoters` for the content modules; `accountView` (admin and above) for
@@ -111,7 +124,9 @@ export default function MoreScreen() {
   const canVoters = can(role, 'voterRead');
   const canAccounts = can(role, 'accountView');
   const visible = entries.filter((entry) =>
-    entry.key === 'accounts' ? canAccounts : entry.key === 'settings' || canVoters
+    entry.key === 'accounts'
+      ? canAccounts
+      : entry.key === 'settings' || entry.key === 'help' || canVoters
   );
 
   return (

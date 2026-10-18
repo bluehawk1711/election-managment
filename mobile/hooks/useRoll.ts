@@ -118,7 +118,7 @@ const WARD_BATCH = 3;
 
 export function useRoll(
   initialWard: number | null = null,
-  options: { eager?: boolean } = {}
+  options: { eager?: boolean; wardScope?: readonly number[] | null } = {}
 ): RollState {
   const source = useMemo(() => getRollSource(), []);
 
@@ -140,6 +140,28 @@ export function useRoll(
    * one screen whose entire job is a total.
    */
   const eager = options.eager ?? false;
+  /**
+   * Which wards this account may READ, when the caller knows (`null` =
+   * unrestricted, the admin case).
+   *
+   * The rules layer answers a query for a ward outside the caller's scope
+   * with PERMISSION_DENIED, not an empty result — and because the "all
+   * wards" selection runs one query per ward under `Promise.all`, a SINGLE
+   * denied ward rejects the whole batch and the screen shows nothing but an
+   * error. That is what happened to a karykarta on open: wardNo starts `null`
+   * ("all"), the first batch is wards 1–3, and unless they happen to own one
+   * of those three every fetch fails until they narrow the selector to their
+   * own ward. Scoping `inScope` here means the queries that leave the device
+   * are only ever the ones rules will answer — the client mirror of
+   * `visibleWards` rather than a second opinion about it.
+   */
+  const wardScope = options.wardScope ?? null;
+  // Content key for the effect deps below: callers build the scope array in
+  // render, so a bare identity dep would refetch on every render forever, and
+  // skipping a change would miss the moment the profile (and with it the
+  // scope) lands. Same-content arrays share a key → no refetch; a changed
+  // membership → one refetch.
+  const wardScopeKey = wardScope == null ? '' : wardScope.join(',');
 
   const [wards, setWards] = useState<WardsBundle | null>(() => peekWards());
   const [rows, setRows] = useState<RollVoter[]>([]);
@@ -330,13 +352,20 @@ export function useRoll(
       setRefreshing(true);
 
       // The wards this pass covers. A single ward is just that ward; "all" is
-      // the first slice of the bundle, or all of it when `eager`.
+      // the first slice of the bundle, or all of it when `eager` — each then
+      // narrowed to `wardScope`, so no query outside the account's scope is
+      // ever issued (see `wardScope` above: a denied row fails the whole
+      // `Promise.all`, it does not come back empty).
+      const scopedToRole = (nos: readonly number[]): readonly number[] =>
+        wardScope == null ? nos : nos.filter((no) => wardScope.includes(no));
       const inScope: readonly number[] =
         wardNo != null
-          ? [wardNo]
-          : eager || !wards
-            ? (wards?.wards ?? []).map((ward) => ward.wardNo)
-            : wards.wards.slice(0, visibleWards).map((ward) => ward.wardNo);
+          ? scopedToRole([wardNo])
+          : scopedToRole(
+              eager || !wards
+                ? (wards?.wards ?? []).map((ward) => ward.wardNo)
+                : wards.wards.slice(0, visibleWards).map((ward) => ward.wardNo)
+            );
 
       // --- Overlay + queue: local, fast, and the reason a cached row can show
       // its own edits without any network at all.
@@ -465,7 +494,7 @@ export function useRoll(
     return () => {
       cancelled = true;
     };
-  }, [source, wardNo, attempt, wards, revision, visibleWards, eager]);
+  }, [source, wardNo, attempt, wards, revision, visibleWards, eager, wardScopeKey]);
 
   // Switching ward starts the paging over. Without this, choosing "All" after
   // reading deep into the list would leave the previously-loaded slice in place

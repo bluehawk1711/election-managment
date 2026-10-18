@@ -42,6 +42,7 @@ export default function MoreLayout() {
         { name: 'expenses/index', title: t('more.expenses') },
         { name: 'expenses/new', title: t('more.newExpense'), presentation: 'modal' },
         { name: 'settings/index', title: t('settings.title') },
+        { name: 'help', title: t('more.help') },
       ]}
     />
   );

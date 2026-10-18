@@ -28,6 +28,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useMemo, type ReactNode } from 'react';
 import { auth, db } from '@/lib/firebase';
+import { enforceDeviceLock } from '@/lib/device-lock';
 import { AppShell } from '@/components/shell/app-shell';
 import { Toaster } from '@/components/ui/toaster';
 import { useSession } from '@/stores/session';
@@ -35,9 +36,8 @@ import { useSession } from '@/stores/session';
 function SessionEffect() {
   useEffect(() => {
     let detachProfile: (() => void) | undefined;
-    let detachAuth: (() => void) | undefined;
 
-    detachAuth = onAuthStateChanged(auth, (user) => {
+    const detachAuth = onAuthStateChanged(auth, (user) => {
       detachProfile?.();
       detachProfile = undefined;
 
@@ -71,6 +71,12 @@ function SessionEffect() {
                 ? data.displayName
                 : undefined,
           });
+
+          // Per-device lock, on every snapshot: already locked → sign out;
+          // bound to ANOTHER browser → lock the account + sign out; no
+          // binding yet → bind THIS one. See lib/device-lock.ts for the
+          // three-state walk — it mirrors mobile's auth provider exactly.
+          void enforceDeviceLock(user.uid, data).catch(() => undefined);
         },
         (error) => {
           // Terminal listener errors are credential-class (the missing-doc

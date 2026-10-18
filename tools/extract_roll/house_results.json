@@ -1,0 +1,13444 @@
+{
+ "targets": [
+  {
+   "ward": 1,
+   "page": 6,
+   "serial": 100,
+   "epic": "IRW2461515",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 7,
+   "serial": 110,
+   "epic": "IRW0263293",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 7,
+   "serial": 111,
+   "epic": "IRW2407468",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 8,
+   "serial": 133,
+   "epic": "IRW2462943",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 8,
+   "serial": 136,
+   "epic": "IRW0485946",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 9,
+   "serial": 165,
+   "epic": "IRW2136315",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 9,
+   "serial": 179,
+   "epic": "IRW1947183",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 9,
+   "serial": 180,
+   "epic": "IRW1947209",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 9,
+   "serial": 181,
+   "epic": "IRW1947142",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 9,
+   "serial": 182,
+   "epic": "IRW2152544",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 10,
+   "serial": 197,
+   "epic": "IRW1597301",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 12,
+   "serial": 247,
+   "epic": "IRW2078202",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 12,
+   "serial": 248,
+   "epic": "IRW2466290",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 12,
+   "serial": 249,
+   "epic": "IRW1947753",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 12,
+   "serial": 250,
+   "epic": "IRW1947787",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 12,
+   "serial": 251,
+   "epic": "TGW1393495",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 12,
+   "serial": 252,
+   "epic": "TGW1393503",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 12,
+   "serial": 253,
+   "epic": "TGW1917053",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 12,
+   "serial": 254,
+   "epic": "IRW2527927",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 12,
+   "serial": 255,
+   "epic": "ZYG1670603",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 12,
+   "serial": 256,
+   "epic": "IRW2330512",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 12,
+   "serial": 257,
+   "epic": "IRW2479723",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 12,
+   "serial": 258,
+   "epic": "IRW2520542",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 12,
+   "serial": 259,
+   "epic": "IRW2424422",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 13,
+   "serial": 260,
+   "epic": "IRW2513042",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 13,
+   "serial": 261,
+   "epic": "IRW2513141",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 13,
+   "serial": 262,
+   "epic": "WFW1291723",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 13,
+   "serial": 263,
+   "epic": "WFW1291731",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 13,
+   "serial": 264,
+   "epic": "IRW2494656",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 13,
+   "serial": 265,
+   "epic": "TNM1438811",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 13,
+   "serial": 266,
+   "epic": "IRW2569721",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 13,
+   "serial": 267,
+   "epic": "IRW2520757",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 13,
+   "serial": 268,
+   "epic": "IRW2520575",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 13,
+   "serial": 269,
+   "epic": "IRW2111318",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 13,
+   "serial": 270,
+   "epic": "IRW2109767",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 13,
+   "serial": 271,
+   "epic": "IRW2113819",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 13,
+   "serial": 272,
+   "epic": "IRW2113843",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 13,
+   "serial": 273,
+   "epic": "IRW2513497",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 13,
+   "serial": 274,
+   "epic": "IRW2513877",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 13,
+   "serial": 275,
+   "epic": "IRW2520583",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 13,
+   "serial": 276,
+   "epic": "IRW2457729",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 13,
+   "serial": 277,
+   "epic": "IRW2457539",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 13,
+   "serial": 278,
+   "epic": "IRW2263390",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 13,
+   "serial": 279,
+   "epic": "IRW2458347",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 13,
+   "serial": 280,
+   "epic": "IRW1270594",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 13,
+   "serial": 282,
+   "epic": "IRW1272418",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 13,
+   "serial": 283,
+   "epic": "IRW1272426",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 13,
+   "serial": 284,
+   "epic": "IRW1167204",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 13,
+   "serial": 285,
+   "epic": "IRW1167212",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 13,
+   "serial": 286,
+   "epic": "IRW1167220",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 14,
+   "serial": 287,
+   "epic": "IRW1167196",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 14,
+   "serial": 288,
+   "epic": "IRW1167238",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 14,
+   "serial": 295,
+   "epic": "IRW1161645",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 16,
+   "serial": 359,
+   "epic": "IRW0597781",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 16,
+   "serial": 362,
+   "epic": "IRW0476663",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 16,
+   "serial": 363,
+   "epic": "IRW0476689",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 17,
+   "serial": 383,
+   "epic": "IRW0520775",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 17,
+   "serial": 384,
+   "epic": "IRW0925180",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 17,
+   "serial": 385,
+   "epic": "IRW0856757",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 17,
+   "serial": 386,
+   "epic": "IRW0856799",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 17,
+   "serial": 387,
+   "epic": "IRW0925156",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 17,
+   "serial": 388,
+   "epic": "IRW0925172",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 17,
+   "serial": 389,
+   "epic": "IRW0856906",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 17,
+   "serial": 390,
+   "epic": "IRW0925164",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 19,
+   "serial": 420,
+   "epic": "IRW2343028",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 19,
+   "serial": 421,
+   "epic": "IRW1847284",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 19,
+   "serial": 422,
+   "epic": "IRW1847185",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 19,
+   "serial": 442,
+   "epic": "IRW2560605",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 20,
+   "serial": 448,
+   "epic": "IRW2542728",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 20,
+   "serial": 454,
+   "epic": "IRW2528628",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 21,
+   "serial": 475,
+   "epic": "IRW2556249",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 21,
+   "serial": 483,
+   "epic": "IRW2501336",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 21,
+   "serial": 484,
+   "epic": "IRW0633172",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 21,
+   "serial": 485,
+   "epic": "IRW1943950",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 21,
+   "serial": 486,
+   "epic": "IRW1827070",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 21,
+   "serial": 487,
+   "epic": "IRW1942978",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 22,
+   "serial": 493,
+   "epic": "IRW1927466",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 22,
+   "serial": 507,
+   "epic": "IRW0598516",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 24,
+   "serial": 550,
+   "epic": "IRW2321545",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 24,
+   "serial": 551,
+   "epic": "IRW2321511",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 24,
+   "serial": 552,
+   "epic": "IRW2321529",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 24,
+   "serial": 553,
+   "epic": "IRW2321552",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 25,
+   "serial": 574,
+   "epic": "IRW1274158",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 25,
+   "serial": 575,
+   "epic": "IRW2599207",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 25,
+   "serial": 583,
+   "epic": "IRW2558294",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 26,
+   "serial": 604,
+   "epic": "IRW2520856",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 26,
+   "serial": 605,
+   "epic": "IRW2520690",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 26,
+   "serial": 606,
+   "epic": "IRW2520708",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 26,
+   "serial": 607,
+   "epic": "IRW2002608",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 26,
+   "serial": 608,
+   "epic": "IRW2002590",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 26,
+   "serial": 609,
+   "epic": "IRW2515419",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 26,
+   "serial": 610,
+   "epic": "IRW1879980",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 26,
+   "serial": 611,
+   "epic": "IRW1879972",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 26,
+   "serial": 612,
+   "epic": "IRW2520930",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 26,
+   "serial": 613,
+   "epic": "IYN1301571",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 26,
+   "serial": 614,
+   "epic": "IRW2029817",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 27,
+   "serial": 615,
+   "epic": "IRW1973759",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 27,
+   "serial": 616,
+   "epic": "CTK4483418",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 27,
+   "serial": 617,
+   "epic": "IRW1802131",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 27,
+   "serial": 618,
+   "epic": "IRW0851782",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 27,
+   "serial": 619,
+   "epic": "IRW1691401",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 27,
+   "serial": 620,
+   "epic": "IRW1691419",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 27,
+   "serial": 621,
+   "epic": "WFW1013192",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 27,
+   "serial": 622,
+   "epic": "WJS0531244",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 27,
+   "serial": 623,
+   "epic": "IRW1879873",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 27,
+   "serial": 624,
+   "epic": "IRW1879865",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 27,
+   "serial": 625,
+   "epic": "IRW1879907",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 27,
+   "serial": 626,
+   "epic": "IRW1879923",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 27,
+   "serial": 627,
+   "epic": "IRW1166602",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 27,
+   "serial": 628,
+   "epic": "IRW1166586",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 27,
+   "serial": 636,
+   "epic": "IRW1268721",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 28,
+   "serial": 643,
+   "epic": "IRW2651537",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 1,
+   "page": 28,
+   "serial": 648,
+   "epic": "IRW2656502",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 2,
+   "page": 34,
+   "serial": 101,
+   "epic": "IRW2481596",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 2,
+   "page": 34,
+   "serial": 102,
+   "epic": "IRW2481497",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 2,
+   "page": 35,
+   "serial": 113,
+   "epic": "IRW1993377",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 2,
+   "page": 35,
+   "serial": 114,
+   "epic": "IRW0308072",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 2,
+   "page": 35,
+   "serial": 115,
+   "epic": "IRW2280618",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 2,
+   "page": 35,
+   "serial": 116,
+   "epic": "IRW1264233",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 2,
+   "page": 35,
+   "serial": 117,
+   "epic": "IRW1264225",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 2,
+   "page": 35,
+   "serial": 118,
+   "epic": "IRW2564763",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 2,
+   "page": 35,
+   "serial": 119,
+   "epic": "IRW2186195",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 2,
+   "page": 35,
+   "serial": 120,
+   "epic": "IRW2565232",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 2,
+   "page": 35,
+   "serial": 121,
+   "epic": "IRW2565240",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 2,
+   "page": 35,
+   "serial": 122,
+   "epic": "IRW1844208",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 2,
+   "page": 35,
+   "serial": 123,
+   "epic": "IRW2549061",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 2,
+   "page": 35,
+   "serial": 124,
+   "epic": "IRW2611168",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 2,
+   "page": 35,
+   "serial": 126,
+   "epic": "IRW2637189",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 2,
+   "page": 36,
+   "serial": 146,
+   "epic": "IRW2460731",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 2,
+   "page": 37,
+   "serial": 156,
+   "epic": "IRW2564706",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 2,
+   "page": 37,
+   "serial": 182,
+   "epic": "IRW2266906",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 2,
+   "page": 38,
+   "serial": 183,
+   "epic": "IRW2461622",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 2,
+   "page": 38,
+   "serial": 184,
+   "epic": "IRW2146462",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 2,
+   "page": 38,
+   "serial": 185,
+   "epic": "IRW2146470",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 2,
+   "page": 38,
+   "serial": 186,
+   "epic": "IRW2519221",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 2,
+   "page": 38,
+   "serial": 187,
+   "epic": "IRW2519213",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 2,
+   "page": 38,
+   "serial": 188,
+   "epic": "IRW2519288",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 2,
+   "page": 38,
+   "serial": 189,
+   "epic": "IRW2519239",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 2,
+   "page": 38,
+   "serial": 190,
+   "epic": "IRW2517704",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 2,
+   "page": 38,
+   "serial": 191,
+   "epic": "IRW2564698",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 2,
+   "page": 38,
+   "serial": 206,
+   "epic": "IRW2561082",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 2,
+   "page": 39,
+   "serial": 207,
+   "epic": "WFW0906560",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 2,
+   "page": 39,
+   "serial": 233,
+   "epic": "IRW2562049",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 2,
+   "page": 41,
+   "serial": 265,
+   "epic": "IRW1524479",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 2,
+   "page": 41,
+   "serial": 266,
+   "epic": "IRW1524487",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 2,
+   "page": 41,
+   "serial": 267,
+   "epic": "IRW1524495",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 2,
+   "page": 41,
+   "serial": 268,
+   "epic": "IRW1524420",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 2,
+   "page": 41,
+   "serial": 270,
+   "epic": "IRW0925024",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 2,
+   "page": 41,
+   "serial": 271,
+   "epic": "IRW2489706",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 2,
+   "page": 41,
+   "serial": 272,
+   "epic": "IRW2489227",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 2,
+   "page": 41,
+   "serial": 274,
+   "epic": "IRW2304707",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 2,
+   "page": 41,
+   "serial": 275,
+   "epic": "IRW2489433",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 2,
+   "page": 41,
+   "serial": 276,
+   "epic": "IRW2544468",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 2,
+   "page": 41,
+   "serial": 277,
+   "epic": "IRW2613388",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 2,
+   "page": 41,
+   "serial": 282,
+   "epic": "IRW2616159",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 2,
+   "page": 42,
+   "serial": 298,
+   "epic": "IRW0925305",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 2,
+   "page": 43,
+   "serial": 324,
+   "epic": "IRW2251684",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 2,
+   "page": 46,
+   "serial": 397,
+   "epic": "IRW0059774",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 2,
+   "page": 46,
+   "serial": 398,
+   "epic": "IRW0059881",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 2,
+   "page": 46,
+   "serial": 399,
+   "epic": "CTK4948535",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 2,
+   "page": 47,
+   "serial": 418,
+   "epic": "CTK4951414",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 2,
+   "page": 47,
+   "serial": 419,
+   "epic": "IRW0060467",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 2,
+   "page": 50,
+   "serial": 492,
+   "epic": "IRW0414995",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 2,
+   "page": 50,
+   "serial": 495,
+   "epic": "CTK4951166",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 2,
+   "page": 50,
+   "serial": 503,
+   "epic": "CTK4950259",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 2,
+   "page": 50,
+   "serial": 504,
+   "epic": "CTK4949947",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 2,
+   "page": 50,
+   "serial": 505,
+   "epic": "CTK4948543",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 2,
+   "page": 50,
+   "serial": 506,
+   "epic": "CTK4948550",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 2,
+   "page": 51,
+   "serial": 536,
+   "epic": "CTK4946190",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 2,
+   "page": 51,
+   "serial": 537,
+   "epic": "CTK4945838",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 2,
+   "page": 53,
+   "serial": 589,
+   "epic": "IRW0924837",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 2,
+   "page": 53,
+   "serial": 590,
+   "epic": "IRW0307751",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 2,
+   "page": 54,
+   "serial": 600,
+   "epic": "CTK4954020",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 2,
+   "page": 54,
+   "serial": 615,
+   "epic": "IRW0597641",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 2,
+   "page": 55,
+   "serial": 624,
+   "epic": "IRW2123032",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 2,
+   "page": 56,
+   "serial": 662,
+   "epic": "IRW2411031",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 2,
+   "page": 56,
+   "serial": 667,
+   "epic": "IRW1264498",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 2,
+   "page": 58,
+   "serial": 703,
+   "epic": "IRW2458263",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 2,
+   "page": 58,
+   "serial": 704,
+   "epic": "IRW1719525",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 2,
+   "page": 58,
+   "serial": 707,
+   "epic": "IRW2339380",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 2,
+   "page": 59,
+   "serial": 730,
+   "epic": "IRW2349918",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 2,
+   "page": 59,
+   "serial": 738,
+   "epic": "IRW1693431",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 2,
+   "page": 59,
+   "serial": 739,
+   "epic": "IRW1265347",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 2,
+   "page": 59,
+   "serial": 740,
+   "epic": "IRW1265180",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 2,
+   "page": 59,
+   "serial": 741,
+   "epic": "IRW2442606",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 2,
+   "page": 59,
+   "serial": 742,
+   "epic": "IRW1693423",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 2,
+   "page": 59,
+   "serial": 743,
+   "epic": "IRW1693456",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 2,
+   "page": 59,
+   "serial": 744,
+   "epic": "IRW1693464",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 2,
+   "page": 59,
+   "serial": 745,
+   "epic": "IRW2568442",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 2,
+   "page": 59,
+   "serial": 747,
+   "epic": "IRW2468361",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 2,
+   "page": 59,
+   "serial": 748,
+   "epic": "IRW2528404",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 2,
+   "page": 60,
+   "serial": 749,
+   "epic": "IRW2322360",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 2,
+   "page": 60,
+   "serial": 750,
+   "epic": "IRW2528412",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 2,
+   "page": 60,
+   "serial": 751,
+   "epic": "IRW2296549",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 2,
+   "page": 60,
+   "serial": 754,
+   "epic": "IRW2557932",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 2,
+   "page": 60,
+   "serial": 765,
+   "epic": "IRW0334771",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 69,
+   "serial": 143,
+   "epic": "IRW1890268",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 70,
+   "serial": 160,
+   "epic": "IRW1158914",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 70,
+   "serial": 161,
+   "epic": "IRW2049930",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 70,
+   "serial": 162,
+   "epic": "IRW2532414",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 70,
+   "serial": 163,
+   "epic": "IRW2338580",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 70,
+   "serial": 164,
+   "epic": "IRW2338598",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 70,
+   "serial": 165,
+   "epic": "IRW2338606",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 71,
+   "serial": 183,
+   "epic": "IRW1701390",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 71,
+   "serial": 192,
+   "epic": "IRW1394758",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 71,
+   "serial": 193,
+   "epic": "IRW2269934",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 72,
+   "serial": 216,
+   "epic": "IRW2033553",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 72,
+   "serial": 220,
+   "epic": "IRW2417970",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 72,
+   "serial": 227,
+   "epic": "IRW2462992",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 72,
+   "serial": 228,
+   "epic": "IRW2462984",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 74,
+   "serial": 267,
+   "epic": "IRW1159524",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 74,
+   "serial": 268,
+   "epic": "IRW1159532",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 74,
+   "serial": 269,
+   "epic": "IRW1159540",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 74,
+   "serial": 270,
+   "epic": "IRW1159557",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 74,
+   "serial": 271,
+   "epic": "IRW1492271",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 75,
+   "serial": 306,
+   "epic": "IRW2180305",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 75,
+   "serial": 307,
+   "epic": "IRW2180230",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 75,
+   "serial": 308,
+   "epic": "IRW2365062",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 75,
+   "serial": 310,
+   "epic": "IRW1158922",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 75,
+   "serial": 311,
+   "epic": "IRW1263912",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 75,
+   "serial": 312,
+   "epic": "IRW2477297",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 75,
+   "serial": 313,
+   "epic": "IRW2477347",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 75,
+   "serial": 314,
+   "epic": "IRW2120632",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 75,
+   "serial": 315,
+   "epic": "IRW0779405",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 76,
+   "serial": 316,
+   "epic": "IRW0779413",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 76,
+   "serial": 338,
+   "epic": "IRW0859892",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 77,
+   "serial": 347,
+   "epic": "IRW2561470",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 77,
+   "serial": 348,
+   "epic": "IRW2384303",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 77,
+   "serial": 349,
+   "epic": "IRW0903211",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 77,
+   "serial": 351,
+   "epic": "IRW2384162",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 78,
+   "serial": 367,
+   "epic": "IRW2304988",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 78,
+   "serial": 373,
+   "epic": "IRW1944230",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 79,
+   "serial": 391,
+   "epic": "IRW1165588",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 79,
+   "serial": 394,
+   "epic": "KGG1451095",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 79,
+   "serial": 395,
+   "epic": "IRW2084788",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 79,
+   "serial": 396,
+   "epic": "IRW2084986",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 79,
+   "serial": 397,
+   "epic": "IRW2247492",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 80,
+   "serial": 411,
+   "epic": "TGW1903079",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 80,
+   "serial": 425,
+   "epic": "IRW2251593",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 80,
+   "serial": 426,
+   "epic": "IRW2251601",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 80,
+   "serial": 427,
+   "epic": "IRW2148179",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 80,
+   "serial": 429,
+   "epic": "IRW2558005",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 80,
+   "serial": 430,
+   "epic": "IRW0982751",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 81,
+   "serial": 432,
+   "epic": "IRW1268374",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 81,
+   "serial": 433,
+   "epic": "IRW2548089",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 81,
+   "serial": 434,
+   "epic": "IRW2548097",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 81,
+   "serial": 435,
+   "epic": "IRW2555993",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 81,
+   "serial": 436,
+   "epic": "WFW1347418",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 81,
+   "serial": 451,
+   "epic": "IRW1720499",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 82,
+   "serial": 463,
+   "epic": "IRW2563807",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 82,
+   "serial": 464,
+   "epic": "IRW2608164",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 82,
+   "serial": 466,
+   "epic": "IRW2210573",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 82,
+   "serial": 470,
+   "epic": "IRW2467819",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 82,
+   "serial": 471,
+   "epic": "IRW2466779",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 82,
+   "serial": 477,
+   "epic": "IRW1828714",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 82,
+   "serial": 478,
+   "epic": "IRW2117257",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 83,
+   "serial": 493,
+   "epic": "IRW2524445",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 83,
+   "serial": 494,
+   "epic": "IRW2524452",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 83,
+   "serial": 495,
+   "epic": "IRW2528644",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 83,
+   "serial": 496,
+   "epic": "IRW2556876",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 83,
+   "serial": 497,
+   "epic": "IRW2461549",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 83,
+   "serial": 498,
+   "epic": "IRW1977313",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 83,
+   "serial": 499,
+   "epic": "IRW2548071",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 83,
+   "serial": 500,
+   "epic": "IRW2518355",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 83,
+   "serial": 501,
+   "epic": "IRW2473007",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 83,
+   "serial": 502,
+   "epic": "IRW2564359",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 83,
+   "serial": 503,
+   "epic": "IRW2525103",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 83,
+   "serial": 504,
+   "epic": "IRW2569739",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 83,
+   "serial": 505,
+   "epic": "IRW1944214",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 83,
+   "serial": 507,
+   "epic": "IRW1943869",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 83,
+   "serial": 508,
+   "epic": "IRW2565018",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 83,
+   "serial": 509,
+   "epic": "IRW2565000",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 84,
+   "serial": 510,
+   "epic": "IRW2590461",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 84,
+   "serial": 513,
+   "epic": "IRW2574192",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 84,
+   "serial": 520,
+   "epic": "IRW1177161",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 84,
+   "serial": 521,
+   "epic": "IRW1177153",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 85,
+   "serial": 543,
+   "epic": "IRW1643733",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 86,
+   "serial": 563,
+   "epic": "TGW2765253",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 87,
+   "serial": 591,
+   "epic": "IRW2564466",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 90,
+   "serial": 657,
+   "epic": "IRW1879592",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 90,
+   "serial": 670,
+   "epic": "IRW2558583",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 90,
+   "serial": 680,
+   "epic": "IRW2556595",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 90,
+   "serial": 681,
+   "epic": "IRW2590255",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 90,
+   "serial": 682,
+   "epic": "IRW2564482",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 91,
+   "serial": 683,
+   "epic": "IRW2564490",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 92,
+   "serial": 708,
+   "epic": "IRW2304962",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 92,
+   "serial": 714,
+   "epic": "IRW2442499",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 92,
+   "serial": 715,
+   "epic": "IRW2442366",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 92,
+   "serial": 721,
+   "epic": "IRW1962000",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 93,
+   "serial": 734,
+   "epic": "IRW2322071",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 93,
+   "serial": 745,
+   "epic": "IRW2422343",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 93,
+   "serial": 746,
+   "epic": "IRW2367738",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 93,
+   "serial": 747,
+   "epic": "IRW2406288",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 93,
+   "serial": 748,
+   "epic": "IRW2367142",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 93,
+   "serial": 757,
+   "epic": "IRW2329415",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 94,
+   "serial": 763,
+   "epic": "IRW1524156",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 94,
+   "serial": 766,
+   "epic": "IRW1986348",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 94,
+   "serial": 767,
+   "epic": "IRW1895572",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 94,
+   "serial": 768,
+   "epic": "GMN3143161",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 94,
+   "serial": 769,
+   "epic": "IRW0903195",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 94,
+   "serial": 771,
+   "epic": "IRW1647627",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 94,
+   "serial": 772,
+   "epic": "RJ/24/185/318115",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 94,
+   "serial": 773,
+   "epic": "CTK2856466",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 94,
+   "serial": 774,
+   "epic": "TGW1228204",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 94,
+   "serial": 775,
+   "epic": "TGW1061647",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 94,
+   "serial": 776,
+   "epic": "IRW2556686",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 94,
+   "serial": 778,
+   "epic": "IRW2480036",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 94,
+   "serial": 779,
+   "epic": "IRW2172880",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 94,
+   "serial": 780,
+   "epic": "IRW2463131",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 94,
+   "serial": 781,
+   "epic": "IRW2131605",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 94,
+   "serial": 782,
+   "epic": "IRW2131621",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 94,
+   "serial": 783,
+   "epic": "AVX3780418",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 94,
+   "serial": 784,
+   "epic": "IRW2599736",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 94,
+   "serial": 786,
+   "epic": "CTK4949129",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 94,
+   "serial": 787,
+   "epic": "IRW2603066",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 95,
+   "serial": 789,
+   "epic": "IRW2607281",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 95,
+   "serial": 790,
+   "epic": "IRW2607299",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 95,
+   "serial": 792,
+   "epic": "IRW2615425",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 95,
+   "serial": 793,
+   "epic": "IRW2616555",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 95,
+   "serial": 799,
+   "epic": "IRW2601755",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 95,
+   "serial": 802,
+   "epic": "IRW2612752",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 3,
+   "page": 95,
+   "serial": 805,
+   "epic": "WLK3063823",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 4,
+   "page": 98,
+   "serial": 5,
+   "epic": "CTK2588754",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 4,
+   "page": 98,
+   "serial": 6,
+   "epic": "CTK2588762",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 4,
+   "page": 98,
+   "serial": 7,
+   "epic": "IRW2172997",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 4,
+   "page": 98,
+   "serial": 8,
+   "epic": "CTK4952834",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 4,
+   "page": 98,
+   "serial": 9,
+   "epic": "IRW1404144",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 4,
+   "page": 100,
+   "serial": 58,
+   "epic": "IRW2214336",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 4,
+   "page": 100,
+   "serial": 59,
+   "epic": "IRW2214369",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 4,
+   "page": 101,
+   "serial": 99,
+   "epic": "IRW1638436",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 4,
+   "page": 101,
+   "serial": 104,
+   "epic": "IRW1991488",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 4,
+   "page": 102,
+   "serial": 110,
+   "epic": "IRW1158856",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 4,
+   "page": 102,
+   "serial": 111,
+   "epic": "IRW1158849",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 4,
+   "page": 102,
+   "serial": 112,
+   "epic": "IRW1158880",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 4,
+   "page": 102,
+   "serial": 114,
+   "epic": "IRW1837095",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 4,
+   "page": 102,
+   "serial": 115,
+   "epic": "IRW1837145",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 4,
+   "page": 102,
+   "serial": 116,
+   "epic": "IRW1837178",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 4,
+   "page": 102,
+   "serial": 117,
+   "epic": "IRW1837210",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 4,
+   "page": 102,
+   "serial": 118,
+   "epic": "CTK4945721",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 4,
+   "page": 102,
+   "serial": 119,
+   "epic": "CTK4945739",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 4,
+   "page": 102,
+   "serial": 120,
+   "epic": "CTK4945713",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 4,
+   "page": 102,
+   "serial": 121,
+   "epic": "IRW2217321",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 4,
+   "page": 102,
+   "serial": 122,
+   "epic": "IRW1815653",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 4,
+   "page": 102,
+   "serial": 123,
+   "epic": "IRW2034577",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 4,
+   "page": 102,
+   "serial": 124,
+   "epic": "IRW1490523",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 4,
+   "page": 102,
+   "serial": 125,
+   "epic": "IRW1953686",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 4,
+   "page": 102,
+   "serial": 126,
+   "epic": "IRW1953587",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 4,
+   "page": 102,
+   "serial": 127,
+   "epic": "IRW1815596",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 4,
+   "page": 102,
+   "serial": 128,
+   "epic": "IRW1815588",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 4,
+   "page": 105,
+   "serial": 186,
+   "epic": "IRW0476218",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 4,
+   "page": 105,
+   "serial": 189,
+   "epic": "IRW0414490",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 4,
+   "page": 106,
+   "serial": 230,
+   "epic": "IRW2265767",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 4,
+   "page": 108,
+   "serial": 270,
+   "epic": "IRW2407344",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 4,
+   "page": 108,
+   "serial": 271,
+   "epic": "IRW2467900",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 4,
+   "page": 108,
+   "serial": 272,
+   "epic": "IRW2480432",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 4,
+   "page": 108,
+   "serial": 281,
+   "epic": "IRW2463941",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 4,
+   "page": 108,
+   "serial": 282,
+   "epic": "IRW1493048",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 4,
+   "page": 108,
+   "serial": 283,
+   "epic": "IRW2563682",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 4,
+   "page": 108,
+   "serial": 284,
+   "epic": "IRW2563708",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 4,
+   "page": 108,
+   "serial": 285,
+   "epic": "IRW2563914",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 4,
+   "page": 108,
+   "serial": 286,
+   "epic": "IRW2542462",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 4,
+   "page": 108,
+   "serial": 287,
+   "epic": "IRW2545200",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 4,
+   "page": 109,
+   "serial": 288,
+   "epic": "IRW1693225",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 4,
+   "page": 109,
+   "serial": 289,
+   "epic": "IRW2338291",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 4,
+   "page": 109,
+   "serial": 290,
+   "epic": "IRW2338283",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 4,
+   "page": 110,
+   "serial": 333,
+   "epic": "IRW1987387",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 4,
+   "page": 110,
+   "serial": 334,
+   "epic": "IRW1987379",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 4,
+   "page": 110,
+   "serial": 335,
+   "epic": "IRW1987189",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 4,
+   "page": 111,
+   "serial": 359,
+   "epic": "IRW2157402",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 4,
+   "page": 112,
+   "serial": 372,
+   "epic": "TGW2093177",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 4,
+   "page": 113,
+   "serial": 410,
+   "epic": "IRW2348514",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 4,
+   "page": 114,
+   "serial": 428,
+   "epic": "IRW1945849",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 4,
+   "page": 115,
+   "serial": 448,
+   "epic": "IRW2526937",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 4,
+   "page": 115,
+   "serial": 449,
+   "epic": "IRW2527042",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 4,
+   "page": 116,
+   "serial": 476,
+   "epic": "IRW1165356",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 4,
+   "page": 116,
+   "serial": 487,
+   "epic": "IRW2384030",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 4,
+   "page": 118,
+   "serial": 532,
+   "epic": "IRW0982967",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 4,
+   "page": 121,
+   "serial": 632,
+   "epic": "IRW1493006",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 4,
+   "page": 121,
+   "serial": 633,
+   "epic": "IRW1492974",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 4,
+   "page": 122,
+   "serial": 635,
+   "epic": "IRW1493022",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 4,
+   "page": 122,
+   "serial": 636,
+   "epic": "IRW1524198",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 4,
+   "page": 122,
+   "serial": 637,
+   "epic": "CTK4451209",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 4,
+   "page": 122,
+   "serial": 638,
+   "epic": "IRW1039833",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 4,
+   "page": 122,
+   "serial": 639,
+   "epic": "IRW2590347",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 4,
+   "page": 122,
+   "serial": 640,
+   "epic": "IRW2590362",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 4,
+   "page": 122,
+   "serial": 641,
+   "epic": "IRW2439776",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 4,
+   "page": 122,
+   "serial": 642,
+   "epic": "IRW2146694",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 4,
+   "page": 122,
+   "serial": 643,
+   "epic": "IRW2564284",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 4,
+   "page": 122,
+   "serial": 644,
+   "epic": "IRW2501997",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 4,
+   "page": 122,
+   "serial": 645,
+   "epic": "IRW2502029",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 4,
+   "page": 122,
+   "serial": 646,
+   "epic": "IRW1165315",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 4,
+   "page": 122,
+   "serial": 647,
+   "epic": "IRW2153716",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 4,
+   "page": 122,
+   "serial": 648,
+   "epic": "IRW2564276",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 4,
+   "page": 122,
+   "serial": 649,
+   "epic": "IRW1902204",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 4,
+   "page": 123,
+   "serial": 661,
+   "epic": "IRW0597633",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 4,
+   "page": 123,
+   "serial": 662,
+   "epic": "IRW0057984",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 4,
+   "page": 123,
+   "serial": 663,
+   "epic": "IRW0924068",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 4,
+   "page": 123,
+   "serial": 667,
+   "epic": "CTK4950895",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 4,
+   "page": 123,
+   "serial": 668,
+   "epic": "IRW0924159",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 4,
+   "page": 123,
+   "serial": 669,
+   "epic": "CTK4950903",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 4,
+   "page": 123,
+   "serial": 670,
+   "epic": "CTK4950697",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 4,
+   "page": 123,
+   "serial": 671,
+   "epic": "CTK4951174",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 4,
+   "page": 123,
+   "serial": 672,
+   "epic": "CTK4951125",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 4,
+   "page": 124,
+   "serial": 682,
+   "epic": "IRW0058024",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 4,
+   "page": 124,
+   "serial": 683,
+   "epic": "IRW0057505",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 4,
+   "page": 125,
+   "serial": 717,
+   "epic": "CTK4945986",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 4,
+   "page": 125,
+   "serial": 718,
+   "epic": "CTK4946422",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 4,
+   "page": 125,
+   "serial": 719,
+   "epic": "CTK4946430",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 4,
+   "page": 125,
+   "serial": 720,
+   "epic": "CTK4946661",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 4,
+   "page": 125,
+   "serial": 721,
+   "epic": "CTK4946851",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 4,
+   "page": 125,
+   "serial": 722,
+   "epic": "CTK4946679",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 4,
+   "page": 125,
+   "serial": 723,
+   "epic": "CTK4946869",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 4,
+   "page": 126,
+   "serial": 732,
+   "epic": "IRW2605640",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 4,
+   "page": 126,
+   "serial": 742,
+   "epic": "IRW2265775",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 4,
+   "page": 127,
+   "serial": 760,
+   "epic": "IRW2240075",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 5,
+   "page": 138,
+   "serial": 151,
+   "epic": "IRW2481786",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 5,
+   "page": 138,
+   "serial": 152,
+   "epic": "IRW2481752",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 5,
+   "page": 140,
+   "serial": 202,
+   "epic": "IRW2562320",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 5,
+   "page": 141,
+   "serial": 217,
+   "epic": "IRW1160084",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 5,
+   "page": 142,
+   "serial": 245,
+   "epic": "IRW1798214",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 5,
+   "page": 143,
+   "serial": 292,
+   "epic": "IRW2174035",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 5,
+   "page": 144,
+   "serial": 306,
+   "epic": "IRW1800937",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 5,
+   "page": 146,
+   "serial": 369,
+   "epic": "IRW1159813",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 5,
+   "page": 147,
+   "serial": 385,
+   "epic": "IRW2212256",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 5,
+   "page": 149,
+   "serial": 454,
+   "epic": "IRW0981894",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 5,
+   "page": 150,
+   "serial": 464,
+   "epic": "IRW2507101",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 5,
+   "page": 150,
+   "serial": 465,
+   "epic": "IRW2507051",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 5,
+   "page": 150,
+   "serial": 466,
+   "epic": "IRW2507135",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 5,
+   "page": 151,
+   "serial": 494,
+   "epic": "IRW0855742",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 5,
+   "page": 151,
+   "serial": 495,
+   "epic": "IRW1798081",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 5,
+   "page": 151,
+   "serial": 496,
+   "epic": "IRW2059574",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 5,
+   "page": 152,
+   "serial": 511,
+   "epic": "IRW1854843",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 5,
+   "page": 152,
+   "serial": 519,
+   "epic": "IRW2461135",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 5,
+   "page": 153,
+   "serial": 539,
+   "epic": "IRW2415552",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 5,
+   "page": 153,
+   "serial": 543,
+   "epic": "IRW2466969",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 5,
+   "page": 153,
+   "serial": 544,
+   "epic": "IRW1641612",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 5,
+   "page": 153,
+   "serial": 551,
+   "epic": "IRW2531556",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 5,
+   "page": 154,
+   "serial": 564,
+   "epic": "IRW2411171",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 5,
+   "page": 154,
+   "serial": 576,
+   "epic": "IRW2376697",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 5,
+   "page": 154,
+   "serial": 579,
+   "epic": "IRW1798263",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 5,
+   "page": 154,
+   "serial": 580,
+   "epic": "IRW2527745",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 5,
+   "page": 154,
+   "serial": 581,
+   "epic": "IRW1975085",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 5,
+   "page": 154,
+   "serial": 582,
+   "epic": "IRW2521789",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 5,
+   "page": 154,
+   "serial": 583,
+   "epic": "IRW2521797",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 5,
+   "page": 154,
+   "serial": 584,
+   "epic": "IRW2297174",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 5,
+   "page": 154,
+   "serial": 585,
+   "epic": "IRW2326148",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 5,
+   "page": 154,
+   "serial": 586,
+   "epic": "IRW2460137",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 5,
+   "page": 154,
+   "serial": 587,
+   "epic": "IRW1693084",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 5,
+   "page": 154,
+   "serial": 588,
+   "epic": "IRW2132140",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 5,
+   "page": 154,
+   "serial": 589,
+   "epic": "IRW2280881",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 5,
+   "page": 155,
+   "serial": 591,
+   "epic": "IRW2173862",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 5,
+   "page": 155,
+   "serial": 597,
+   "epic": "JVF1660190",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 5,
+   "page": 155,
+   "serial": 600,
+   "epic": "IRW2632552",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 5,
+   "page": 155,
+   "serial": 601,
+   "epic": "IRW2634640",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 5,
+   "page": 155,
+   "serial": 602,
+   "epic": "IRW2634632",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 5,
+   "page": 155,
+   "serial": 605,
+   "epic": "IRW1038199",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 5,
+   "page": 155,
+   "serial": 606,
+   "epic": "IRW1038157",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 5,
+   "page": 155,
+   "serial": 608,
+   "epic": "IRW1038215",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 5,
+   "page": 155,
+   "serial": 609,
+   "epic": "IRW1038223",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 5,
+   "page": 155,
+   "serial": 610,
+   "epic": "IRW1038181",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 5,
+   "page": 157,
+   "serial": 639,
+   "epic": "IRW2608552",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 5,
+   "page": 157,
+   "serial": 650,
+   "epic": "IRW2050425",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 5,
+   "page": 157,
+   "serial": 651,
+   "epic": "IRW2053817",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 5,
+   "page": 157,
+   "serial": 652,
+   "epic": "IRW2050391",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 5,
+   "page": 158,
+   "serial": 656,
+   "epic": "IRW2564524",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 5,
+   "page": 158,
+   "serial": 657,
+   "epic": "IRW2564508",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 5,
+   "page": 158,
+   "serial": 658,
+   "epic": "IRW2564516",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 5,
+   "page": 158,
+   "serial": 665,
+   "epic": "IRW1986140",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 5,
+   "page": 158,
+   "serial": 666,
+   "epic": "IRW1986132",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 5,
+   "page": 158,
+   "serial": 667,
+   "epic": "IRW1985217",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 5,
+   "page": 158,
+   "serial": 668,
+   "epic": "IRW2431757",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 5,
+   "page": 158,
+   "serial": 669,
+   "epic": "IRW2436657",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 5,
+   "page": 158,
+   "serial": 670,
+   "epic": "IRW2556397",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 5,
+   "page": 158,
+   "serial": 672,
+   "epic": "IRW2406437",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 5,
+   "page": 158,
+   "serial": 673,
+   "epic": "IRW2367159",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 5,
+   "page": 158,
+   "serial": 674,
+   "epic": "IRW2370559",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 5,
+   "page": 159,
+   "serial": 685,
+   "epic": "IRW2509792",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 5,
+   "page": 159,
+   "serial": 686,
+   "epic": "IRW2509826",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 5,
+   "page": 159,
+   "serial": 687,
+   "epic": "IRW2509859",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 5,
+   "page": 159,
+   "serial": 688,
+   "epic": "IRW2509867",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 5,
+   "page": 159,
+   "serial": 689,
+   "epic": "IRW2509883",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 5,
+   "page": 159,
+   "serial": 693,
+   "epic": "UMF0460584",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 5,
+   "page": 160,
+   "serial": 704,
+   "epic": "TGW0510404",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 5,
+   "page": 160,
+   "serial": 707,
+   "epic": "TGW2588176",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 5,
+   "page": 160,
+   "serial": 709,
+   "epic": "IRW2060747",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 5,
+   "page": 160,
+   "serial": 710,
+   "epic": "TGW1941467",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 5,
+   "page": 160,
+   "serial": 711,
+   "epic": "WFW0929422",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 5,
+   "page": 160,
+   "serial": 712,
+   "epic": "IRW2442770",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 5,
+   "page": 160,
+   "serial": 713,
+   "epic": "IRW2569937",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 5,
+   "page": 160,
+   "serial": 714,
+   "epic": "IRW2634806",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 5,
+   "page": 160,
+   "serial": 716,
+   "epic": "IRW2659027",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 5,
+   "page": 160,
+   "serial": 717,
+   "epic": "IRW2659035",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 5,
+   "page": 161,
+   "serial": 737,
+   "epic": "CTK4953402",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 5,
+   "page": 161,
+   "serial": 738,
+   "epic": "IRW0476556",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 5,
+   "page": 162,
+   "serial": 760,
+   "epic": "CTK4927018",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 5,
+   "page": 162,
+   "serial": 761,
+   "epic": "CTK4951315",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 5,
+   "page": 162,
+   "serial": 762,
+   "epic": "CTK4952180",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 6,
+   "page": 165,
+   "serial": 1,
+   "epic": "IRW2610814",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 6,
+   "page": 165,
+   "serial": 2,
+   "epic": "IRW2611341",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 6,
+   "page": 165,
+   "serial": 10,
+   "epic": "IRW2630697",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 6,
+   "page": 165,
+   "serial": 15,
+   "epic": "IRW2644268",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 6,
+   "page": 165,
+   "serial": 16,
+   "epic": "IRW2644284",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 6,
+   "page": 165,
+   "serial": 21,
+   "epic": "WFW1198746",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 6,
+   "page": 165,
+   "serial": 23,
+   "epic": "CTK4541181",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 6,
+   "page": 166,
+   "serial": 41,
+   "epic": "IRW1524438",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 6,
+   "page": 166,
+   "serial": 42,
+   "epic": "IRW1524453",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 6,
+   "page": 166,
+   "serial": 43,
+   "epic": "IRW1492370",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 6,
+   "page": 166,
+   "serial": 44,
+   "epic": "IRW1524461",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 6,
+   "page": 166,
+   "serial": 45,
+   "epic": "IRW1356641",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 6,
+   "page": 166,
+   "serial": 46,
+   "epic": "IRW1356658",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 6,
+   "page": 166,
+   "serial": 47,
+   "epic": "IRW2264265",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 6,
+   "page": 166,
+   "serial": 48,
+   "epic": "IRW1645951",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 6,
+   "page": 167,
+   "serial": 49,
+   "epic": "IRW1645209",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 6,
+   "page": 167,
+   "serial": 50,
+   "epic": "IRW2561975",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 6,
+   "page": 167,
+   "serial": 51,
+   "epic": "IRW2206696",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 6,
+   "page": 167,
+   "serial": 52,
+   "epic": "IRW1942762",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 6,
+   "page": 167,
+   "serial": 53,
+   "epic": "IRW1942788",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 6,
+   "page": 167,
+   "serial": 54,
+   "epic": "IRW1942754",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 6,
+   "page": 167,
+   "serial": 55,
+   "epic": "IRW2169308",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 6,
+   "page": 167,
+   "serial": 56,
+   "epic": "IRW2169290",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 6,
+   "page": 168,
+   "serial": 70,
+   "epic": "IRW1927326",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 6,
+   "page": 168,
+   "serial": 71,
+   "epic": "IRW1927334",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 6,
+   "page": 168,
+   "serial": 72,
+   "epic": "IRW1927268",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 6,
+   "page": 168,
+   "serial": 76,
+   "epic": "IRW2564458",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 6,
+   "page": 168,
+   "serial": 84,
+   "epic": "IRW1986033",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 6,
+   "page": 168,
+   "serial": 85,
+   "epic": "IRW2054104",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 6,
+   "page": 169,
+   "serial": 91,
+   "epic": "IRW2590511",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 6,
+   "page": 169,
+   "serial": 101,
+   "epic": "IRW2527919",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 6,
+   "page": 169,
+   "serial": 102,
+   "epic": "IRW2328979",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 6,
+   "page": 169,
+   "serial": 103,
+   "epic": "KFH1967322",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 6,
+   "page": 169,
+   "serial": 104,
+   "epic": "IRW2296671",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 6,
+   "page": 169,
+   "serial": 105,
+   "epic": "KFH1967587",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 6,
+   "page": 169,
+   "serial": 106,
+   "epic": "KFH1977875",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 6,
+   "page": 169,
+   "serial": 107,
+   "epic": "IRW2599686",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 6,
+   "page": 169,
+   "serial": 108,
+   "epic": "IRW2600773",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 6,
+   "page": 169,
+   "serial": 109,
+   "epic": "IRW2600864",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 6,
+   "page": 170,
+   "serial": 123,
+   "epic": "IRW2630952",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 6,
+   "page": 170,
+   "serial": 124,
+   "epic": "IRW2631471",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 6,
+   "page": 170,
+   "serial": 125,
+   "epic": "IRW2632008",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 6,
+   "page": 170,
+   "serial": 126,
+   "epic": "IRW2632024",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 6,
+   "page": 170,
+   "serial": 127,
+   "epic": "IRW2632057",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 6,
+   "page": 170,
+   "serial": 128,
+   "epic": "IRW2632073",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 6,
+   "page": 171,
+   "serial": 130,
+   "epic": "IRW2634079",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 6,
+   "page": 171,
+   "serial": 131,
+   "epic": "IRW2634095",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 6,
+   "page": 171,
+   "serial": 133,
+   "epic": "IRW2634285",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 6,
+   "page": 171,
+   "serial": 134,
+   "epic": "IRW2634301",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 6,
+   "page": 171,
+   "serial": 135,
+   "epic": "IRW2634335",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 6,
+   "page": 171,
+   "serial": 138,
+   "epic": "IRW2644680",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 6,
+   "page": 171,
+   "serial": 148,
+   "epic": "WFW1349885",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 6,
+   "page": 172,
+   "serial": 157,
+   "epic": "IRW2131795",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 6,
+   "page": 172,
+   "serial": 170,
+   "epic": "IRW1163773",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 6,
+   "page": 172,
+   "serial": 171,
+   "epic": "IRW2206845",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 6,
+   "page": 173,
+   "serial": 172,
+   "epic": "IRW2205011",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 6,
+   "page": 173,
+   "serial": 173,
+   "epic": "IRW1880053",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 6,
+   "page": 173,
+   "serial": 178,
+   "epic": "IRW1267137",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 6,
+   "page": 173,
+   "serial": 179,
+   "epic": "IRW1267145",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 6,
+   "page": 173,
+   "serial": 186,
+   "epic": "IRW1927151",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 6,
+   "page": 173,
+   "serial": 187,
+   "epic": "IRW1927128",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 6,
+   "page": 173,
+   "serial": 191,
+   "epic": "IRW2134369",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 6,
+   "page": 173,
+   "serial": 192,
+   "epic": "IRW2135697",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 6,
+   "page": 175,
+   "serial": 227,
+   "epic": "IRW2645927",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 6,
+   "page": 175,
+   "serial": 236,
+   "epic": "IRW2442580",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 6,
+   "page": 176,
+   "serial": 248,
+   "epic": "IRW2485266",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 6,
+   "page": 176,
+   "serial": 262,
+   "epic": "IRW2318194",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 6,
+   "page": 177,
+   "serial": 270,
+   "epic": "IRW1163922",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 6,
+   "page": 177,
+   "serial": 271,
+   "epic": "IRW1163930",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 6,
+   "page": 177,
+   "serial": 272,
+   "epic": "IRW1164813",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 6,
+   "page": 177,
+   "serial": 273,
+   "epic": "IRW1164805",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 6,
+   "page": 177,
+   "serial": 275,
+   "epic": "IRW2602563",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 7,
+   "page": 180,
+   "serial": 13,
+   "epic": "IRW2561173",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 7,
+   "page": 180,
+   "serial": 22,
+   "epic": "IRW2506830",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 7,
+   "page": 180,
+   "serial": 23,
+   "epic": "IRW2506954",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 7,
+   "page": 180,
+   "serial": 24,
+   "epic": "IRW2514602",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 7,
+   "page": 181,
+   "serial": 25,
+   "epic": "IRW2559987",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 7,
+   "page": 181,
+   "serial": 30,
+   "epic": "IRW2312783",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 7,
+   "page": 183,
+   "serial": 77,
+   "epic": "IRW1635465",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 7,
+   "page": 183,
+   "serial": 78,
+   "epic": "IRW1635200",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 7,
+   "page": 183,
+   "serial": 79,
+   "epic": "IRW1635192",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 7,
+   "page": 183,
+   "serial": 80,
+   "epic": "IRW1635473",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 7,
+   "page": 184,
+   "serial": 88,
+   "epic": "IRW1962380",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 7,
+   "page": 184,
+   "serial": 95,
+   "epic": "IRW2494243",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 7,
+   "page": 184,
+   "serial": 96,
+   "epic": "IRW1635218",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 7,
+   "page": 184,
+   "serial": 97,
+   "epic": "IRW1635440",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 7,
+   "page": 186,
+   "serial": 143,
+   "epic": "IRW2280394",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 7,
+   "page": 186,
+   "serial": 162,
+   "epic": "IRW1356484",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 7,
+   "page": 189,
+   "serial": 224,
+   "epic": "IRW2514651",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 7,
+   "page": 189,
+   "serial": 225,
+   "epic": "IRW2514818",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 7,
+   "page": 189,
+   "serial": 226,
+   "epic": "IRW2525707",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 7,
+   "page": 189,
+   "serial": 227,
+   "epic": "IRW2144731",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 7,
+   "page": 189,
+   "serial": 228,
+   "epic": "IRW2407377",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 7,
+   "page": 189,
+   "serial": 229,
+   "epic": "IRW2407401",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 7,
+   "page": 189,
+   "serial": 231,
+   "epic": "TGW0001016",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 7,
+   "page": 190,
+   "serial": 248,
+   "epic": "IRW2229888",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 7,
+   "page": 190,
+   "serial": 249,
+   "epic": "IRW1943984",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 7,
+   "page": 190,
+   "serial": 265,
+   "epic": "IRW2514057",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 7,
+   "page": 190,
+   "serial": 266,
+   "epic": "IRW2514214",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 7,
+   "page": 190,
+   "serial": 267,
+   "epic": "IRW2514107",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 7,
+   "page": 191,
+   "serial": 279,
+   "epic": "IRW0984534",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 7,
+   "page": 191,
+   "serial": 280,
+   "epic": "IRW0984542",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 7,
+   "page": 191,
+   "serial": 281,
+   "epic": "IRW0984476",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 7,
+   "page": 191,
+   "serial": 282,
+   "epic": "IRW0984484",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 7,
+   "page": 192,
+   "serial": 296,
+   "epic": "IRW1272434",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 7,
+   "page": 192,
+   "serial": 297,
+   "epic": "IRW2461663",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 7,
+   "page": 192,
+   "serial": 299,
+   "epic": "YJW0579458",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 7,
+   "page": 192,
+   "serial": 300,
+   "epic": "KFH1928068",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 7,
+   "page": 192,
+   "serial": 301,
+   "epic": "YJW0519660",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 7,
+   "page": 192,
+   "serial": 302,
+   "epic": "YJW1806132",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 7,
+   "page": 192,
+   "serial": 303,
+   "epic": "IRW0873463",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 7,
+   "page": 192,
+   "serial": 304,
+   "epic": "IRW2448033",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 7,
+   "page": 192,
+   "serial": 305,
+   "epic": "IRW2448066",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 7,
+   "page": 192,
+   "serial": 306,
+   "epic": "IRW2599744",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 8,
+   "page": 195,
+   "serial": 4,
+   "epic": "IRW0622100",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 8,
+   "page": 195,
+   "serial": 8,
+   "epic": "IRW0923805",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 8,
+   "page": 195,
+   "serial": 9,
+   "epic": "IRW0923813",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 8,
+   "page": 195,
+   "serial": 10,
+   "epic": "IRW1160928",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 8,
+   "page": 195,
+   "serial": 11,
+   "epic": "IRW1160936",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 8,
+   "page": 195,
+   "serial": 14,
+   "epic": "IRW0981787",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 8,
+   "page": 195,
+   "serial": 24,
+   "epic": "IRW2113157",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 8,
+   "page": 196,
+   "serial": 47,
+   "epic": "IRW2489854",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 8,
+   "page": 196,
+   "serial": 51,
+   "epic": "IRW0621862",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 8,
+   "page": 197,
+   "serial": 52,
+   "epic": "IRW0621854",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 8,
+   "page": 197,
+   "serial": 53,
+   "epic": "IRW0621870",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 8,
+   "page": 197,
+   "serial": 61,
+   "epic": "IRW1159177",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 8,
+   "page": 197,
+   "serial": 75,
+   "epic": "IRW1639558",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 8,
+   "page": 198,
+   "serial": 93,
+   "epic": "IRW2424612",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 8,
+   "page": 198,
+   "serial": 94,
+   "epic": "IRW2424539",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 8,
+   "page": 198,
+   "serial": 95,
+   "epic": "IRW2424521",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 8,
+   "page": 198,
+   "serial": 96,
+   "epic": "IRW2424687",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 8,
+   "page": 199,
+   "serial": 102,
+   "epic": "IRW2438026",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 8,
+   "page": 199,
+   "serial": 121,
+   "epic": "IRW2571081",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 8,
+   "page": 199,
+   "serial": 122,
+   "epic": "IRW2262632",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 8,
+   "page": 199,
+   "serial": 123,
+   "epic": "IRW2449908",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 8,
+   "page": 199,
+   "serial": 124,
+   "epic": "IRW1953652",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 8,
+   "page": 199,
+   "serial": 125,
+   "epic": "IRW2444750",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 8,
+   "page": 199,
+   "serial": 126,
+   "epic": "IRW2145316",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 8,
+   "page": 199,
+   "serial": 127,
+   "epic": "IRW1977602",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 8,
+   "page": 200,
+   "serial": 133,
+   "epic": "IRW0855668",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 8,
+   "page": 200,
+   "serial": 134,
+   "epic": "IRW0855643",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 8,
+   "page": 200,
+   "serial": 139,
+   "epic": "IRW1996461",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 8,
+   "page": 201,
+   "serial": 179,
+   "epic": "IRW1801414",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 8,
+   "page": 201,
+   "serial": 180,
+   "epic": "IRW1768951",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 8,
+   "page": 202,
+   "serial": 193,
+   "epic": "IRW2602175",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 8,
+   "page": 202,
+   "serial": 194,
+   "epic": "IRW2605319",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 8,
+   "page": 202,
+   "serial": 195,
+   "epic": "IRW1279009",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 8,
+   "page": 202,
+   "serial": 196,
+   "epic": "TGW2621217",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 8,
+   "page": 202,
+   "serial": 197,
+   "epic": "IRW2635985",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 8,
+   "page": 202,
+   "serial": 198,
+   "epic": "IRW2658474",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 8,
+   "page": 203,
+   "serial": 212,
+   "epic": "IRW2424794",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 8,
+   "page": 203,
+   "serial": 213,
+   "epic": "IRW2424588",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 8,
+   "page": 203,
+   "serial": 219,
+   "epic": "IRW2354496",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 8,
+   "page": 203,
+   "serial": 220,
+   "epic": "IRW2353233",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 8,
+   "page": 203,
+   "serial": 221,
+   "epic": "IRW2349496",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 8,
+   "page": 204,
+   "serial": 236,
+   "epic": "IRW2354769",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 8,
+   "page": 204,
+   "serial": 252,
+   "epic": "IRW2354686",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 8,
+   "page": 204,
+   "serial": 258,
+   "epic": "IRW2366102",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 8,
+   "page": 205,
+   "serial": 264,
+   "epic": "IRW2044733",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 8,
+   "page": 205,
+   "serial": 265,
+   "epic": "IRW2044758",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 8,
+   "page": 205,
+   "serial": 268,
+   "epic": "IRW2054021",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 8,
+   "page": 206,
+   "serial": 273,
+   "epic": "IRW2156651",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 8,
+   "page": 206,
+   "serial": 274,
+   "epic": "IRW2608594",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 9,
+   "page": 209,
+   "serial": 2,
+   "epic": "IRW2338523",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 9,
+   "page": 209,
+   "serial": 3,
+   "epic": "IRW2411734",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 9,
+   "page": 209,
+   "serial": 5,
+   "epic": "IRW2266336",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 9,
+   "page": 209,
+   "serial": 8,
+   "epic": "IRW2174050",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 9,
+   "page": 209,
+   "serial": 12,
+   "epic": "IRW2297950",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 9,
+   "page": 209,
+   "serial": 14,
+   "epic": "IRW1975531",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 9,
+   "page": 209,
+   "serial": 23,
+   "epic": "IRW2590032",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 9,
+   "page": 210,
+   "serial": 25,
+   "epic": "IRW2460749",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 9,
+   "page": 210,
+   "serial": 26,
+   "epic": "IRW2490639",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 9,
+   "page": 210,
+   "serial": 27,
+   "epic": "IRW2463438",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 9,
+   "page": 210,
+   "serial": 28,
+   "epic": "IRW2489565",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 9,
+   "page": 210,
+   "serial": 29,
+   "epic": "IRW2490225",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 9,
+   "page": 210,
+   "serial": 37,
+   "epic": "IRW2463073",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 9,
+   "page": 210,
+   "serial": 41,
+   "epic": "IRW2411742",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 9,
+   "page": 211,
+   "serial": 52,
+   "epic": "IRW2122786",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 9,
+   "page": 211,
+   "serial": 53,
+   "epic": "IRW2411692",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 9,
+   "page": 211,
+   "serial": 54,
+   "epic": "IRW1975051",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 9,
+   "page": 211,
+   "serial": 55,
+   "epic": "IRW2384410",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 9,
+   "page": 211,
+   "serial": 56,
+   "epic": "IRW2384402",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 9,
+   "page": 211,
+   "serial": 57,
+   "epic": "IRW2561546",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 9,
+   "page": 211,
+   "serial": 58,
+   "epic": "JLD1452804",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 9,
+   "page": 211,
+   "serial": 59,
+   "epic": "XKA0512368",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 9,
+   "page": 211,
+   "serial": 61,
+   "epic": "IRW2490860",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 9,
+   "page": 211,
+   "serial": 63,
+   "epic": "IRW1890383",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 9,
+   "page": 211,
+   "serial": 64,
+   "epic": "IRW1890367",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 9,
+   "page": 211,
+   "serial": 65,
+   "epic": "IRW1890375",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 9,
+   "page": 211,
+   "serial": 66,
+   "epic": "IRW2479038",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 9,
+   "page": 212,
+   "serial": 72,
+   "epic": "IRW2173656",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 9,
+   "page": 212,
+   "serial": 73,
+   "epic": "IRW2130227",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 9,
+   "page": 212,
+   "serial": 74,
+   "epic": "IRW2248037",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 9,
+   "page": 212,
+   "serial": 89,
+   "epic": "IRW1879030",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 9,
+   "page": 212,
+   "serial": 90,
+   "epic": "IRW1878693",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 9,
+   "page": 213,
+   "serial": 91,
+   "epic": "IRW1878230",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 9,
+   "page": 213,
+   "serial": 92,
+   "epic": "IRW1877901",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 9,
+   "page": 213,
+   "serial": 93,
+   "epic": "IRW1878735",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 9,
+   "page": 213,
+   "serial": 100,
+   "epic": "IRW2441244",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 9,
+   "page": 213,
+   "serial": 101,
+   "epic": "IRW2407609",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 9,
+   "page": 214,
+   "serial": 116,
+   "epic": "IRW2336154",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 9,
+   "page": 214,
+   "serial": 126,
+   "epic": "IRW1955657",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 9,
+   "page": 214,
+   "serial": 127,
+   "epic": "IRW1955640",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 9,
+   "page": 214,
+   "serial": 128,
+   "epic": "IRW2441160",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 9,
+   "page": 214,
+   "serial": 130,
+   "epic": "IRW2480929",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 9,
+   "page": 214,
+   "serial": 131,
+   "epic": "IRW2480846",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 9,
+   "page": 215,
+   "serial": 150,
+   "epic": "IRW2558898",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 9,
+   "page": 215,
+   "serial": 156,
+   "epic": "IRW1942846",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 9,
+   "page": 216,
+   "serial": 175,
+   "epic": "IRW2528065",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 9,
+   "page": 216,
+   "serial": 176,
+   "epic": "IRW2521110",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 9,
+   "page": 216,
+   "serial": 177,
+   "epic": "IRW2515484",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 9,
+   "page": 216,
+   "serial": 189,
+   "epic": "IRW2487585",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 9,
+   "page": 216,
+   "serial": 190,
+   "epic": "IRW2487536",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 9,
+   "page": 216,
+   "serial": 191,
+   "epic": "IRW2475556",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 9,
+   "page": 216,
+   "serial": 192,
+   "epic": "IRW2461978",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 9,
+   "page": 216,
+   "serial": 193,
+   "epic": "IRW2461861",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 9,
+   "page": 216,
+   "serial": 194,
+   "epic": "IRW2087062",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 9,
+   "page": 216,
+   "serial": 195,
+   "epic": "IRW2557189",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 9,
+   "page": 217,
+   "serial": 196,
+   "epic": "IRW2557718",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 10,
+   "page": 220,
+   "serial": 8,
+   "epic": "IRW2571230",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 10,
+   "page": 220,
+   "serial": 16,
+   "epic": "IRW2088508",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 10,
+   "page": 220,
+   "serial": 17,
+   "epic": "IRW2088482",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 10,
+   "page": 220,
+   "serial": 19,
+   "epic": "CTK4527842",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 10,
+   "page": 220,
+   "serial": 20,
+   "epic": "IRW2462224",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 10,
+   "page": 220,
+   "serial": 21,
+   "epic": "IRW2427060",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 10,
+   "page": 220,
+   "serial": 22,
+   "epic": "IRW2368488",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 10,
+   "page": 220,
+   "serial": 23,
+   "epic": "IRW2357424",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 10,
+   "page": 220,
+   "serial": 24,
+   "epic": "IRW2368512",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 10,
+   "page": 221,
+   "serial": 26,
+   "epic": "IRW2368538",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 10,
+   "page": 221,
+   "serial": 31,
+   "epic": "IRW2492932",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 10,
+   "page": 221,
+   "serial": 32,
+   "epic": "IRW2496644",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 10,
+   "page": 221,
+   "serial": 33,
+   "epic": "IRW2492890",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 10,
+   "page": 221,
+   "serial": 34,
+   "epic": "IRW2493005",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 10,
+   "page": 221,
+   "serial": 45,
+   "epic": "IRW2450575",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 10,
+   "page": 221,
+   "serial": 46,
+   "epic": "IRW2397214",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 10,
+   "page": 221,
+   "serial": 47,
+   "epic": "IRW2391563",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 10,
+   "page": 221,
+   "serial": 48,
+   "epic": "IRW2397438",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 10,
+   "page": 222,
+   "serial": 52,
+   "epic": "IRW2368991",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 10,
+   "page": 222,
+   "serial": 53,
+   "epic": "IRW2369023",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 10,
+   "page": 222,
+   "serial": 61,
+   "epic": "IRW1997261",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 10,
+   "page": 222,
+   "serial": 74,
+   "epic": "IRW2461606",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 10,
+   "page": 222,
+   "serial": 76,
+   "epic": "IRW2392470",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 10,
+   "page": 223,
+   "serial": 93,
+   "epic": "IRW2221141",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 10,
+   "page": 223,
+   "serial": 100,
+   "epic": "IRW2127017",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 10,
+   "page": 223,
+   "serial": 101,
+   "epic": "IRW2133916",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 10,
+   "page": 223,
+   "serial": 102,
+   "epic": "IRW2138097",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 10,
+   "page": 224,
+   "serial": 112,
+   "epic": "IRW2312304",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 10,
+   "page": 224,
+   "serial": 113,
+   "epic": "IRW2312312",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 10,
+   "page": 224,
+   "serial": 114,
+   "epic": "IRW2140424",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 10,
+   "page": 224,
+   "serial": 119,
+   "epic": "IRW2306496",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 10,
+   "page": 224,
+   "serial": 126,
+   "epic": "IRW2203883",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 10,
+   "page": 224,
+   "serial": 127,
+   "epic": "IRW2486074",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 10,
+   "page": 224,
+   "serial": 128,
+   "epic": "IRW2514461",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 10,
+   "page": 224,
+   "serial": 132,
+   "epic": "IRW2425312",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 10,
+   "page": 225,
+   "serial": 133,
+   "epic": "UQP2295814",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 10,
+   "page": 225,
+   "serial": 134,
+   "epic": "IRW2388528",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 10,
+   "page": 225,
+   "serial": 135,
+   "epic": "IRW2136554",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 10,
+   "page": 225,
+   "serial": 136,
+   "epic": "IRW2487924",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 10,
+   "page": 225,
+   "serial": 138,
+   "epic": "IRW2510295",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 10,
+   "page": 225,
+   "serial": 139,
+   "epic": "IRW2489201",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 10,
+   "page": 225,
+   "serial": 140,
+   "epic": "IRW2172500",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 10,
+   "page": 225,
+   "serial": 141,
+   "epic": "IRW2172518",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 10,
+   "page": 225,
+   "serial": 142,
+   "epic": "IRW2591519",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 10,
+   "page": 226,
+   "serial": 163,
+   "epic": "IRW2640423",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 10,
+   "page": 226,
+   "serial": 164,
+   "epic": "IRW2640464",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 10,
+   "page": 228,
+   "serial": 194,
+   "epic": "IRW1404169",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 11,
+   "page": 234,
+   "serial": 102,
+   "epic": "IRW2318228",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 11,
+   "page": 234,
+   "serial": 103,
+   "epic": "IRW2316859",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 11,
+   "page": 235,
+   "serial": 122,
+   "epic": "IRW2517969",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 11,
+   "page": 235,
+   "serial": 125,
+   "epic": "IRW2033512",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 11,
+   "page": 235,
+   "serial": 126,
+   "epic": "IRW2033504",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 11,
+   "page": 236,
+   "serial": 144,
+   "epic": "IRW2033892",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 11,
+   "page": 237,
+   "serial": 177,
+   "epic": "IRW1844307",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 11,
+   "page": 237,
+   "serial": 186,
+   "epic": "IRW2521771",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 11,
+   "page": 239,
+   "serial": 224,
+   "epic": "IRW2521680",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 11,
+   "page": 239,
+   "serial": 225,
+   "epic": "IRW2280105",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 11,
+   "page": 239,
+   "serial": 226,
+   "epic": "IRW2490993",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 11,
+   "page": 239,
+   "serial": 227,
+   "epic": "IRW2491009",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 11,
+   "page": 239,
+   "serial": 229,
+   "epic": "IRW2512424",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 11,
+   "page": 239,
+   "serial": 230,
+   "epic": "IRW2565265",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 11,
+   "page": 239,
+   "serial": 231,
+   "epic": "IRW2500973",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 11,
+   "page": 239,
+   "serial": 232,
+   "epic": "IRW2450476",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 11,
+   "page": 239,
+   "serial": 233,
+   "epic": "IRW2604932",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 11,
+   "page": 239,
+   "serial": 234,
+   "epic": "IRW2604924",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 11,
+   "page": 240,
+   "serial": 241,
+   "epic": "IRW2486041",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 11,
+   "page": 240,
+   "serial": 243,
+   "epic": "IRW1976307",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 11,
+   "page": 241,
+   "serial": 271,
+   "epic": "IRW2306272",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 11,
+   "page": 241,
+   "serial": 272,
+   "epic": "IRW2601045",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 11,
+   "page": 241,
+   "serial": 275,
+   "epic": "IRW2645695",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 11,
+   "page": 241,
+   "serial": 276,
+   "epic": "IRW2658748",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 11,
+   "page": 242,
+   "serial": 288,
+   "epic": "IRW2498434",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 11,
+   "page": 242,
+   "serial": 289,
+   "epic": "IRW2485852",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 11,
+   "page": 242,
+   "serial": 290,
+   "epic": "IRW1932938",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 11,
+   "page": 242,
+   "serial": 291,
+   "epic": "IRW2526572",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 11,
+   "page": 242,
+   "serial": 292,
+   "epic": "IRW2606424",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 11,
+   "page": 243,
+   "serial": 322,
+   "epic": "IRW1493170",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 11,
+   "page": 243,
+   "serial": 323,
+   "epic": "IRW2296424",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 11,
+   "page": 243,
+   "serial": 324,
+   "epic": "IRW2304160",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 11,
+   "page": 243,
+   "serial": 325,
+   "epic": "IRW2489276",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 11,
+   "page": 243,
+   "serial": 327,
+   "epic": "IRW1901958",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 11,
+   "page": 243,
+   "serial": 328,
+   "epic": "IRW1902212",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 11,
+   "page": 244,
+   "serial": 333,
+   "epic": "IRW1972702",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 11,
+   "page": 244,
+   "serial": 340,
+   "epic": "IRW0777730",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 11,
+   "page": 244,
+   "serial": 348,
+   "epic": "IRW2126175",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 11,
+   "page": 244,
+   "serial": 349,
+   "epic": "IRW2126183",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 11,
+   "page": 244,
+   "serial": 350,
+   "epic": "IRW0477273",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 11,
+   "page": 244,
+   "serial": 351,
+   "epic": "IRW0476747",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 11,
+   "page": 244,
+   "serial": 354,
+   "epic": "IRW0777722",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 11,
+   "page": 245,
+   "serial": 371,
+   "epic": "IRW1268739",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 11,
+   "page": 245,
+   "serial": 381,
+   "epic": "IRW2126191",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 11,
+   "page": 246,
+   "serial": 383,
+   "epic": "IRW1039098",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 11,
+   "page": 247,
+   "serial": 428,
+   "epic": "IRW0777219",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 11,
+   "page": 248,
+   "serial": 437,
+   "epic": "IRW2209401",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 11,
+   "page": 248,
+   "serial": 458,
+   "epic": "IRW2350874",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 11,
+   "page": 248,
+   "serial": 459,
+   "epic": "IRW1266451",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 11,
+   "page": 248,
+   "serial": 460,
+   "epic": "IRW2571032",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 11,
+   "page": 248,
+   "serial": 461,
+   "epic": "TGW2783157",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 11,
+   "page": 248,
+   "serial": 462,
+   "epic": "IRW2605749",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 11,
+   "page": 249,
+   "serial": 463,
+   "epic": "IRW2610343",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 11,
+   "page": 249,
+   "serial": 464,
+   "epic": "IRW2610434",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 11,
+   "page": 249,
+   "serial": 465,
+   "epic": "IRW2614196",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 11,
+   "page": 249,
+   "serial": 466,
+   "epic": "IRW2638674",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 11,
+   "page": 249,
+   "serial": 481,
+   "epic": "IRW0622522",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 11,
+   "page": 250,
+   "serial": 498,
+   "epic": "IRW2130334",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 11,
+   "page": 250,
+   "serial": 499,
+   "epic": "IRW2657013",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 11,
+   "page": 250,
+   "serial": 500,
+   "epic": "IRW0902031",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 11,
+   "page": 250,
+   "serial": 501,
+   "epic": "IRW0902007",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 11,
+   "page": 250,
+   "serial": 502,
+   "epic": "IRW0902023",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 11,
+   "page": 250,
+   "serial": 503,
+   "epic": "IRW0902015",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 11,
+   "page": 251,
+   "serial": 505,
+   "epic": "JHP2010262",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 11,
+   "page": 251,
+   "serial": 506,
+   "epic": "JHP2013563",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 11,
+   "page": 251,
+   "serial": 507,
+   "epic": "WEE2101913",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 11,
+   "page": 251,
+   "serial": 515,
+   "epic": "IRW2440063",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 11,
+   "page": 253,
+   "serial": 565,
+   "epic": "IRW0556589",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 11,
+   "page": 253,
+   "serial": 566,
+   "epic": "IRW0555904",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 11,
+   "page": 253,
+   "serial": 567,
+   "epic": "IRW0556555",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 11,
+   "page": 253,
+   "serial": 570,
+   "epic": "IRW2151389",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 11,
+   "page": 253,
+   "serial": 571,
+   "epic": "IRW1954213",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 11,
+   "page": 253,
+   "serial": 572,
+   "epic": "IRW1954239",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 11,
+   "page": 253,
+   "serial": 573,
+   "epic": "IRW1954221",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 11,
+   "page": 254,
+   "serial": 579,
+   "epic": "IRW1273846",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 11,
+   "page": 254,
+   "serial": 581,
+   "epic": "IRW1404151",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 12,
+   "page": 257,
+   "serial": 6,
+   "epic": "IRW0857425",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 12,
+   "page": 259,
+   "serial": 63,
+   "epic": "IRW0263186",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 12,
+   "page": 260,
+   "serial": 83,
+   "epic": "IRW2460657",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 12,
+   "page": 261,
+   "serial": 112,
+   "epic": "IRW2477495",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 12,
+   "page": 261,
+   "serial": 113,
+   "epic": "TDL1541507",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 12,
+   "page": 261,
+   "serial": 114,
+   "epic": "TDL0615344",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 12,
+   "page": 261,
+   "serial": 115,
+   "epic": "IRW2461184",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 12,
+   "page": 261,
+   "serial": 116,
+   "epic": "IRW1162536",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 12,
+   "page": 261,
+   "serial": 117,
+   "epic": "IRW1356245",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 12,
+   "page": 261,
+   "serial": 120,
+   "epic": "IRW1039734",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 12,
+   "page": 262,
+   "serial": 153,
+   "epic": "IRW2191716",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 12,
+   "page": 262,
+   "serial": 155,
+   "epic": "IRW2264042",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 12,
+   "page": 263,
+   "serial": 160,
+   "epic": "IRW2502102",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 12,
+   "page": 264,
+   "serial": 190,
+   "epic": "IRW1646496",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 12,
+   "page": 265,
+   "serial": 225,
+   "epic": "IRW1827880",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 12,
+   "page": 265,
+   "serial": 226,
+   "epic": "IRW1943232",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 12,
+   "page": 265,
+   "serial": 227,
+   "epic": "IRW1943224",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 12,
+   "page": 266,
+   "serial": 246,
+   "epic": "IRW1659283",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 12,
+   "page": 266,
+   "serial": 247,
+   "epic": "RIF0258061",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 12,
+   "page": 266,
+   "serial": 252,
+   "epic": "IRW2050789",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 12,
+   "page": 266,
+   "serial": 253,
+   "epic": "IRW1659275",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 12,
+   "page": 266,
+   "serial": 261,
+   "epic": "IRW1492552",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 12,
+   "page": 266,
+   "serial": 262,
+   "epic": "IRW1635879",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 12,
+   "page": 266,
+   "serial": 263,
+   "epic": "IRW1635820",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 12,
+   "page": 266,
+   "serial": 264,
+   "epic": "IRW1635887",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 12,
+   "page": 266,
+   "serial": 266,
+   "epic": "IRW1989466",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 12,
+   "page": 267,
+   "serial": 276,
+   "epic": "IRW1524776",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 12,
+   "page": 267,
+   "serial": 278,
+   "epic": "IRW1524784",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 12,
+   "page": 268,
+   "serial": 301,
+   "epic": "IRW2463974",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 12,
+   "page": 269,
+   "serial": 338,
+   "epic": "IRW2460145",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 12,
+   "page": 270,
+   "serial": 353,
+   "epic": "IRW0982959",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 12,
+   "page": 270,
+   "serial": 361,
+   "epic": "IRW2496842",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 12,
+   "page": 272,
+   "serial": 425,
+   "epic": "IRW1989631",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 12,
+   "page": 274,
+   "serial": 460,
+   "epic": "IRW0263343",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 12,
+   "page": 274,
+   "serial": 464,
+   "epic": "IRW1635705",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 12,
+   "page": 274,
+   "serial": 465,
+   "epic": "IRW1635739",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 12,
+   "page": 279,
+   "serial": 595,
+   "epic": "IRW1524768",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 12,
+   "page": 279,
+   "serial": 596,
+   "epic": "IRW1524750",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 12,
+   "page": 279,
+   "serial": 597,
+   "epic": "IRW1492842",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 12,
+   "page": 279,
+   "serial": 598,
+   "epic": "IRW2480010",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 12,
+   "page": 279,
+   "serial": 599,
+   "epic": "IRW1943000",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 12,
+   "page": 279,
+   "serial": 600,
+   "epic": "IRW2251445",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 12,
+   "page": 279,
+   "serial": 601,
+   "epic": "IRW1945989",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 12,
+   "page": 279,
+   "serial": 602,
+   "epic": "IRW2561298",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 12,
+   "page": 279,
+   "serial": 603,
+   "epic": "IRW2058725",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 12,
+   "page": 279,
+   "serial": 604,
+   "epic": "IRW2071850",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 12,
+   "page": 279,
+   "serial": 605,
+   "epic": "IRW2071686",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 12,
+   "page": 279,
+   "serial": 606,
+   "epic": "IRW2058840",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 12,
+   "page": 279,
+   "serial": 607,
+   "epic": "IRW2087443",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 12,
+   "page": 279,
+   "serial": 608,
+   "epic": "IRW2087575",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 12,
+   "page": 279,
+   "serial": 609,
+   "epic": "IRW1645746",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 12,
+   "page": 279,
+   "serial": 610,
+   "epic": "IRW2148500",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 12,
+   "page": 279,
+   "serial": 611,
+   "epic": "IRW2440246",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 12,
+   "page": 279,
+   "serial": 613,
+   "epic": "IRW2481927",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 12,
+   "page": 279,
+   "serial": 614,
+   "epic": "IRW2299782",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 12,
+   "page": 279,
+   "serial": 615,
+   "epic": "IRW1384155",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 12,
+   "page": 279,
+   "serial": 616,
+   "epic": "IRW1944032",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 12,
+   "page": 279,
+   "serial": 617,
+   "epic": "IRW1944024",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 12,
+   "page": 280,
+   "serial": 619,
+   "epic": "IRW2595262",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 12,
+   "page": 280,
+   "serial": 621,
+   "epic": "NXL0859199",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 12,
+   "page": 280,
+   "serial": 622,
+   "epic": "IRW2606101",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 12,
+   "page": 280,
+   "serial": 628,
+   "epic": "IRW2404234",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 12,
+   "page": 280,
+   "serial": 635,
+   "epic": "IRW1702505",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 12,
+   "page": 281,
+   "serial": 640,
+   "epic": "IRW1164771",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 12,
+   "page": 281,
+   "serial": 641,
+   "epic": "IRW1164763",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 12,
+   "page": 282,
+   "serial": 672,
+   "epic": "IRW1942952",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 13,
+   "page": 289,
+   "serial": 91,
+   "epic": "IRW1160605",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 13,
+   "page": 289,
+   "serial": 92,
+   "epic": "IRW1263748",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 13,
+   "page": 289,
+   "serial": 94,
+   "epic": "IRW2353548",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 13,
+   "page": 289,
+   "serial": 95,
+   "epic": "IRW2354561",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 13,
+   "page": 289,
+   "serial": 96,
+   "epic": "IRW2353357",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 13,
+   "page": 289,
+   "serial": 97,
+   "epic": "IRW2353449",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 13,
+   "page": 289,
+   "serial": 98,
+   "epic": "IRW2283836",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 13,
+   "page": 289,
+   "serial": 99,
+   "epic": "IRW2219277",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 13,
+   "page": 289,
+   "serial": 100,
+   "epic": "IRW2514404",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 13,
+   "page": 289,
+   "serial": 101,
+   "epic": "IRW2299840",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 13,
+   "page": 289,
+   "serial": 102,
+   "epic": "IRW2438216",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 13,
+   "page": 289,
+   "serial": 103,
+   "epic": "IRW2341865",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 13,
+   "page": 289,
+   "serial": 104,
+   "epic": "IRW2347086",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 13,
+   "page": 289,
+   "serial": 105,
+   "epic": "IRW2215473",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 13,
+   "page": 289,
+   "serial": 106,
+   "epic": "IRW1160159",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 13,
+   "page": 289,
+   "serial": 108,
+   "epic": "IRW1719517",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 13,
+   "page": 290,
+   "serial": 111,
+   "epic": "IRW1267632",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 13,
+   "page": 292,
+   "serial": 167,
+   "epic": "IRW1985233",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 13,
+   "page": 292,
+   "serial": 169,
+   "epic": "IRW1985571",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 13,
+   "page": 292,
+   "serial": 171,
+   "epic": "IRW1985209",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 13,
+   "page": 292,
+   "serial": 172,
+   "epic": "IRW1985266",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 13,
+   "page": 292,
+   "serial": 173,
+   "epic": "IRW1985373",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 13,
+   "page": 292,
+   "serial": 175,
+   "epic": "IRW2564672",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 13,
+   "page": 293,
+   "serial": 184,
+   "epic": "IRW2472991",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 13,
+   "page": 293,
+   "serial": 185,
+   "epic": "IRW2472934",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 13,
+   "page": 293,
+   "serial": 202,
+   "epic": "IRW1164565",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 13,
+   "page": 293,
+   "serial": 203,
+   "epic": "IRW1164706",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 13,
+   "page": 294,
+   "serial": 212,
+   "epic": "IRW1039718",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 13,
+   "page": 294,
+   "serial": 213,
+   "epic": "IRW1039700",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 13,
+   "page": 295,
+   "serial": 229,
+   "epic": "IRW2485936",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 13,
+   "page": 295,
+   "serial": 233,
+   "epic": "IRW2488898",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 13,
+   "page": 295,
+   "serial": 241,
+   "epic": "IRW2150191",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 13,
+   "page": 295,
+   "serial": 242,
+   "epic": "IRW2147742",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 13,
+   "page": 295,
+   "serial": 243,
+   "epic": "IRW2143246",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 13,
+   "page": 296,
+   "serial": 247,
+   "epic": "IRW2461028",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 13,
+   "page": 296,
+   "serial": 266,
+   "epic": "IRW2511020",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 13,
+   "page": 296,
+   "serial": 267,
+   "epic": "IRW2138386",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 13,
+   "page": 296,
+   "serial": 268,
+   "epic": "IRW2141430",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 13,
+   "page": 297,
+   "serial": 280,
+   "epic": "IRW1266055",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 13,
+   "page": 297,
+   "serial": 281,
+   "epic": "IRW1266063",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 13,
+   "page": 297,
+   "serial": 282,
+   "epic": "IRW1266071",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 13,
+   "page": 298,
+   "serial": 301,
+   "epic": "IRW1810019",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 13,
+   "page": 298,
+   "serial": 302,
+   "epic": "IRW1810050",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 13,
+   "page": 299,
+   "serial": 337,
+   "epic": "IRW0597666",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 13,
+   "page": 300,
+   "serial": 369,
+   "epic": "IRW1264639",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 13,
+   "page": 302,
+   "serial": 420,
+   "epic": "IRW0476853",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 13,
+   "page": 304,
+   "serial": 453,
+   "epic": "IRW1752856",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 13,
+   "page": 304,
+   "serial": 454,
+   "epic": "IRW1752872",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 13,
+   "page": 304,
+   "serial": 455,
+   "epic": "IRW2547388",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 13,
+   "page": 304,
+   "serial": 458,
+   "epic": "IRW2520187",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 13,
+   "page": 304,
+   "serial": 460,
+   "epic": "IRW0856641",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 13,
+   "page": 304,
+   "serial": 471,
+   "epic": "IRW2237808",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 13,
+   "page": 305,
+   "serial": 482,
+   "epic": "IRW1161744",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 13,
+   "page": 305,
+   "serial": 498,
+   "epic": "IRW0856633",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  },
+  {
+   "ward": 13,
+   "page": 305,
+   "serial": 499,
+   "epic": "IRW0856534",
+   "state": "ok",
+   "candidates": [
+    "",
+    "",
+    "",
+    ""
+   ],
+   "best": ""
+  }
+ ]
+}

@@ -148,7 +148,7 @@ export default function VotersScreen() {
   const { t } = useTranslation();
   const router = useRouter();
   const toast = useToast();
-  const { profile } = useAuth();
+  const { profile, profileLoading } = useAuth();
   const outline = useColor('outline');
   const primary = useColor('primary');
   const params = useLocalSearchParams<{ ward?: string }>();
@@ -162,7 +162,24 @@ export default function VotersScreen() {
     return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
   }, [params.ward]);
 
-  const roll = useRoll(initialWard);
+  /**
+   * Wards this account may fetch, mirrored from the profile BEFORE `useRoll`
+   * so the very first query batch is already scoped (useRoll.ts explains why
+   * an unscoped batch is fatal rather than merely wasteful: one denied ward
+   * rejects the whole `Promise.all`).
+   *
+   * `null` = unrestricted (admin and above). A karykarta's single ward is a
+   * fresh array only when the value changes — the fetch effect keys on the
+   * CONTENT of this array, but a stable identity keeps the render cheap too.
+   */
+  const wardScope = useMemo<readonly number[] | null>(() => {
+    const role = profile?.role ?? null;
+    if (!can(role, 'voterRead')) return [];
+    if (role !== 'karykarta') return null;
+    return profile?.wardNo != null ? [profile.wardNo] : [];
+  }, [profile?.role, profile?.wardNo]);
+
+  const roll = useRoll(initialWard, { wardScope });
   const [query, setQuery] = useState('');
 
   /**
@@ -181,15 +198,41 @@ export default function VotersScreen() {
     setQuery('');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialWard]);
+
   /**
-   * Which roll area's data the list shows.
+   * A karykarta's own ward, selected on open.
    *
-   * One area ships with the app (Veernagar), so this is currently a label
-   * rather than a filter — but it sits at the very top of the header because
-   * it is the widest scope of the hierarchy (area > ward > voter) and the
-   * place a second roll will slot in without touching the layout.
+   * Without this the list opened on the "all wards" selection — which then
+   * fetched wards their scope excludes and showed nothing until they picked
+   * their ward by hand from the selector ("works after switching to his ward
+   * filter"). The profile lands after mount, so this runs once, once: any
+   * explicit `?ward=` deep link or manual pick already chosen wins (the guard
+   * sets `applied` on the param too), and `wardScope` above keeps the fetches
+   * honest in the window between mount and this effect.
+   */
+  const appliedWard = useRef(false);
+  useEffect(() => {
+    if (appliedWard.current) return;
+    if (params.ward != null) {
+      appliedWard.current = true; // the param effect owns this navigation
+      return;
+    }
+    if (profileLoading) return;
+    if (profile?.role === 'karykarta' && profile.wardNo != null) {
+      appliedWard.current = true;
+      roll.setWard(profile.wardNo);
+      setQuery('');
+    } else if (profile) {
+      appliedWard.current = true;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile, profileLoading, params.ward]);
+  /**
+   * Which roll area's data the list shows — see `AreaSelect`, fed from the
+   * Firestore `areas` collection (one shipped: Veernagar).
    */
   const [area, setArea] = useState('veernagar');
+
   const [status, setStatus] = useState<StatusFilter>('all');
   /**
    * Which fields the query is matched against.

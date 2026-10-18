@@ -3,6 +3,7 @@ import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
 import { View } from '@/components/ui/view';
 import { useColor } from '@/hooks/useColor';
+import { useReference } from '@/providers/reference-provider';
 import { CONTROL_RADIUS } from '@/theme/globals';
 import { typeStyle } from '@/theme/typography';
 import { Check, ChevronDown, MapPin } from 'lucide-react-native';
@@ -11,13 +12,11 @@ import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet } from 'react-native';
 
 /**
- * The selectable roll areas, keyed by the i18n label each one carries.
- *
- * One entry for now — the app ships a single roll (Veernagar). The list is
- * data, not structure: adding an area is one line here plus its translation,
- * and the pill, the sheet and the selection state all follow. The selector
- * is on screen from day one so switching areas never becomes a layout
- * change later.
+ * The bundled fallback for when the Firestore `areas` collection has not been
+ * seeded yet — the app ships one roll (Veernagar), so an EMPTY database must
+ * still render a working selector rather than an empty pill. Once
+ * `scripts/seed-roll.mjs` has written `areas/veernagar`, the live list wins
+ * and this array only covers the cold-start frame before the snapshot lands.
  */
 export const AREAS = [
   { value: 'veernagar', labelKey: 'areas.veernagar' },
@@ -53,10 +52,25 @@ export function AreaSelect({ value, onChange }: Props) {
   const muted = useColor('muted');
   const accent = useColor('accent');
 
-  const options = AREAS.map((area) => ({
-    value: area.value,
-    label: t(area.labelKey as 'areas.veernagar'),
-  }));
+  // Live area list (Firestore `areas`, seeded by scripts/seed-roll.mjs) with
+  // the bundled Veernagar entry as the fallback — categorising the roll by
+  // area is data, not a hard-coded label, and this selector is where the
+  // second area will appear with no layout change at all.
+  //
+  // Filtered to the ROLL's constituency id: the demo campaign seed also
+  // writes `areas` documents (`area-ratanada-chowk`, …) into the same
+  // collection, and those are geography for tasks/booths — not datasets a
+  // voter roll should be switched to.
+  const { areas } = useReference();
+  const live = areas.filter(
+    (area) => area.constituencyId === 'cons-jodhpur-jhanwar'
+  );
+  const options = live.length
+    ? live.map((area) => ({ value: area.id, label: area.name }))
+    : AREAS.map((area) => ({
+        value: area.value,
+        label: t(area.labelKey as 'areas.veernagar'),
+      }));
   const selected = options.find((option) => option.value === value);
 
   return (

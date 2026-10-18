@@ -12,6 +12,7 @@ import {
   onSnapshot,
   serverTimestamp,
   setDoc,
+  updateDoc,
 } from 'firebase/firestore';
 import * as Linking from 'expo-linking';
 import { router } from 'expo-router';
@@ -25,6 +26,11 @@ import {
   type ReactNode,
 } from 'react';
 import { parseAuthLink } from '@/lib/auth-link';
+import {
+  clearLockNotice,
+  deviceInfo,
+  noteLock,
+} from '@/lib/device';
 import { profileFromDoc, type Profile } from '@/lib/documents';
 import { auth, db } from '@/lib/firebase';
 
@@ -206,6 +212,91 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await firebaseSignOut(auth);
     setProfileEntry(null);
   }, []);
+
+  // ---------------------------------------------------------------------
+  // Per-device account lock (firestore.rules §users).
+  //
+  // Runs on every profile snapshot for a signed-in user and enforces three
+  // states, in this order:
+  //
+  //  1. `profile.locked` → the account is locked (by an admin, or by the
+  //     account itself earlier): end the session NOW and leave a notice for
+  //     the sign-in screen. Rules already deny every capability — this is
+  //     just the client half of the same gate.
+  //  2. bound device exists but is NOT this install → a different device
+  //     signed in with this account's password. Lock the account
+  //     (`locked: true` from the OWNER path — the only way a non-admin can
+  //     lock, and that path can never write `locked: false`), leave the
+  //     notice, sign out. Recovery is a super-admin unlock, which also drops
+  //     the binding so the rightful device re-binds on its next sign-in.
+  //  3. no binding yet → first launch from this install: bind it. Rules
+  //     only permit a device write while none exists, so any later attempt
+  //     to swap the binding (from a modified client) is rejected server-side.
+  //
+  // Everything is best-effort: a failure here degrades to "no binding" or
+  // "signed out locally", never to a half-broken session.
+  // ---------------------------------------------------------------------
+  useEffect(() => {
+    if (!userId || !profile) return;
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const info = await deviceInfo();
+        if (cancelled) return;
+
+        if (profile.locked) {
+          await noteLock(profile.lockedReason ?? 'admin');
+          if (cancelled) return;
+          await firebaseSignOut(auth);
+          setProfileEntry(null);
+          return;
+        }
+
+        const bound = profile.device?.id ?? null;
+
+        if (bound && bound !== info.id) {
+          try {
+            await updateDoc(doc(db, 'users', userId), {
+              locked: true,
+              lockedReason: 'device_change',
+              lockedAt: Date.now(),
+              // 'system' says "nobody pressed a button — a foreign device
+              // walked into the account", which is what the panel shows.
+              lockedBy: 'system',
+              updatedAt: serverTimestamp(),
+            });
+          } catch {
+            // Offline or already locked by the other device's own attempt —
+            // the sign-out below still runs either way.
+          }
+          if (cancelled) return;
+          await noteLock('device_change');
+          await firebaseSignOut(auth);
+          setProfileEntry(null);
+          return;
+        }
+
+        if (!bound) {
+          await updateDoc(doc(db, 'users', userId), {
+            device: info,
+            updatedAt: serverTimestamp(),
+          });
+        }
+        // Normal path (bound to this install, or we just bound it): this
+        // sign-in is legitimate, so any lock notice left by a previous
+        // lockout no longer describes the current state.
+        await clearLockNotice();
+      } catch {
+        // Device bookkeeping must never keep a signed-in user from using the
+        // app — the rules enforce the lock server-side regardless.
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [userId, profile]);
 
   const refreshProfile = useCallback(async () => {
     if (!userId) return;

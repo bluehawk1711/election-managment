@@ -53,6 +53,28 @@ export interface Profile {
   role: AppRole | null;
   /** Ward a karykarta is assigned to; `null` for unrestricted roles. */
   wardNo: number | null;
+  /**
+   * The install this account is bound to — the per-device lock's record of
+   * "the" device. `null` before the first launch and after a super-admin
+   * unlock, which clears the binding on purpose so the next sign-in re-binds.
+   *
+   * Written by the auth provider on first sign-in only; firestore.rules
+   * refuses every owner-side modification of an existing binding, so a
+   * modified client cannot swap it out from under the lock.
+   */
+  device: { id: string; name: string; platform: string; lastActiveAt: number } | null;
+  /**
+   * Account lock. Rules AND this into every capability (`isLocked()`), so
+   * `true` means zero voter reads, zero campaign writes, zero roster access —
+   * while `users/{uid}` itself stays readable so the app can explain why.
+   */
+  locked: boolean;
+  /** `'device_change'` (self-locked by a foreign sign-in) or `'admin'`. */
+  lockedReason: 'device_change' | 'admin' | null;
+  /** Epoch millis of the lock, or null. */
+  lockedAt: number | null;
+  /** The super admin who locked it, or `'system'` for a device lock. */
+  lockedBy: string | null;
   createdAt: number | null;
   updatedAt: number | null;
 }
@@ -147,8 +169,36 @@ export function profileFromDoc(
     onboarded: data.onboarded === true,
     role: toAppRole(data.role),
     wardNo: typeof data.wardNo === 'number' ? data.wardNo : null,
+    device: parseDevice(data.device),
+    locked: data.locked === true,
+    lockedReason:
+      data.lockedReason === 'device_change' || data.lockedReason === 'admin'
+        ? data.lockedReason
+        : null,
+    lockedAt: typeof data.lockedAt === 'number' ? data.lockedAt : null,
+    lockedBy: typeof data.lockedBy === 'string' ? data.lockedBy : null,
     createdAt: millisOf(data.createdAt),
     updatedAt: millisOf(data.updatedAt),
+  };
+}
+
+/**
+ * Defensive read of the bound-device map — untrusted data with a closed
+ * key set, exactly like `enumOf`'s job for enums: anything malformed reads as
+ * "no device", which lands on the first-bind path instead of crashing the
+ * provider that decides whether to sign the user out.
+ */
+function parseDevice(
+  value: unknown
+): { id: string; name: string; platform: string; lastActiveAt: number } | null {
+  if (!value || typeof value !== 'object') return null;
+  const map = value as Record<string, unknown>;
+  if (typeof map.id !== 'string' || !map.id) return null;
+  return {
+    id: map.id,
+    name: typeof map.name === 'string' ? map.name : '',
+    platform: typeof map.platform === 'string' ? map.platform : '',
+    lastActiveAt: typeof map.lastActiveAt === 'number' ? map.lastActiveAt : 0,
   };
 }
 
