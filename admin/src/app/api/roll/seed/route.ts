@@ -32,9 +32,12 @@ import { adminDb } from '@/lib/admin-firebase';
 
 // No `export const runtime = 'nodejs'`: `cacheComponents` rejects route
 // segment runtime config, and Node is the default runtime anyway.
-// The import writes 6,855 documents through BulkWriter — minutes, not
-// seconds. Local dev only (see above), so the platform timeout is advisory.
-export const maxDuration = 600;
+//
+// No `export const maxDuration` either: the full import writes 6,855
+// documents through BulkWriter (minutes, not seconds) and Vercel's Hobby
+// plan caps that value at 300 — but this route 403s in production anyway,
+// and `next dev` has no such limit, so the long run only ever happens
+// locally where the platform timeout does not apply.
 
 const TAIL_LINES = 60;
 
