@@ -1166,6 +1166,47 @@ describe('per-device account lock', () => {
     );
   });
 
+  it('does NOT bind a super admin to one device — rebind, never lock', async () => {
+    // Alice is the superAdmin (see the fixture). She binds her phone…
+    await assertSucceeds(
+      updateDoc(doc(alice(), 'users', ALICE), {
+        device: device(),
+        updatedAt: serverTimestamp(),
+      })
+    );
+
+    // …signs in on a SECOND device and simply re-binds — the exact write
+    // that is refused for Bob above. No lock, no super-admin rescue needed:
+    // the account that unlocks everyone else must never be hostage to one
+    // phone.
+    await assertSucceeds(
+      updateDoc(doc(alice(), 'users', ALICE), {
+        device: device('99999999-8888-7777-6666-555555555555'),
+        updatedAt: serverTimestamp(),
+      })
+    );
+
+    // Dropping the binding entirely is hers too.
+    await assertSucceeds(
+      updateDoc(doc(alice(), 'users', ALICE), {
+        device: deleteField(),
+        updatedAt: serverTimestamp(),
+      })
+    );
+
+    // Shape validation is role-blind: a malformed map is still refused.
+    await assertFails(
+      updateDoc(doc(alice(), 'users', ALICE), {
+        device: device('short'),
+        updatedAt: serverTimestamp(),
+      })
+    );
+
+    // And throughout, her capabilities are intact — the exemption changed
+    // the binding rules, not the lock.
+    await assertSucceeds(votersInWard(alice(), ROLL_WARD));
+  });
+
   it('locks itself on a foreign device, and only a super admin unlocks', async () => {
     // Bob binds his phone…
     await assertSucceeds(

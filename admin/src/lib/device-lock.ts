@@ -6,6 +6,12 @@
  *   account and ends its session; only a super admin unlocks, and the
  *   unlock drops the binding so the rightful device re-binds.
  *
+ * One deliberate asymmetry, mirrored in `firestore.rules §users`: a
+ * SUPER ADMIN is not device-bound. They rebind this browser instead of
+ * locking themselves out — the account that unlocks everyone else must
+ * never end up hostage to a single laptop. A deliberate admin lock still
+ * applies to them.
+ *
  * The fingerprint lives in `localStorage` (the web analogue of the app's
  * SecureStore UUID): stable per browser profile, re-minted by an incognito
  * window or a cleared cache — which correctly counts as "a new device", the
@@ -158,6 +164,25 @@ export async function enforceDeviceLock(
 
   const mine = panelDevice();
   const bound = bindingOf(data);
+
+  // 2a. Super admins are not device-bound (see the file header and
+  //     firestore.rules §users): rebind this browser — first bind or a
+  //     swap — and stay signed in. The rules allow a device write from a
+  //     `superAdmin` profile on any write, not just the first.
+  if (data.role === 'superAdmin') {
+    if (!bound || bound.id !== mine.id) {
+      try {
+        await updateDoc(doc(db, 'users', uid), {
+          device: mine,
+          updatedAt: serverTimestamp(),
+        });
+      } catch {
+        // Offline — the next snapshot retries; no lock either way.
+      }
+    }
+    clearLockNotice();
+    return;
+  }
 
   // 2. A different browser holds the binding: lock the account through the
   //    OWNER path (the only lock a non-admin write can create) and leave.

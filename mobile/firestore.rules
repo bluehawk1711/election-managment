@@ -335,6 +335,20 @@ service cloud.firestore {
       // panel renders; an owner write cannot smuggle anything else through
       // the `device` hole.
       //
+      // The super-admin exemption — a super admin is NOT bound to one
+      // device. They travel, share the account with their team and sign in
+      // from the panel as often as the app, so freezing their binding would
+      // lock the ONE account that has to stay reachable to unlock everyone
+      // else. So when the pre-write role is `superAdmin`, the first-bind-only
+      // constraint below is skipped: they may rebind or drop the binding at
+      // will, and both clients rebind (rather than self-lock) on a foreign
+      // device. `resource.data.get('role', '')` reads the pre-write role —
+      // `role` is not in the affected-key allowlist below, so it cannot have
+      // changed here, and the default covers profiles from before roles
+      // existed. Developer deliberately does NOT get this: two unbindable
+      // accounts double the blast radius of a stolen password for no
+      // operational gain.
+      //
       // The unlock asymmetry — the single most important line here:
       //
       //     resource.data.get('locked', false) == false   (was unlocked)
@@ -352,17 +366,20 @@ service cloud.firestore {
                                    'updatedAt', 'device', 'locked',
                                    'lockedReason', 'lockedAt', 'lockedBy'])
                     && validDevice(request.resource.data.get('device', null))
-                    // A device write is legal only as a FIRST bind: result
-                    // has a `device`, document had none. An existing binding
-                    // can be neither modified nor removed by its owner —
-                    // otherwise "delete the binding, re-add mine" would be a
-                    // two-write bypass of the whole per-device lock, and
-                    // refreshing the bound device is precisely the super
-                    // admin's unlock (which drops the key) + rebind. Pure
-                    // `diff`/`keys` reads on both sides — no absent-field
-                    // error, no short-circuit dependency.
+                    // A device write is legal only as a FIRST bind — result
+                    // has a `device`, document had none — OR from a super
+                    // admin, who is not device-bound at all (see the
+                    // exemption above). For everyone else an existing
+                    // binding can be neither modified nor removed by its
+                    // owner — otherwise "delete the binding, re-add mine"
+                    // would be a two-write bypass of the whole per-device
+                    // lock, and refreshing the bound device is precisely the
+                    // super admin's unlock (which drops the key) + rebind.
+                    // Pure `diff`/`keys` reads on both sides — no
+                    // absent-field error, no short-circuit dependency.
                     && (!request.resource.data.diff(resource.data).affectedKeys()
                              .hasAny(['device'])
+                        || resource.data.get('role', '') == 'superAdmin'
                         || (!resource.data.keys().hasAny(['device'])
                             && request.resource.data.keys().hasAny(['device'])))
                     && (resource.data.get('locked', false) == false

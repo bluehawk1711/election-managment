@@ -233,6 +233,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   //     only permit a device write while none exists, so any later attempt
   //     to swap the binding (from a modified client) is rejected server-side.
   //
+  // The super-admin exemption: a super admin skips step 2 entirely. They
+  // rebind instead of locking (firestore.rules §users allows a device write
+  // for the `superAdmin` role on any write, not just the first), because
+  // freezing the one account that unlocks everyone else behind a single
+  // phone would be recovery-hostage-taking. A deliberate admin lock
+  // (`profile.locked` in step 1) still applies to them.
+  //
   // Everything is best-effort: a failure here degrades to "no binding" or
   // "signed out locally", never to a half-broken session.
   // ---------------------------------------------------------------------
@@ -254,6 +261,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
 
         const bound = profile.device?.id ?? null;
+
+        // Super admins are not device-bound: rebind to whichever install
+        // they are on (or bind for the first time) and move on. The rules
+        // server-side allow exactly this — a device write from a
+        // `superAdmin` profile on any write, not just the first.
+        if (profile.role === 'superAdmin') {
+          if (bound !== info.id) {
+            await updateDoc(doc(db, 'users', userId), {
+              device: info,
+              updatedAt: serverTimestamp(),
+            });
+          }
+          await clearLockNotice();
+          return;
+        }
 
         if (bound && bound !== info.id) {
           try {
