@@ -25,3 +25,13 @@
 data/*
 /data/*/**
 
+
+# Roll-extraction debug output — regenerable by tools/extract_roll scripts,
+# never committed (ocr_cells alone is ~439MB of per-cell PNGs).
+/tools/extract_roll/ocr_cells/
+/tools/extract_roll/*.log
+/bad6.txt
+/bad_houses.txt
+/nonnum*.txt
+/r.json
+/info.json
