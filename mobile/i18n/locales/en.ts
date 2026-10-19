@@ -164,6 +164,32 @@ export const en = {
   'dash.greetingEvening': 'Good evening, {{name}}',
   'dash.campaignDay': 'Campaign Day {{day}}',
   'dash.pollingIn': '{{days}} days to polling',
+  // Election-day banner (one date, `campaigns/active.electionDate`, shared by
+  // the whole team — see lib/election.ts for how the four states are decided).
+  'dash.electionTitle': 'Election day',
+  'dash.electionTomorrow': 'Voting day is tomorrow',
+  'dash.electionDays': '{{days}} days to voting day',
+  'dash.electionToday': 'Voting day',
+  'dash.electionPassed': 'Voting day was on {{date}}',
+  'dash.electionAgo': '{{days}} days ago',
+  'dash.electionUnset': 'No election day set',
+  'dash.electionUnsetHint':
+    'Set the date and everyone on the team counts down to it.',
+  'dash.electionSetAction': 'Set date',
+  'dash.electionChangeAction': 'Change',
+  // The picker the banner and Settings both open.
+  'election.title': 'Set election day',
+  'election.hint':
+    'One date for the campaign: the whole team sees it on the dashboard.',
+  'election.day': 'Day',
+  'election.month': 'Month',
+  'election.year': 'Year',
+  'election.invalid': 'That is not a real date — try 12 02 2027.',
+  'election.saved': 'Election day saved',
+  'election.cleared': 'Election day cleared',
+  'election.failed': 'Could not save the election day',
+  'election.clear': 'Clear date',
+  'election.pending': 'Saving…',
   'dash.notifications': 'Notifications',
   'dash.noNotifications': 'No new notifications yet',
   'dash.settings': 'Settings',
@@ -425,6 +451,9 @@ export const en = {
   'voters.editHint': 'Edits save to your account — sign in anywhere and they come back.',
   'voters.noChanges': 'Nothing to save — no field changed.',
   'voters.saved': 'Saved to this device',
+  // The one field that shipped with no placeholder: an empty box beside an
+  // "Age" caption read as a label, not a place to type a number.
+  'voters.agePlaceholder': 'e.g. 33',
   'voters.ageInvalid': 'Age must be a number between 18 and 100.',
   'voters.revert': 'Discard local edit',
   'voters.reverted': 'Local edit discarded',

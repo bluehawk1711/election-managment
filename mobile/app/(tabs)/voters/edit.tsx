@@ -343,6 +343,62 @@ function EditForm({
   const [saving, setSaving] = useState(false);
 
   /**
+   * The `voter` every staged field above was seeded from — and the fix for
+   * "the list shows my edit, the edit sheet shows the old value".
+   *
+   * Staged state seeds ONCE at mount, and that mount races this screen's own
+   * overlay load. `useRoll` seeds `rows` from the ward cache during the very
+   * first render while its `overlays` state is still `{}` — the merge the
+   * list has already had, this hook instance has not — so the form mounts
+   * over the RAW roll and, because the `key` on `<EditForm>` is the id (which
+   * never changes, deliberately), would keep those defaults forever. Not
+   * every field either: the staged ones (name, father, house, age, gender,
+   * locality, phone, jati, note) go stale while the fieldwork segments, which
+   * read `voter.*` directly, stay correct — precisely the reported shape.
+   *
+   * Re-seeding during render is React's documented "adjust state when a prop
+   * changes" pattern (the same one `useRoll` uses for its ward reset), and
+   * `pristine` is what makes it safe: while the form still holds exactly what
+   * it was seeded with there is no draft to lose, so the moment the merged
+   * voter lands it is adopted. One keystroke and `pristine` is false — from
+   * then on the draft belongs to the user and no sync, refresh or late
+   * overlay may overwrite it.
+   *
+   * The whole `voter` is tracked rather than just `effective`, because the
+   * note lives on `overlay` — and `voter` changes identity on exactly the
+   * occasions `effective` does (both come out of `useRoll`'s memo), so the
+   * trigger is the same either way.
+   */
+  const [seededFrom, setSeededFrom] = useState(voter);
+
+  const pristine =
+    name === (seededFrom.effective.name ?? '') &&
+    father === (seededFrom.effective.fatherOrHusbandName ?? '') &&
+    houseNo === (seededFrom.effective.houseNo ?? '') &&
+    age === String(seededFrom.effective.age ?? '') &&
+    gender === (seededFrom.effective.gender ?? 'male') &&
+    locality === (seededFrom.effective.locality ?? '') &&
+    phone === (seededFrom.effective.phone ?? '') &&
+    jati === (seededFrom.effective.jati ?? '') &&
+    (seededFrom.overlay.note ?? '') === note;
+
+  if (pristine && seededFrom !== voter) {
+    setSeededFrom(voter);
+    setName(base.name ?? '');
+    setFather(base.fatherOrHusbandName ?? '');
+    setHouseNo(base.houseNo ?? '');
+    setAge(String(base.age ?? ''));
+    setGender(base.gender ?? 'male');
+    setLocality(base.locality ?? '');
+    setPhone(base.phone ?? '');
+    setJati(base.jati ?? '');
+    setNote(voter.overlay.note ?? '');
+    // The values changed underneath, so any validation verdict about the old
+    // ones has to go with them.
+    setShowErrors(false);
+  }
+
+  /**
    * Which fieldwork control is mid-flight, e.g. `'photo'`.
    *
    * One string rather than a boolean per control so the buttons can all
@@ -819,30 +875,48 @@ function EditForm({
           </View>
         </View>
 
+        {/* Every field below is `variant='outline'`. The default `filled`
+            variant paints its border the SAME colour as its background, which
+            is invisible on a white card (the phone box below was literally
+            undetectable) and barely there on the page — so nothing told a
+            reader where a box ended and typing began, which is the complaint
+            behind "I don't know where to add the number". An outline draws
+            the box and turns primary while it has focus, so the caret and its
+            container finally agree. */}
         <Input
           label={t('common.name')}
           value={name}
           onChangeText={setName}
           placeholder={t('common.name')}
+          variant='outline'
         />
         <Input
           label={t('voters.father')}
           value={father}
           onChangeText={setFather}
           placeholder={t('voters.father')}
+          variant='outline'
         />
         <Input
           label={t('voters.house')}
           value={houseNo}
           onChangeText={setHouseNo}
           placeholder={t('voters.house')}
+          variant='outline'
         />
         <Input
           label={t('voters.age')}
           value={age}
           onChangeText={setAge}
+          placeholder={t('voters.agePlaceholder')}
+          // The one field that had no placeholder: an empty box with only an
+          // "Age" caption beside it read as a label, not as somewhere a number
+          // goes. `maxLength` keeps the keyboard from producing "1234" — the
+          // validator would reject it anyway, but not until Save is pressed.
           keyboardType='number-pad'
+          maxLength={3}
           error={showErrors && !ageValid ? t('voters.ageInvalid') : undefined}
+          variant='outline'
         />
 
         <View style={styles.genderRow}>
@@ -867,6 +941,7 @@ function EditForm({
           value={locality}
           onChangeText={setLocality}
           placeholder={t('voters.locality')}
+          variant='outline'
         />
         {/* ---- Mobile number: everything phone-related in ONE card ----
             The old layout spread it across the general form, an orphan
@@ -888,6 +963,7 @@ function EditForm({
             onChangeText={setPhone}
             keyboardType='phone-pad'
             placeholder={t('voters.phoneHint')}
+            variant='outline'
             error={
               phone.trim() !== '' && !isValidPhone(phone)
                 ? t('voters.phoneInvalid')
@@ -1052,6 +1128,7 @@ function EditForm({
           value={jati}
           onChangeText={setJati}
           placeholder={t('voters.jatiPlaceholder')}
+          variant='outline'
         />
 
         {/* --- Fieldwork: committed one tap at a time, not via Save --- */}
@@ -1223,6 +1300,7 @@ function EditForm({
           type='textarea'
           rows={4}
           placeholder={t('voters.notesPlaceholder')}
+          variant='outline'
         />
 
         {/* Roll provenance — the four identifiers that are *not* editable,

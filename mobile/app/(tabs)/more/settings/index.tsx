@@ -1,5 +1,6 @@
 import { DeleteAccountDialog } from '@/components/auth/delete-account-dialog';
 import { SignOutButton } from '@/components/auth/sign-out-button';
+import { ElectionDayCard } from '@/components/dashboard/election-day-card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -261,6 +262,14 @@ export default function SettingsScreen() {
           })}
         </View>
       </Card>
+
+      {/* ── Election day ────────────────────────────────────────────────
+          The same self-contained card the dashboard shows — one component, one
+          picker, one date in `campaigns/active` — so Settings and the banner
+          cannot report different answers. It lives here because the date is
+          campaign configuration a user may arrive looking to change, and a
+          tap-to-edit card is both the display and the row. */}
+      <ElectionDayCard />
 
       {/* ── Session ───────────────────────────────────────────────────── */}
       <Text variant='caption' style={styles.sectionHeading}>

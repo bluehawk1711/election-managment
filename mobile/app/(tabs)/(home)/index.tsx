@@ -2,6 +2,7 @@ import { ActivityCard, ActivityRow } from '@/components/dashboard/activity-card'
 import { AttentionCard, AttentionRow } from '@/components/dashboard/attention-card';
 import { CoverageCard } from '@/components/dashboard/coverage-card';
 import { DashboardHeader } from '@/components/dashboard/dashboard-header';
+import { ElectionDayCard } from '@/components/dashboard/election-day-card';
 import { FieldworkCard } from '@/components/dashboard/fieldwork-card';
 import { GreetingRow } from '@/components/dashboard/greeting-row';
 import { HeroCard } from '@/components/dashboard/hero-card';
@@ -169,10 +170,6 @@ export default function HomeScreen() {
         reference.campaign?.startDate != null
           ? daysBetween(reference.campaign.startDate, now) + 1
           : null,
-      daysToPolling:
-        reference.campaign?.electionDate != null
-          ? Math.max(0, daysBetween(now, reference.campaign.electionDate))
-          : null,
     };
   }, [now, reference, tasks, issues, events, expenses]);
 
@@ -273,7 +270,11 @@ export default function HomeScreen() {
       ? ''
       : [
           metrics.campaignDay != null ? t('dash.campaignDay', { day: metrics.campaignDay }) : null,
-          metrics.daysToPolling != null ? t('dash.pollingIn', { days: metrics.daysToPolling }) : null,
+          // Deliberately NOT `daysToPolling` any more: the election-day banner
+          // below now owns that number, and it does more than the meta line
+          // could — voting day on the day itself, and the date when there is
+          // one. Two copies of the same countdown a screen apart drift apart
+          // as soon as only one of them is read.
         ]
           .filter(Boolean)
           .join(' · ');
@@ -307,6 +308,13 @@ export default function HomeScreen() {
           onBell={() => toast.info(t('dash.notifications'), t('dash.noNotifications'))}
           onTune={() => router.push('/(tabs)/more/settings')}
         />
+
+        {/* The countdown to polling day, and — being tappable — the picker for
+            the date it counts down to. It sits above the readiness hero because
+            it is the one number that changes by itself every day, and because a
+            karykarta who opens this app for four seconds should be able to read
+            it without scrolling. */}
+        <ElectionDayCard />
 
         {loading || metrics == null || now == null ? (
           <View style={{ gap: 8 }}>
