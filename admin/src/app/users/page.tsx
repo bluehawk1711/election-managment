@@ -20,7 +20,7 @@
  * karykarta sends `deleteField()` for wardNo: the RESULT must not carry a
  * ward for a non-scoped role, and only a sentinel removes a key.
  */
-import { Eye, EyeOff, Info, KeyRound, Loader2, Lock, Plus, Search, ShieldCheck, Smartphone, Trash2, Unlock, UserCog, Users, X } from 'lucide-react';
+import { Eye, EyeOff, Info, KeyRound, Loader2, Lock, MonitorSmartphone, Plus, Search, ShieldCheck, Smartphone, Trash2, Unlock, UserCog, Users, X } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import {
@@ -33,6 +33,7 @@ import {
   grantRole,
   lockAccount,
   readVault,
+  setMultiDevice,
   unlockAccount,
   updateVaultPassword,
 } from '@/lib/api';
@@ -184,6 +185,22 @@ export default function AccountsPage() {
       );
     } catch (caught) {
       toast.error('Unlock refused', messageFor(caught));
+    }
+  };
+
+  /* ---- multi-device exemption ---- */
+  const submitMultiDevice = async (target: Profile, value: boolean) => {
+    if (!myUid) return;
+    try {
+      await setMultiDevice(target.uid, value, myUid);
+      toast.success(
+        value ? 'Multi-device granted' : 'Multi-device revoked',
+        value
+          ? `${target.displayName || target.email} can now sign in from any number of devices — the single-device lock no longer applies to this account.`
+          : `${target.displayName || target.email} is back to one device — a sign-in from any other device will lock the account.`
+      );
+    } catch (caught) {
+      toast.error('Multi-device change refused', messageFor(caught));
     }
   };
 
@@ -498,6 +515,19 @@ export default function AccountsPage() {
                             : 'locked'}
                         </span>
                       ) : null}
+                      {profile.multiDevice ? (
+                        <span
+                          title={`Multi-device access — this account may sign in from any number of devices and never self-locks. ${
+                            profile.multiDeviceBy
+                              ? `Granted by admin ${profile.multiDeviceBy}.`
+                              : ''
+                          }`}
+                          className="inline-flex items-center gap-1 rounded-md border border-signal-emerald/35 bg-signal-emerald/10 px-1.5 py-0.5 text-[10px] font-medium text-signal-emerald"
+                        >
+                          <MonitorSmartphone className="size-3" />
+                          multi-device
+                        </span>
+                      ) : null}
                     </div>
                   </div>
 
@@ -541,6 +571,30 @@ export default function AccountsPage() {
                         className="rounded-lg p-2 text-mist-600 transition-colors hover:bg-brand-500/10 hover:text-brand-400"
                       >
                         <Eye className="size-4" />
+                      </button>
+                      {/* Multi-device — lifts the single-device lock for THIS
+                          account so it can sign in anywhere. Same
+                          canManageAccounts gate as lock/unlock. */}
+                      <button
+                        onClick={() => void submitMultiDevice(profile, !profile.multiDevice)}
+                        disabled={isSelf}
+                        title={
+                          isSelf
+                            ? 'You cannot change your own multi-device setting'
+                            : profile.multiDevice
+                              ? 'Revoke multi-device — back to one device'
+                              : 'Allow this account on multiple devices'
+                        }
+                        aria-label={
+                          profile.multiDevice ? 'Revoke multi-device' : 'Allow multi-device'
+                        }
+                        className={`rounded-lg p-2 transition-colors disabled:cursor-not-allowed disabled:opacity-35 ${
+                          profile.multiDevice
+                            ? 'bg-signal-emerald/10 text-signal-emerald hover:bg-signal-emerald/20'
+                            : 'text-mist-600 hover:bg-brand-500/10 hover:text-brand-400'
+                        }`}
+                      >
+                        <MonitorSmartphone className="size-4" />
                       </button>
                       {/* Lock / unlock — unlock only exists on a locked row,
                           and both funnel through canManageAccounts on the

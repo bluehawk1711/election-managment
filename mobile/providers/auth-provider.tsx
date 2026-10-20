@@ -262,11 +262,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         const bound = profile.device?.id ?? null;
 
-        // Super admins are not device-bound: rebind to whichever install
-        // they are on (or bind for the first time) and move on. The rules
-        // server-side allow exactly this — a device write from a
-        // `superAdmin` profile on any write, not just the first.
-        if (profile.role === 'superAdmin') {
+        // Super admins and multi-device accounts are not device-bound: rebind
+        // to whichever install they are on (or bind for the first time) and
+        // move on. The rules server-side allow exactly this — a device write
+        // from a `superAdmin` profile or a `multiDevice` profile on any write,
+        // not just the first.
+        if (profile.role === 'superAdmin' || profile.multiDevice) {
           if (bound !== info.id) {
             await updateDoc(doc(db, 'users', userId), {
               device: info,

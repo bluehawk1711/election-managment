@@ -404,6 +404,32 @@ export async function unlockAccount(targetUid: string): Promise<void> {
   });
 }
 
+/**
+ * Grants or revokes the multi-device exemption for one account.
+ *
+ * `multiDevice: true` lifts the single-device lock for THIS account: it may
+ * sign in from any number of installs and never self-locks on a foreign one
+ * (the same behavior a super admin gets, granted per-account). `false` returns
+ * it to the normal one-device lock. `multiDeviceBy`/`multiDeviceAt` are the
+ * audit trail the roster shows — who granted it and when.
+ *
+ * Rules: the dedicated multi-device manage-clause update (affected keys are
+ * exactly `['multiDevice', 'multiDeviceBy', 'multiDeviceAt']`), gated on
+ * `canManageAccounts` — super admin + developer — like every other
+ * account-management write here.
+ */
+export async function setMultiDevice(
+  targetUid: string,
+  value: boolean,
+  managerUid: string
+): Promise<void> {
+  await updateDoc(doc(db, 'users', targetUid), {
+    multiDevice: value,
+    multiDeviceBy: value ? managerUid : null,
+    multiDeviceAt: value ? Date.now() : null,
+  });
+}
+
 /** Reads the password vault for one account, or null when none exists. */
 export async function readVault(targetUid: string): Promise<AccountVault | null> {
   const snapshot = await getDoc(doc(db, 'accountSecrets', targetUid));

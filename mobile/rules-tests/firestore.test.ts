@@ -435,6 +435,93 @@ describe('/users/{uid}', () => {
       );
     });
   });
+
+  // The multi-device exemption — "allow this specific account to sign in from
+  // more than one device". The single-device lock normally makes a profile's
+  // binding first-bind-only (an owner cannot modify an existing binding), but
+  // a `multiDevice: true` profile is exempt: it may rebind and drop its binding
+  // at will, exactly like a super admin. These tests pin the three facts that
+  // make that work: who may GRANT it, that the grant lifts the rebind
+  // restriction, and that an ordinary account without the flag is still bound.
+  describe('the multi-device exemption', () => {
+    const device = (id: string) => ({
+      id,
+      name: 'Test phone',
+      platform: 'android',
+      lastActiveAt: 1_770_000_000_000,
+    });
+
+    it('lets a super admin and a developer grant multi-device', async () => {
+      await assertSucceeds(
+        updateDoc(doc(alice(), 'users', DAKSH), {
+          multiDevice: true,
+          multiDeviceBy: ALICE,
+          multiDeviceAt: 1_770_000_000_000,
+        })
+      );
+    });
+
+    it('rejects a grant from an admin or a karykarta', async () => {
+      // Daksh is a plain `admin` — no accountManage capability.
+      await assertFails(
+        updateDoc(doc(daksh(), 'users', CARA), {
+          multiDevice: true,
+          multiDeviceBy: DAKSH,
+          multiDeviceAt: 1_770_000_000_000,
+        })
+      );
+      await assertFails(
+        updateDoc(doc(bob(), 'users', CARA), {
+          multiDevice: true,
+          multiDeviceBy: BOB,
+          multiDeviceAt: 1_770_000_000_000,
+        })
+      );
+    });
+
+    it('lets an owner rebind their device once multi-device is granted', async () => {
+      // Grant the flag first (as super admin), then exercise the OWNER path:
+      // the owner swaps their own binding, which the first-bind-only rule
+      // would otherwise reject.
+      await testEnv.withSecurityRulesDisabled(async (context) => {
+        await setDoc(doc(context.firestore(), 'users', CARA), {
+          email: 'cara@example.com',
+          displayName: 'Cara',
+          photoURL: null,
+          onboarded: true,
+          multiDevice: true,
+        });
+      });
+
+      await assertSucceeds(
+        updateDoc(doc(cara(), 'users', CARA), {
+          device: device('device-cara-phone-2'),
+          updatedAt: serverTimestamp(),
+        })
+      );
+    });
+
+    it('still binds an ordinary (non-multi-device) account to one device', async () => {
+      await testEnv.withSecurityRulesDisabled(async (context) => {
+        await setDoc(doc(context.firestore(), 'users', CARA), {
+          email: 'cara@example.com',
+          displayName: 'Cara',
+          photoURL: null,
+          onboarded: true,
+          device: device('device-cara-original'),
+        });
+      });
+
+      // No `multiDevice` flag and an existing binding: the owner cannot swap
+      // it out. This is the single-device lock the exemption lifts.
+      await assertFails(
+        updateDoc(doc(cara(), 'users', CARA), {
+          device: device('device-someone-else'),
+          updatedAt: serverTimestamp(),
+        })
+      );
+    });
+  });
 });
 
 describe('/users/{uid}/voterEdits — the account-private overlay sync', () => {

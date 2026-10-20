@@ -116,6 +116,8 @@ export const profileFromDoc = (doc: AnyDoc): Profile => {
         : null,
     lockedAt: typeof data.lockedAt === 'number' ? data.lockedAt : null,
     lockedBy: typeof data.lockedBy === 'string' ? data.lockedBy : null,
+    multiDevice: data.multiDevice === true,
+    multiDeviceBy: typeof data.multiDeviceBy === 'string' ? data.multiDeviceBy : null,
   };
 };
 

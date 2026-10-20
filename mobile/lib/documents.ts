@@ -75,6 +75,18 @@ export interface Profile {
   lockedAt: number | null;
   /** The super admin who locked it, or `'system'` for a device lock. */
   lockedBy: string | null;
+  /**
+   * Multi-device exemption (firestore.rules §users `multiDevice` path).
+   *
+   * `true` means this account is NOT single-device bound: it may sign in from
+   * any number of installs and never self-locks on a foreign one — the same
+   * behavior the `superAdmin` role gets, but granted per-account by a super
+   * admin from the roster. Defaults to `false`, i.e. the normal one-device
+   * lock applies.
+   */
+  multiDevice: boolean;
+  /** The super admin/developer uid who granted `multiDevice`, or null. */
+  multiDeviceBy: string | null;
   createdAt: number | null;
   updatedAt: number | null;
 }
@@ -177,6 +189,8 @@ export function profileFromDoc(
         : null,
     lockedAt: typeof data.lockedAt === 'number' ? data.lockedAt : null,
     lockedBy: typeof data.lockedBy === 'string' ? data.lockedBy : null,
+    multiDevice: data.multiDevice === true,
+    multiDeviceBy: typeof data.multiDeviceBy === 'string' ? data.multiDeviceBy : null,
     createdAt: millisOf(data.createdAt),
     updatedAt: millisOf(data.updatedAt),
   };

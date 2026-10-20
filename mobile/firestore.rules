@@ -380,6 +380,13 @@ service cloud.firestore {
                     && (!request.resource.data.diff(resource.data).affectedKeys()
                              .hasAny(['device'])
                         || resource.data.get('role', '') == 'superAdmin'
+                        // A multi-device account is NOT single-bound either:
+                        // it may rebind or drop its binding at will, exactly
+                        // like a super admin (see the multi-device grant path
+                        // below). The
+                        // client half (auth-provider) rebinds instead of
+                        // self-locking for these accounts too.
+                        || resource.data.get('multiDevice', false) == true
                         || (!resource.data.keys().hasAny(['device'])
                             && request.resource.data.keys().hasAny(['device'])))
                     && (resource.data.get('locked', false) == false
@@ -394,6 +401,31 @@ service cloud.firestore {
                                || request.resource.data.get('lockedAt', null) is float)
                            && text(request.resource.data.get('lockedBy', ''), 1, 128))
                         : true);
+
+      // Granting or revoking multi-device access — account management, same
+      // `canManageAccounts` gate as the role-grant and lock paths.
+      //
+      // `multiDevice` is the admin-facing switch that lifts the single-device
+      // lock for ONE specific account: the owner may then sign in from any
+      // number of devices and never self-locks on a foreign one. This is the
+      // "allow this account on multiple devices" the panel toggles, and it is
+      // deliberately a SEPARATE path from role grant so granting it cannot be
+      // a side effect of changing a role.
+      //
+      // `multiDeviceBy`/`multiDeviceAt` are the audit trail the panel shows
+      // (WHO granted it, WHEN) — a bare `multiDevice: true` with no context is
+      // exactly the state the roster cannot explain, mirroring the lock
+      // fields' reasoning below.
+      allow update: if canManageAccounts()
+                    && resource != null
+                    && userId != request.auth.uid
+                    && request.resource.data.diff(resource.data).affectedKeys()
+                         .hasOnly(['multiDevice', 'multiDeviceBy', 'multiDeviceAt'])
+                    && request.resource.data.get('multiDevice', false) is bool
+                    && (request.resource.data.get('multiDeviceAt', null) == null
+                        || request.resource.data.get('multiDeviceAt', null) is int
+                        || request.resource.data.get('multiDeviceAt', null) is float)
+                    && text(request.resource.data.get('multiDeviceBy', ''), 0, 128);
 
       // Locking, unlocking and clearing the device binding — account
       // management (`accountManage`: super admin + developer, and only while

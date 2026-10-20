@@ -158,6 +158,16 @@ export interface Profile {
   lockedAt: number | null;
   /** The super admin who locked it, or `'system'` for a device lock. */
   lockedBy: string | null;
+  /**
+   * Multi-device exemption (firestore.rules §users). `true` lifts the
+   * single-device lock for THIS account: it may sign in from any number of
+   * installs and never self-locks on a foreign one. `false` (default) keeps
+   * the normal one-device lock. Toggled by super admin/developer from the
+   * roster — the same gate as every other account-management write.
+   */
+  multiDevice: boolean;
+  /** The super admin/developer uid who granted `multiDevice`, or null. */
+  multiDeviceBy: string | null;
 }
 
 /**
