@@ -404,6 +404,7 @@ export const en = {
   'voters.bulkRowsReady': '{{ready}} of {{total}} rows have a usable number.',
   'voters.bulkInvalidRows': 'That number looks wrong for: {{names}}{{extra}}',
   'voters.bulkUpdateCount': 'Update {{count}} voters',
+  'voters.bulkNoChanges': 'Nothing to save — every row already has that number.',
   'voters.bulkNoSelection': 'Long-press voters in the list to tick them, then bring them here. Every phone number counts as a field edit and syncs to your account.',
   'voters.applyToHouse': 'Set for this whole house ({{count}})',
   'dash.fieldwork': 'My fieldwork',

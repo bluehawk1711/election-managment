@@ -393,6 +393,7 @@ export const hi: Record<TranslationKey, string> = {
   'voters.bulkRowsReady': '{{total}} में से {{ready}} पंक्तियों में मान्य नंबर है।',
   'voters.bulkInvalidRows': 'यह नंबर इनके लिए गलत लग रहा है: {{names}}{{extra}}',
   'voters.bulkUpdateCount': '{{count}} मतदाताओं को अपडेट करें',
+  'voters.bulkNoChanges': 'सेव करने के लिए कुछ नहीं — हर पंक्ति में पहले से वही नंबर है।',
   'voters.bulkNoSelection': 'सूची में मतदाताओं को लंबे दबाकर चुनें, फिर यहाँ लाएँ। हर फ़ोन नंबर एक फील्ड एडिट है और आपके खाते में सिंक होता है।',
   'voters.applyToHouse': 'पूरे इस मकान के लिए सेट करें ({{count}})',
   'dash.fieldwork': 'मेरा फील्डवर्क',
