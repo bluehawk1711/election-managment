@@ -31,7 +31,7 @@
 import { Text } from '@/components/ui/text';
 import { useColor } from '@/hooks/useColor';
 import { useHaptics } from '@/hooks/useHaptics';
-import { WhatsAppCompose } from '@/components/roll/whatsapp-compose';
+import { WhatsAppCompose } from '@/components/whatsapp-compose';
 import { openExternal, smsUrl, telUrl } from '@/lib/contact';
 import { isValidPhone, phoneKey } from '@/lib/roll/contacts';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -66,16 +66,11 @@ export function ContactActions({ phone, compact = false, onFail }: Props) {
   const number = enabled ? phoneKey(raw) : '';
 
   /**
-   * The compose sheet's draft, kept across opens on this card so a second
-   * message to the next house does not mean retyping the first one. State on
-   * the component rather than in a store: the draft belongs to the voter
-   * being looked at, which is exactly what a component instance is.
-   *
-   * Starts EMPTY — there is no default campaign message any more (see
-   * `lib/contact.ts::whatsappUrl`), so nothing a user did not type can go
-   * out under their name.
+   * Whether the compose sheet is up. The sheet owns the message itself: it
+   * reads and writes the saved one (`hooks/useWhatsappMessage`), so there is
+   * no draft on this component — and nothing starts EMPTY-but-for-a default,
+   * because there is no default (see `lib/contact.ts::whatsappUrl`).
    */
-  const [message, setMessage] = useState('');
   const [composing, setComposing] = useState(false);
 
   const open = (url: string | null) => {
@@ -110,8 +105,6 @@ export function ContactActions({ phone, compact = false, onFail }: Props) {
     <WhatsAppCompose
       visible={composing}
       phone={number}
-      message={message}
-      onMessageChange={setMessage}
       onClose={() => setComposing(false)}
       onFail={onFail}
     />

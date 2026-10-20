@@ -21,8 +21,9 @@
  * The WhatsApp line is READ from `appConfig/general` (the same doc the
  * update gate uses — the number is configured once, in the admin panel's
  * Settings page). When it is set, the page ends with a real button that
- * opens a chat with a pre-filled "I need help with the app" message;
- * without it the section still explains where the number will appear.
+ * opens the compose sheet — EMPTY, because the message is the reader's own
+ * to write (`components/whatsapp-compose.tsx`); without the number the
+ * section still explains where it will appear.
  */
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -30,13 +31,13 @@ import { Icon } from '@/components/ui/icon';
 import { ScrollView } from '@/components/ui/scroll-view';
 import { Text } from '@/components/ui/text';
 import { View } from '@/components/ui/view';
+import { WhatsAppCompose } from '@/components/whatsapp-compose';
 import { useColor } from '@/hooks/useColor';
 import { fetchVersionGate } from '@/lib/app-config';
-import { whatsappUrl } from '@/lib/contact';
 import { ChevronDown } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Linking, Pressable, StyleSheet } from 'react-native';
+import { Pressable, StyleSheet } from 'react-native';
 
 interface HelpItem {
   q: string;
@@ -123,6 +124,8 @@ export default function HelpScreen() {
   // version). Absent when the doc is missing/offline — the page still works,
   // it just cannot offer the button.
   const [supportPhone, setSupportPhone] = useState('');
+  /** Whether the compose sheet is up — the sheet owns the message text. */
+  const [composing, setComposing] = useState(false);
   useEffect(() => {
     let alive = true;
     fetchVersionGate()
@@ -253,13 +256,10 @@ export default function HelpScreen() {
     },
   ];
 
-  const openSupport = () => {
-    const url = whatsappUrl(
-      supportPhone,
-      '🙏🏻 मुझे ऐप से जुड़ी मदद चाहिए / I need help with the app.'
-    );
-    if (url) void Linking.openURL(url);
-  };
+  // No default message: the chat opens with the reader's OWN saved text if
+  // they wrote one, and with nothing at all if they did not. A support line
+  // that spoke FOR them was exactly the problem with the old pre-filled text.
+  const openSupport = () => setComposing(true);
 
   return (
     <ScrollView
@@ -289,6 +289,12 @@ export default function HelpScreen() {
             {t('help.contactAction')}
           </Button>
         ) : null}
+
+        <WhatsAppCompose
+          visible={composing}
+          phone={supportPhone}
+          onClose={() => setComposing(false)}
+        />
       </Card>
     </ScrollView>
   );

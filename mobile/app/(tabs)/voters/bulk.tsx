@@ -1,16 +1,22 @@
 /**
- * Bulk phone update (user demand #8, all three entry styles):
+ * Bulk phone update (user demand #8, entry styles):
  *
  *   1. **Tick rows** — long-press in the list, tap “Bulk phone”; the ticked
- *      ids arrive here as the `ids` param and pre-fill the first section.
+ *      ids arrive here as the `ids` param. This is the MAIN flow and it asks
+ *      for one thing only: a phone number. No voter id, no EPIC — the people
+ *      are already on screen with their photo and name, so typing an id to
+ *      say "these ones" would be asking for what the selection already said.
+ *      The number is typed ONCE and fills every row (the old single-field
+ *      bulk entry), and each row stays editable afterwards.
  *   2. **Whole house** — the button on the edit sheet next to the phone field
  *      (`applyToHouse` there), which needs no screen and applies to exactly
  *      what is typed. This screen is its sibling, not its duplicate.
- *   3. **Paste an EPIC list** — `EPIC, phone` per line, the shape a volunteer
- *      is handed from a sheet. Digits and separators are normalised loosely
- *      (comma / tab / colon / semicolon / space all split), because the list
- *      is always typed or pasted from somewhere else and strict parsing would
- *      make half of it fail silently.
+ *   3. **Paste an EPIC list** — OPTIONAL, kept below for the sheet a volunteer
+ *      is handed from the field: `EPIC, phone` per line. It is never the only
+ *      way in; anyone who has ticked rows never needs it. Digits and
+ *      separators are normalised loosely (comma / tab / colon / semicolon /
+ *      space all split), because the list is always typed or pasted from
+ *      somewhere else and strict parsing would make half of it fail silently.
  *
  * Every write goes through `patchVoter` like a single edit — so base-roll
  * immutability, the pending-sync queue and (now) the Firestore push all keep
@@ -40,7 +46,7 @@ import type { VoterView } from '@/lib/roll/types';
 import { useAuth } from '@/providers/auth-provider';
 import { UserX } from 'lucide-react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet } from 'react-native';
 
@@ -101,8 +107,10 @@ export default function BulkPhoneScreen() {
    * file.
    */
   const [drafts, setDrafts] = useState<Record<string, string>>({});
-  /** One number typed once and copied into every row — see `fillAll`. */
-  const [shared, setShared] = useState('');
+  /** One number typed once — see `setShared`. */
+  const [shared, setSharedState] = useState('');
+  /** The previous shared value, so a row edit survives the next keystroke. */
+  const sharedRef = useRef('');
   const [paste, setPaste] = useState('');
   const [busy, setBusy] = useState<string | null>(null);
 
@@ -213,17 +221,33 @@ export default function BulkPhoneScreen() {
     setDrafts((previous) => ({ ...previous, [voterId]: text }));
 
   /**
-   * Copies the shared number into every ticked row at once — the "they all
-   * live at the same landline" case, which is most of what bulk phone entry
-   * is actually for. Per-row fields stay editable afterwards: the fill is a
-   * starting point, not a lock.
+   * The one field the whole screen is built around: type a number and it
+   * lands in every row as you type — no "fill" button to press, no voter id
+   * to look up first.
+   *
+   * Only rows still holding the PREVIOUS shared number (or nothing at all)
+   * are overwritten. A row the user retyped by hand therefore keeps its own
+   * value: the fill is a starting point, not a lock, and correcting a typo in
+   * the shared field must not quietly undo someone's per-row fix.
    */
-  const fillAll = () => {
-    const value = shared.trim();
-    if (!value) return;
-    setDrafts((previous) => {
-      const next = { ...previous };
-      for (const voter of ticked) next[voter.id] = value;
+  const setShared = (text: string) => {
+    const previous = sharedRef.current.trim();
+    sharedRef.current = text;
+    setSharedState(text);
+
+    const value = text.trim();
+    if (!value) return; // clearing the field must not wipe what is already in the rows
+    setDrafts((old) => {
+      const next = { ...old };
+      for (const voter of ticked) {
+        const current =
+          old[voter.id] !== undefined
+            ? old[voter.id].trim()
+            : (voter.effective.phone ?? '').trim();
+        const untouched = old[voter.id] === undefined;
+        const carriesPrevious = previous !== '' && current === previous;
+        if (untouched || carriesPrevious) next[voter.id] = value;
+      }
       return next;
     });
   };
@@ -302,32 +326,34 @@ export default function BulkPhoneScreen() {
           </Text>
           <Text variant='caption'>{t('voters.bulkPerVoter')}</Text>
 
-          {/* One number for everyone — the common case — typed once and
-              copied into the rows below, which stay individually editable. */}
-          <View style={styles.sharedRow}>
-            <Input
-              label={t('voters.bulkSharedNumber')}
-              value={shared}
-              onChangeText={setShared}
-              keyboardType='phone-pad'
-              placeholder={t('voters.phoneHint')}
-              containerStyle={styles.sharedInput}
-              variant='outline'
-            />
-            <Button
-              size='sm'
-              variant='outline'
-              disabled={busy !== null || !shared.trim()}
-              onPress={fillAll}
-              style={styles.fillButton}
-            >
-              {t('voters.bulkFillAll')}
-            </Button>
-          </View>
+          {/* One number for everyone — the whole point of this screen. Typed
+              once, it fills the rows below as it is typed (see `setShared`),
+              which keeps the old single-field bulk entry: no voter id, no
+              EPIC, no second press. The rows underneath exist to be checked
+              against the faces and to be corrected one by one when a house
+              has its own line. */}
+          <Input
+            label={t('voters.bulkSharedNumber')}
+            value={shared}
+            onChangeText={setShared}
+            keyboardType='phone-pad'
+            placeholder={t('voters.phoneHint')}
+            variant='outline'
+            disabled={busy !== null}
+          />
+          <Text variant='caption'>{t('voters.bulkSharedHint')}</Text>
+          <Button
+            loading={busy === 'rows'}
+            disabled={busy !== null || readyCount === 0}
+            onPress={() => void applyRows()}
+          >
+            {t('voters.bulkUpdateCount', { count: readyCount })}
+          </Button>
 
-          {/* One row per ticked voter — photo, name and the number field —
-              the shape of a search suggestion, so "which voters am I about to
-              change" is answered by faces and names rather than a count. */}
+          {/* One row per ticked voter — photo, name and their own number
+              field — bordered so each voter reads as one object rather than
+              three loose lines. "Which voters am I about to change?" is
+              answered by faces and names rather than by a count. */}
           <View style={styles.rows}>
             {ticked.map((voter) => (
               <BulkVoterRow
@@ -346,6 +372,10 @@ export default function BulkPhoneScreen() {
               total: ticked.length,
             })}
           </Text>
+          {/* The same save as above, repeated after the rows on purpose: the
+              top one is the end of "type a number, press once", this one is
+              the end of "I corrected a row by hand" — neither should have to
+              scroll past forty rows to find its own button. */}
           <Button
             loading={busy === 'rows'}
             disabled={busy !== null || readyCount === 0}
@@ -354,6 +384,10 @@ export default function BulkPhoneScreen() {
             {t('voters.bulkUpdateCount', { count: readyCount })}
           </Button>
         </Card>
+      ) : null}
+
+      {!loading && ticked.length === 0 ? (
+        <Text variant='caption'>{t('voters.bulkNoSelection')}</Text>
       ) : null}
 
       {!loading ? (
@@ -392,10 +426,6 @@ export default function BulkPhoneScreen() {
           </Button>
         </Card>
       ) : null}
-
-      {!loading && ticked.length === 0 ? (
-        <Text variant='caption'>{t('voters.bulkNoSelection')}</Text>
-      ) : null}
     </ScrollView>
   );
 }
@@ -405,35 +435,47 @@ const styles = StyleSheet.create({
   body: { padding: 20, gap: 14, paddingBottom: 112 },
   center: { alignItems: 'center', gap: 8, paddingVertical: 20 },
   card: { gap: 10 },
-  // The one-number-for-everyone row: the field takes the width, the fill
-  // button hugs its own label beside it.
-  sharedRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 8 },
-  sharedInput: { flex: 1 },
-  fillButton: { height: 44 },
   rows: { gap: 8 },
+  /**
+   * One voter, one box. A full 1pt border rather than the hairline the list
+   * cards use: these rows carry an EDITABLE field, and an editable thing that
+   * does not look bounded reads as loose text on the card behind it. The
+   * background is the card colour, so the box still holds up in dark mode.
+   */
   row: {
     flexDirection: 'row',
     gap: 10,
-    padding: 8,
+    padding: 10,
     borderRadius: 12,
-    borderWidth: StyleSheet.hairlineWidth,
+    borderWidth: 1,
   },
-  rowPhoto: { width: 46, height: 46, borderRadius: 10 },
+  /** The portrait gets the same treatment at thumbnail scale — a bordered,
+   *  rounded square, never a bare image floating beside the name. */
+  rowPhoto: {
+    width: 46,
+    height: 46,
+    borderRadius: 10,
+    borderWidth: 1,
+    overflow: 'hidden',
+  },
   rowPhotoPlaceholder: {
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: StyleSheet.hairlineWidth,
   },
-  rowText: { flex: 1, minWidth: 0, gap: 2 },
+  /** `minWidth: 0` lets this column shrink: a long Devanagari name or an
+   *  open keyboard would otherwise push the row wider than the screen. */
+  rowText: { flex: 1, minWidth: 0, gap: 4 },
 });
 
 /**
- * One ticked voter in the bulk list: photo, name, and THEIR number field.
+ * One ticked voter in the bulk list: photo, name, and THEIR number field —
+ * the three things that identify "this person, this number", held together
+ * in one bordered box so a scrolling list of forty reads as forty voters
+ * rather than as eighty loose lines.
  *
- * Shaped like a search suggestion — the face and the name lead, the editable
- * line sits under them — because the question this row answers is "which
- * voter is this number going onto?", and a bare name in a scrolling list of
- * forty answers it badly.
+ * The face and the name lead because the question this row answers is "which
+ * voter is this number going onto?", and a bare name in a scrolling list
+ * answers it badly.
  *
  * The photo precedence is the roll list's own (own capture → bundled roll
  * portrait → placeholder), so a face here is the face everywhere else in the
@@ -453,6 +495,7 @@ function BulkVoterRow({
 }) {
   const { t } = useTranslation();
   const border = useColor('border');
+  const card = useColor('card');
   const muted = useColor('muted');
   const outline = useColor('outline');
 
@@ -463,7 +506,7 @@ function BulkVoterRow({
     : bundledPhoto;
 
   return (
-    <View style={[styles.row, { borderColor: border }]}>
+    <View style={[styles.row, { borderColor: border, backgroundColor: card }]}>
       {photoSource ? (
         <Image
           source={photoSource}
@@ -473,7 +516,7 @@ function BulkVoterRow({
           // Recycled rows flash a spinner otherwise — same call as the card.
           showLoadingIndicator={false}
           showErrorFallback={false}
-          containerStyle={styles.rowPhoto}
+          containerStyle={[styles.rowPhoto, { borderColor: border }]}
         />
       ) : (
         <View
@@ -488,7 +531,9 @@ function BulkVoterRow({
       )}
 
       <View style={styles.rowText}>
-        <Text variant='body' numberOfLines={1}>
+        {/* `subtitle`, not `body`: the name is what identifies this row, and
+            at this size it has to lead the number field under it. */}
+        <Text variant='subtitle' numberOfLines={1}>
           {effective.name}
         </Text>
         <Text variant='caption' numberOfLines={1}>
@@ -504,7 +549,7 @@ function BulkVoterRow({
           value={value}
           onChangeText={onChange}
           keyboardType='phone-pad'
-          placeholder={t('voters.phoneHint')}
+          placeholder={t('common.phone')}
           containerStyle={{ marginTop: 2 }}
           variant='outline'
           disabled={disabled}

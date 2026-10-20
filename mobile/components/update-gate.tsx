@@ -13,26 +13,27 @@
  *    still reject whatever an old client cannot speak), which is exactly why
  *    the modal can exist before auth state is known.
  *
- * "Update" opens WhatsApp at the configured support number with a
- * pre-written request (`update.whatsappMessage` — the admin panel previews
- * the same string under Settings). With no number configured, the message
- * stays and the button hides: a dead wa.me link is worse than an honest
- * "contact your super admin".
+ * "Update" opens WhatsApp at the configured support number through the
+ * compose sheet — EMPTY, because nothing this app sends automatically is as
+ * trustworthy as what the person holding the phone wrote (the old
+ * pre-written request is gone with every other default message; see
+ * `components/whatsapp-compose.tsx`). With no number configured the button
+ * hides: a dead wa.me link is worse than an honest "contact your super
+ * admin".
  */
 import { MessageCircle, RefreshCw, ShieldAlert } from 'lucide-react-native';
-import { Linking } from 'react-native';
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
+import { WhatsAppCompose } from '@/components/whatsapp-compose';
 import {
   APP_VERSION,
   fetchVersionGate,
   needsUpdate,
   type VersionGateConfig,
 } from '@/lib/app-config';
-import { whatsappUrl } from '@/lib/contact';
 import { useColor } from '@/hooks/useColor';
 
 type GateState =
@@ -70,6 +71,8 @@ function UpdateLock({
 }) {
   const { t } = useTranslation();
   const [checking, setChecking] = useState(false);
+  /** Whether the compose sheet is up. The sheet carries its own message. */
+  const [composing, setComposing] = useState(false);
 
   const background = useColor('background');
   const card = useColor('card');
@@ -77,10 +80,7 @@ function UpdateLock({
   const outline = useColor('outline');
   const primary = useColor('primary');
 
-  const message = t('update.whatsappMessage', {
-    version: config.latestVersion || APP_VERSION,
-  });
-  const waUrl = config.supportPhone ? whatsappUrl(config.supportPhone, message) : null;
+  const supportPhone = config.supportPhone || '';
 
   const retry = async () => {
     setChecking(true);
@@ -127,17 +127,11 @@ function UpdateLock({
           </View>
         </View>
 
-        {waUrl ? (
+        {supportPhone ? (
           <Pressable
             accessibilityRole='button'
             accessibilityLabel={t('update.cta')}
-            onPress={() => {
-              // Same posture as lib/contact.ts: no canOpenURL pre-check (the
-              // Android package-visibility denial would turn a working link
-              // into a silent failure); a throw surfaces as nothing here, and
-              // the retry below is the fallback.
-              void Linking.openURL(waUrl).catch(() => undefined);
-            }}
+            onPress={() => setComposing(true)}
             style={({ pressed }) => [
               styles.primaryButton,
               { backgroundColor: primary, opacity: pressed ? 0.85 : 1 },
@@ -163,6 +157,15 @@ function UpdateLock({
             {checking ? t('update.checking') : t('update.retry')}
           </Text>
         </Pressable>
+
+        {/* The message the CTA sends is the reader's own — saved by them if
+            they wrote one, nothing at all otherwise. Mounted permanently: the
+            sheet runs its own close animation. */}
+        <WhatsAppCompose
+          visible={composing}
+          phone={supportPhone}
+          onClose={() => setComposing(false)}
+        />
       </View>
     </View>
   );

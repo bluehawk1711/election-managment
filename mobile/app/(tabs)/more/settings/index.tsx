@@ -14,6 +14,7 @@ import { useColor } from '@/hooks/useColor';
 import { useLanguage } from '@/hooks/useLanguage';
 import { useModeToggle } from '@/hooks/useModeToggle';
 import { useProfile } from '@/hooks/useProfile';
+import { useWhatsappMessage } from '@/hooks/useWhatsappMessage';
 import { messageFor } from '@/lib/errors';
 import { auth } from '@/lib/firebase';
 import { APP_VERSION } from '@/lib/app-config';
@@ -57,6 +58,10 @@ export default function SettingsScreen() {
   const { update, saving } = useProfile();
   const { language, languages, setLanguage } = useLanguage();
   const { mode, setMode } = useModeToggle();
+  // The message every WhatsApp button sends. Typed here OR typed in the
+  // compose sheet — both land in the same store, saved on every keystroke.
+  const { message: whatsappMessage, ready, setMessage: setWhatsappMessage } =
+    useWhatsappMessage();
   const toast = useToast();
   // Theme tokens for the segmented controls — the stylesheet used to
   // hardcode a blue (#2563EB) and a grey border, which fought the dark
@@ -263,6 +268,43 @@ export default function SettingsScreen() {
         </View>
       </Card>
 
+      {/* ── WhatsApp message ────────────────────────────────────────────
+          The same store the compose sheet writes to (`useWhatsappMessage`),
+          so a message written there appears here and a message written here
+          is what the next WhatsApp tap sends. Auto-saved on every keystroke;
+          empty means "open the chat with no message", never a stand-in text:
+          this app has no default message anywhere. */}
+      <Card style={{ gap: 12 }}>
+        <View style={{ gap: 2 }}>
+          <Text variant='subtitle'>{t('settings.whatsappMessage')}</Text>
+          <Text variant='caption'>{t('settings.whatsappMessageHint')}</Text>
+        </View>
+        <Input
+          type='textarea'
+          rows={4}
+          value={whatsappMessage}
+          onChangeText={setWhatsappMessage}
+          placeholder={t('whatsapp.placeholder')}
+          variant='outline'
+          disabled={!ready}
+        />
+        <View style={styles.waRow}>
+          <Button
+            variant='outline'
+            size='sm'
+            disabled={!ready || !whatsappMessage.trim()}
+            onPress={() => setWhatsappMessage('')}
+          >
+            {t('settings.whatsappClear')}
+          </Button>
+          <Text variant='caption' style={{ flex: 1, color: outline }}>
+            {whatsappMessage.trim()
+              ? t('settings.whatsappMessageSaved')
+              : t('settings.whatsappMessageEmpty')}
+          </Text>
+        </View>
+      </Card>
+
       {/* ── Election day ────────────────────────────────────────────────
           The same self-contained card the dashboard shows — one component, one
           picker, one date in `campaigns/active` — so Settings and the banner
@@ -335,6 +377,8 @@ const styles = StyleSheet.create({
     // hardcoded hex fought the dark theme.
   },
   pressed: { opacity: 0.7 },
+  /** Clear button and its status line, sharing one baseline. */
+  waRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   aboutRow: {
     flexDirection: 'row',
     alignItems: 'center',
