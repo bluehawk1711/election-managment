@@ -1,5 +1,5 @@
 /**
- * Overlay ⇄ Firestore sync — "my edits follow my account" (plan-voters.md §4,
+ * Overlay ⇄ Realtime Database sync — "my edits follow my account" (plan-voters.md §4,
  * the sync phase the plan deferred until now).
  *
  * Storage stays local-first: `lib/roll/overlay.ts` is still the write path and
@@ -10,14 +10,14 @@
  *           voter's full remote overlay, then dequeued. A failed write keeps
  *           its entry, so the next sync retries; nothing is ever dropped by a
  *           flaky connection.
- *   pull  — the whole `voterEdits` collection (one `getDocs`) is merged into
+ *   pull  — the whole `voterEdits` node (one `once('value')`) is merged into
  *           the local ward overlays with per-voter last-writer-wins
  *           (`mergeRemoteWard`), which is also what re-downloading this
  *           device's own pushes resolves to: a no-op.
  *
- * Scope: **the editor's own account only** — a subcollection under
- * `users/{uid}`, so a karykarta's fieldwork is visible on every device they
- * sign into and to nobody else. `firestore.rules` enforces exactly that.
+ * Scope: **the editor's own account only** — a node under
+ * `users/{uid}/voterEdits`, so a karykarta's fieldwork is visible on every device
+ * they sign into and to nobody else. RTDB rules enforce exactly that.
  *
  * Three overlay fields deliberately do NOT travel:
  *
@@ -34,14 +34,8 @@
  * Everything is fire-and-forget at the call sites (`void syncVoterEdits()`):
  * a screen must render and save whether or not the network is there.
  */
-import {
-  collection,
-  doc,
-  getDoc,
-  getDocs,
-  setDoc,
-} from 'firebase/firestore';
-import { auth, db } from '@/lib/firebase';
+import { auth } from '@/lib/firebase';
+import { getDoc, getDocs, setDoc } from '@/lib/db';
 import {
   loadQueue,
   loadWardOverlay,
@@ -114,8 +108,8 @@ function remotePayload(
 let pushing: Promise<number> | null = null;
 
 /**
- * Writes every queued edit to Firestore and dequeues the ones that landed.
- * Returns how many documents were written. Never throws — an offline device
+ * Writes every queued edit to Realtime Database and dequeues the ones that landed.
+ * Returns how many references were updated. Never throws — an offline device
  * simply keeps its queue.
  */
 export async function pushEdits(): Promise<number> {
@@ -138,8 +132,15 @@ export async function pushEdits(): Promise<number> {
         continue;
       }
       try {
+        // A MERGE, exactly as the Firestore version was — `setDoc(…, { merge:
+        // true })`. Deliberately NOT a compare-and-set: nothing here was ever
+        // conditional, and quietly turning a storage port into a
+        // concurrency-control change is the sort of swap that surfaces weeks
+        // later as "one of my edits disappeared". `lib/db`'s `writeIfUnchanged`
+        // is there if a genuinely conditional write is ever wanted; this is
+        // not the place for one.
         await setDoc(
-          doc(db, 'users', uid, 'voterEdits', entry.voterId),
+          `users/${uid}/voterEdits/${entry.voterId}`,
           remotePayload(overlay, entry.wardNo),
           { merge: true }
         );
@@ -163,32 +164,43 @@ export async function pullEdits(): Promise<number> {
   const uid = auth.currentUser?.uid;
   if (!uid) return 0;
 
-  const snapshot = await getDocs(collection(db, 'users', uid, 'voterEdits'));
+  const rows = await getDocs(`users/${uid}/voterEdits`);
   const byWard = new Map<number, Record<string, VoterOverlay>>();
+  let pulled = 0;
 
-  for (const change of snapshot.docs) {
-    const data = change.data() as VoterOverlay & { wardNo?: number };
+  for (const row of rows) {
+    const data = row.data();
     const wardNo = data.wardNo;
     if (typeof wardNo !== 'number' || !Number.isFinite(wardNo)) continue;
-    const { wardNo: _dropped, ...overlay } = data;
-    if (typeof overlay.updatedAt !== 'number') continue;
+    if (typeof data.updatedAt !== 'number') continue;
+
+    // `wardNo` is grouping metadata, not an overlay field — the Firestore
+    // version destructured it OUT here, and carrying it back in would write a
+    // key `VoterOverlay` does not declare into the local store on every pull.
+    const { wardNo: _grouped, ...overlay } = data;
+
     const group = byWard.get(wardNo) ?? {};
-    // The document id IS the voter id (written that way in `pushEdits`).
-    group[change.id] = overlay as VoterOverlay;
+    // `unknown` first: a `Record<string, unknown>` coming off the wire has no
+    // structural overlap with `VoterOverlay`'s optional fields, so the direct
+    // cast is refused — and rightly so, as a compile-time reminder that what
+    // actually validates these keys and types is `database.rules`, not TS.
+    group[row.id] = overlay as unknown as VoterOverlay;
     byWard.set(wardNo, group);
+    pulled += 1;
   }
 
   for (const [wardNo, remote] of byWard) {
     await mergeRemoteWard(overlayStorage, wardNo, remote);
   }
-  return snapshot.size;
+  // Count of VOTERS, not of wards — this number is reported as "pulled N".
+  return pulled;
 }
 
 /**
  * Downloads TEAMMATES' edits into the read-only team layer.
  *
  * Two accounts sharing a non-empty `teamId` may read each other's
- * `voterEdits` (firestore.rules `sameTeam`). Membership itself lives on
+ * `voterEdits` (RTDB rules `sameTeam`). Membership itself lives on
  * profiles, but the roster cannot be discovered by querying `/users` — that
  * collection's `list` rule is `canViewAccounts` (admin and up), so a
  * karykarta's `where('teamId', '==', …)` would be PERMISSION_DENIED and this
@@ -207,7 +219,7 @@ export async function pullEdits(): Promise<number> {
  * no-team case — a member removed from their team must not keep seeing the
  * old teammates' data on this device.
  *
- * Returns how many teammate documents were pulled.
+ * Returns how many teammate nodes were pulled.
  */
 export async function pullTeamEdits(): Promise<number> {
   const uid = auth.currentUser?.uid;
@@ -215,7 +227,7 @@ export async function pullTeamEdits(): Promise<number> {
 
   // 1. The caller's own team. No team → nothing to share; clear the layer so a
   //    just-removed member's data does not linger on this device.
-  const me = await getDoc(doc(db, 'users', uid));
+  const me = await getDoc(`users/${uid}`);
   const teamId = me.exists() ? (me.data() as { teamId?: string }).teamId : undefined;
   if (typeof teamId !== 'string' || teamId === '') {
     await replaceTeamOverlay(teamOverlayStorage, {});
@@ -226,7 +238,7 @@ export async function pullTeamEdits(): Promise<number> {
   //    caller's own teamId. A missing roster (team assigned before this doc
   //    existed) clears the layer — there is nothing to pull, and inventing a
   //    roster from profiles is exactly the query the rules forbid.
-  const rosterSnap = await getDoc(doc(db, 'teams', teamId));
+  const rosterSnap = await getDoc(`teams/${teamId}`);
   const members: Record<string, string> = rosterSnap.exists()
     ? ((rosterSnap.data() as { members?: Record<string, string> }).members ?? {})
     : {};
@@ -237,14 +249,18 @@ export async function pullTeamEdits(): Promise<number> {
   for (const [memberUid, authorName] of Object.entries(members)) {
     if (memberUid === uid) continue; // own edits already live in the ward overlay
 
-    // Rules evaluate `sameTeam` per returned doc, so this list only ever
+    // Rules evaluate `sameTeam` per returned row, so this read only ever
     // yields visible teammates' documents — the roster hint cannot widen it.
-    const edits = await getDocs(collection(db, 'users', memberUid, 'voterEdits'));
-    for (const change of edits.docs) {
-      const data = change.data() as VoterOverlay;
-      if (typeof data.updatedAt !== 'number') continue;
-      entries[change.id] = {
-        overlay: data,
+    // A denied read throws, and the caller's best-effort contract means the
+    // previous team layer survives rather than being cleared.
+    const edits = await getDocs(`users/${memberUid}/voterEdits`);
+
+    for (const edit of edits) {
+      // Same `unknown` hop as `pullEdits` — rules validate, not the compiler.
+      const overlay = edit.data() as unknown as VoterOverlay;
+      if (typeof overlay.updatedAt !== 'number') continue;
+      entries[edit.id] = {
+        overlay,
         authorUid: memberUid,
         authorName: typeof authorName === 'string' && authorName !== '' ? authorName : null,
       };

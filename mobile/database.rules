@@ -1,0 +1,370 @@
+rules_version = '2';
+
+// ----- identity -------------------------------------------------------
+
+function isSignedIn() {
+  return request.auth != null;
+}
+
+function isOwner(uid) {
+  return isSignedIn() && request.auth.uid == uid;
+};
+
+// **ROLES VIA AUTH CUSTOM CLAIMS**
+// Roles are set by the Admin SDK (admin/src/app/api/account/password/route.ts)
+// and encoded in auth.token.role and auth.token.wardNo.
+// 
+//   auth.token.role: one of karykarta, admin, superAdmin, developer
+//   auth.token.wardNo: integer ward number or null (unrestricted)
+// 
+// RTDB rules cannot do cross-document get() like Firestore,
+// so role enforcement is handled through custom claims in auth token.
+// This eliminates the 1,161-line cross-document read problem.
+
+// ----- role checks via custom claims ----------------------------------
+
+/**
+ * `true` when the caller has one of the four roles.
+ * Uses auth.token.role rather than reading /users/$uid/role.
+ */
+function hasRole(role) {
+  return isSignedIn() && request.auth.token.role == role;
+}
+
+/**
+ * `true` when the caller may read voter data at all.
+ */
+function canReadVoters() {
+  return isSignedIn()
+    && !isLocked()
+    && hasRole('karykarta')
+       || hasRole('admin')
+       || hasRole('superAdmin')
+       || hasRole('developer');
+}
+
+/** Roles that see the whole roll, not one ward. */
+function canSeeAllWards() {
+  return isSignedIn()
+    && !isLocked()
+    && (hasRole('admin')
+        || hasRole('superAdmin')
+        || hasRole('developer'));
+}
+
+/**
+ * `true` when the caller may read this specific roll row.
+ */
+function canReadVoter(data) {
+  return canReadVoters()
+    && (canSeeAllWards()
+        || (hasRole('karykarta')
+            && request.auth.token.wardNo == data.wardNo));
+}
+
+// ----- schema helpers -------------------------------------------------
+
+function exactKeys(data, keys) {
+  return data.keys().hasOnly(keys) && data.keys().hasAll(keys);
+}
+
+function text(value, min, max) {
+  return value is string && value.size() >= min && value.size() <= max;
+}
+
+function nullableMillis(value) {
+  return value == null || value is int || value is float;
+}
+
+function requiredMillis(value) {
+  return value is int || value is float;
+}
+
+/** The bound-device map on `users/{uid}`: exactly the four keys the panel
+ * and the app render, with sane types. `null`/absent is always fine — an
+ * account with no bound device is the normal state before first launch
+ * and after an unlock (which clears the binding).
+ */
+function validDevice(value) {
+  return value == null
+      || (value is map
+          && exactKeys(value,
+              ['id', 'name', 'platform', 'lastActiveAt'])
+          && text(value.get('id', ''), 8, 128)
+          && text(value.get('name', ''), 1, 120)
+          && value.get('platform', '') in
+               ['ios', 'android', 'web', 'windows', 'macos', 'unknown']
+          && (value.get('lastActiveAt', null) is int
+              || value.get('lastActiveAt', null) is float));
+}
+
+// ----- teams ----------------------------------------------------------
+
+function teamId() {
+  return callerProfile().data.get('teamId', '');
+}
+
+function ownerTeamId(ownerUid) {
+  return get(/users/$(ownerUid)).data.get('teamId', '');
+}
+
+function sameTeam(ownerUid) {
+  return isSignedIn() && !isLocked()
+    && exists(/users/$(request.auth.uid))
+    && exists(/users/$(ownerUid))
+    && teamId() != ''
+    && teamId() == ownerTeamId(ownerUid);
+}
+
+// ----- profile --------------------------------------------------------
+
+match /users/{userId} {
+  // The document id IS the uid
+  allow get: if isOwner(userId);
+
+  // Listing is an account-management capability:
+  allow list: if canViewAccounts();
+
+  // `onboarded == false` on create means a client cannot sign up already onboarded
+  // and skip the flow.
+  allow create: if isOwner(userId)
+    && request.resource.data.onboarded == false
+    && request.resource.data.keys().hasOnly([
+      'email', 'displayName', 'photoURL', 'onboarded',
+      'createdAt', 'updatedAt'
+    ]);
+
+  // Accounts, roles and ward assignment — created by admin
+  allow create: if canManageAccounts()
+    && userId != request.auth.uid
+    && request.resource.data.onboarded == true
+    && request.resource.data.keys().hasOnly([
+      'email', 'displayName', 'photoURL', 'onboarded',
+      'role', 'wardNo', 'createdAt', 'updatedAt'
+    ])
+    && request.resource.data.get('role', null) in
+         ['karykarta', 'admin', 'superAdmin', 'developer']
+    && request.resource.data.get('wardNo', null) == null
+       || (request.resource.data.get('wardNo', null) is int
+           && request.resource.data.get('wardNo', null) > 0)
+    && noPoliticalFields(request.resource.data);
+
+  // Self-service update: the profile fields plus the device binding and
+  // the lock itself, and nothing else.
+  allow update: if isOwner(userId)
+    && resource != null
+    && request.resource.data.diff(resource.data).affectedKeys()
+         .hasOnly(['displayName', 'photoURL', 'onboarded',
+                     'updatedAt', 'device', 'locked',
+                     'lockedReason', 'lockedAt', 'lockedBy'])
+    && validDevice(request.resource.data.get('device', null))
+    && (!request.resource.data.diff(resource.data).affectedKeys()
+            .hasAny(['device'])
+        || resource.data.get('role', '') == 'superAdmin')
+    && (resource.data.get('locked', false) == false
+        || request.resource.data.get('locked', null) == true)
+    && (request.resource.data.get('locked', null) == true
+        ? (request.resource.data.get('lockedReason', '') in
+              ['', 'device_change', 'admin']
+          && (request.resource.data.get('lockedAt', null) is int
+              || request.resource.data.get('lockedAt', null) is float)
+          && text(request.resource.data.get('lockedBy', ''), 1, 128)
+        : true);
+
+  // Granting or revoking multi-device access — account management
+  allow update: if canManageAccounts()
+    && resource != null
+    && userId != request.auth.uid
+    && request.resource.data.diff(resource.data).affectedKeys()
+         .hasOnly(['multiDevice', 'multiDeviceBy', 'multiDeviceAt'])
+    && request.resource.data.get('multiDevice', false) is bool
+    && (request.resource.data.get('multiDeviceAt', null) == null
+        || request.resource.data.get('multiDeviceAt', null) is int
+        || request.resource.data.get('multiDeviceAt', null) is float)
+    && text(request.resource.data.get('multiDeviceBy', ''), 0, 128);
+
+  // Assigning or clearing a team — account management
+  allow update: if canManageAccounts()
+    && resource != null
+    && userId != request.auth.uid
+    && request.resource.data.diff(resource.data).affectedKeys()
+         .hasOnly(['teamId', 'updatedAt'])
+    && (request.resource.data.get('teamId', null) == null
+        || (request.resource.data.get('teamId', '') is string
+            && request.resource.data.get('teamId', '').size() <= 64));
+
+  // Locking, unlocking and clearing the device binding — account management
+  // (`accountManage`: super admin + developer, and only while the caller is
+  // not locked themselves).
+  allow update: if canManageAccounts()
+    && resource != null
+    && userId != request.auth.uid
+    && request.resource.data.diff(resource.data).affectedKeys()
+         .hasOnly(['locked', 'lockedReason', 'lockedAt',
+                    'lockedBy', 'device'])
+    && request.resource.data.get('locked', null) is bool
+    && request.resource.data.get('lockedReason', '') in
+         ['', 'device_change', 'admin']
+    && (request.resource.data.get('lockedAt', null) == null
+        || request.resource.data.get('lockedAt', null) is int
+        || request.resource.data.get('lockedAt', null) is float)
+    && text(request.resource.data.get('lockedBy', ''), 0, 128)
+    && validDevice(request.resource.data.get('device', null));
+
+  // Granting or changing a role — account management (`canManageAccounts`)
+  allow update: if canManageAccounts()
+    && resource != null
+    && userId != request.auth.uid
+    && request.resource.data.diff(resource.data).affectedKeys()
+         .hasOnly(['role', 'wardNo'])
+    && (request.resource.data.get('wardNo', null) == null
+        || (request.resource.data.get('wardNo', null) is int
+            && request.resource.data.get('wardNo', null) > 0))
+    && request.resource.data.get('role', null) in
+         ['karykarta', 'admin', 'superAdmin', 'developer'];
+
+  // Deleting an account is an admin action
+  allow delete: if canManageAccounts() && userId != request.auth.uid;
+}
+
+// ----- voterEdits overlay (sync) ------------------------------------
+
+// READS are widened to canViewAccounts on purpose — the panel surface
+// `which voter data changes each user made` reads the whole collection in one
+// query. Karykarta and roleless accounts still see only their own documents
+// (canViewAccounts starts at admin), so widening visibility to the roster does
+// not widen it to the team.
+match /voterEdits/{voterId} {
+  allow read: if isOwner(userId) || sameTeam(userId) || canViewAccounts();
+
+  allow create, update: if isOwner(userId)
+    && !isLocked()
+    && request.resource.data.keys().hasOnly([
+      'name', 'fatherOrHusbandName', 'houseNo', 'age', 'gender',
+      'locality', 'phone', 'jati', 'location', 'photoUrl',
+      'photoPublicId', 'voted', 'leaning', 'leaningNote', 'note',
+      'wardNo', 'updatedAt', 'updatedBy'
+    ])
+    && request.resource.data.keys().hasAll(['wardNo', 'updatedAt', 'updatedBy'])
+    && request.resource.data.wardNo is int
+    && request.resource.data.wardNo > 0
+    && (request.resource.data.updatedAt is int
+        || request.resource.data.updatedAt is float)
+    && text(request.resource.data.updatedBy, 1, 128)
+    && request.resource.data.get('gender', '') in
+         ['', 'male', 'female', 'other']
+    && request.resource.data.get('voted', '') in
+         ['', 'unknown', 'voted', 'notVoted']
+    && request.resource.data.get('leaning', '') in
+         ['', 'unknown', 'right', 'centerRight', 'center',
+          'centerLeft', 'left']
+    && (request.resource.data.keys().hasAny(['age'])
+        ? request.resource.data.age is int
+        : true)
+    && noPoliticalFields(request.resource.data);
+
+// Deleting = "reset this device's/this account's edit", allowed for the owner
+  allow delete: if isOwner(userId) && !isLocked();
+}
+
+// ----- account password vault ---------------------------------------
+
+match /accountSecrets/{userId} {
+  allow read, delete: if canManageAccounts();
+
+  allow create, update: if canManageAccounts()
+    && exactKeys(request.resource.data,
+         ['uid', 'email', 'password', 'updatedAt', 'updatedBy'])
+    && request.resource.data.uid == userId
+    && text(request.resource.data.email, 3, 320)
+    && text(request.resource.data.password, 6, 256)
+    && requiredMillis(request.resource.data.updatedAt)
+    && text(request.resource.data.updatedBy, 1, 128);
+}
+
+// ----- app config (version gate + support line) ---------------------
+
+match /appConfig/{docId} {
+  allow read: if true;
+
+  allow create, update: if canManageAccounts()
+    && exactKeys(request.resource.data,
+         ['latestVersion', 'requiredVersion', 'supportPhone',
+          'updatedAt', 'updatedBy'])
+    && text(request.resource.data.latestVersion, 1, 24)
+    && request.resource.data.latestVersion
+         matches('^[0-9]+(\\.[0-9]+){0,3}([-.][A-Za-z0-9.-]+)?$')
+    && text(request.resource.data.requiredVersion, 1, 24)
+    && request.resource.data.requiredVersion
+         matches('^[0-9]+(\\.[0-9]+){0,3}([-.][A-Za-z0-9.-]+)?$')
+    && request.resource.data.requiredVersion
+         matches('^[0-9]+(\\.[0-9]+)*$')
+    && request.resource.data.supportPhone.matches('^$|^[0-9]{6,15}$')
+    && (request.resource.data.updatedAt == null
+        || request.resource.data.updatedAt is timestamp)
+    && text(request.resource.data.updatedBy, 1, 128);
+
+  allow delete: if false;
+}
+
+// ----- campaign ------------------------------------------------------
+
+function campaignKeys() {
+  return ['name', 'candidateName', 'constituencyName', 'electionDate',
+          'tagline', 'startDate', 'updatedAt'];
+}
+
+function campaignWritten(data, previous, key) {
+  return data.diff(previous).affectedKeys().hasAny([key]);
+}
+
+function campaignValid(data, previous) {
+  return (!campaignWritten(data, previous, 'name')
+          || text(data.get('name', ''), 1, 120))
+      && (!campaignWritten(data, previous, 'candidateName')
+          || text(data.get('candidateName', ''), 0, 120))
+      && (!campaignWritten(data, previous, 'constituencyName')
+          || text(data.get('constituencyName', ''), 0, 120))
+      && (!campaignWritten(data, previous, 'electionDate')
+          || nullableMillis(data.get('electionDate', null)))
+      && (!campaignWritten(data, previous, 'startDate')
+          || nullableMillis(data.get('startDate', null)))
+      && (!campaignWritten(data, previous, 'tagline')
+          || text(data.get('tagline', ''), 0, 200))
+      && (!campaignWritten(data, previous, 'updatedAt')
+          || data.get('updatedAt', null) == null
+          || data.get('updatedAt', null) is timestamp);
+}
+
+match /campaigns/{campaignId} {
+  allow read: if signedIn() && !isLocked();
+
+  // Create and update are SEPARATE clauses
+  allow create: if canEditCampaign()
+    && noPoliticalFields(request.resource.data)
+    && request.resource.data.keys().hasOnly(campaignKeys())
+    && campaignValid(request.resource.data, {});
+
+  allow update: if canEditCampaign()
+    && resource != null
+    && noPoliticalFields(request.resource.data)
+    && request.resource.data.diff(resource.data).affectedKeys()
+         .hasOnly(campaignKeys())
+    && campaignValid(request.resource.data, resource.data);
+
+  allow delete: if false;
+}
+
+// ----- geography -----------------------------------------------------
+
+match /constituencies/{docId} {
+  allow read: if signedIn();
+  allow create, update: if canEditCampaign()
+    && noPoliticalFields(request.resource.data);
+}
+
+// wards — imported roll, read-only from client
+match /wards/{docId} {
+  allow read: if signedIn() && !isLocked();
+  allow write: if false; // never client-writable
+}

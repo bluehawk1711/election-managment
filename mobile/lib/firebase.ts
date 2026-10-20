@@ -17,6 +17,11 @@ import {
   type ReactNativeAsyncStorage,
 } from 'firebase/auth';
 import {
+  connectDatabaseEmulator,
+  getDatabase,
+  type Database,
+} from 'firebase/database';
+import {
   connectFirestoreEmulator,
   getFirestore,
   initializeFirestore,
@@ -76,6 +81,24 @@ const firebaseConfig: FirebaseOptions = {
   storageBucket: process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET,
   messagingSenderId: process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
   appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID,
+  /**
+   * The Realtime Database's URL, NOT an id — this is the one entry in
+   * `FirebaseOptions` that names a *host*, and it is why RTDB cannot reuse
+   * `FIRESTORE_DATABASE_ID` below.
+   *
+   * `getDatabase(app, 'default')` does not mean "the database called default".
+   * The second argument is parsed as a URL, `'default'` has no host, and
+   * `parseRepoInfo` calls `fatal('Cannot parse Firebase url. Please use
+   * https://<YOUR FIREBASE>.firebaseio.com')` — at module import time, before
+   * a single screen renders. `getDatabase(app)` with this key absent is no
+   * better: the SDK cannot guess the host and throws "Unable to determine the
+   * default Firebase database URL".
+   *
+   * The id `default` that Firestore needs is the id of the Firestore
+   * *database resource* in `firebase.json`; the RTDB host is a separate
+   * instance with its own name, normally `<project>-default-rtdb.firebaseio.com`.
+   */
+  databaseURL: process.env.EXPO_PUBLIC_FIREBASE_DATABASE_URL,
 };
 
 if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
@@ -182,6 +205,40 @@ export const db = existing
 export const storage = getStorage(app);
 
 /**
+ * The Realtime Database handle, created on first use.
+ *
+ * **Lazy on purpose.** `getDatabase` throws when the URL is missing or
+ * unparseable, and this module is imported by every screen. Eagerly building
+ * the instance would turn one unset env var into "the app crashes at launch
+ * and shows nothing", which is exactly the failure mode the Firestore block
+ * above goes out of its way to avoid. Deferring it means the 22 screens still
+ * reading Firestore keep working during the migration, and the first RTDB
+ * operation reports the actual problem instead of taking the whole app down.
+ *
+ * `getDatabase` is itself memoised per app instance, so calling this once per
+ * operation is free — and it is what makes Fast Refresh safe here, matching
+ * the `existing` guard at the top of the file.
+ */
+let database: Database | null = null;
+
+export function realtime(): Database {
+  if (database) return database;
+
+  const url = firebaseConfig.databaseURL;
+  if (!url) {
+    throw new Error(
+      'EXPO_PUBLIC_FIREBASE_DATABASE_URL is not set. The Realtime Database is ' +
+        'reached by host, not by id — copy .env.example to .env and set it to ' +
+        'https://<project>-default-rtdb.firebaseio.com (Firebase console → ' +
+        'Build → Realtime Database → Create database).'
+    );
+  }
+
+  database = getDatabase(app, url);
+  return database;
+}
+
+/**
  * Point everything at `npm run emulators` when EXPO_PUBLIC_FIREBASE_USE_EMULATOR=1.
  *
  * Gated on `!existing` because `connectFirestoreEmulator` throws once the
@@ -193,6 +250,7 @@ if (!existing && process.env.EXPO_PUBLIC_FIREBASE_USE_EMULATOR === '1') {
   const host = Constants.expoConfig?.hostUri?.split(':')[0] ?? 'localhost';
 
   connectAuthEmulator(auth, `http://${host}:9099`, { disableWarnings: true });
+  connectDatabaseEmulator(realtime(), host, 9000);
   connectFirestoreEmulator(db, host, 8080);
   connectStorageEmulator(storage, host, 9199);
 

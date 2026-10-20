@@ -23,6 +23,11 @@ import {
   getFirestore,
   type Firestore,
 } from 'firebase/firestore';
+import {
+  getDatabase,
+  connectDatabaseEmulator,
+  type Database,
+} from 'firebase/database';
 
 /** See the file header — enterprise-named database, never `(default)`. */
 export const FIRESTORE_DATABASE_ID = 'default';
@@ -72,6 +77,19 @@ export const db: Firestore = existing
     );
 
 /**
+ * Realtime Database instance for the panel.
+ * Shares the same app as Firestore but uses the databaseURL from env.
+ * The database id is `default`, NOT `(default)`.
+ */
+export const database: Database | null = existing
+  ? getDatabase(app, FIRESTORE_DATABASE_ID)
+  : initializeDatabase(
+      app,
+      { databaseURL: process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL },
+      FIRESTORE_DATABASE_ID
+    );
+
+/**
  * Point at the local emulators when NEXT_PUBLIC_FIREBASE_USE_EMULATOR=1
  * (`npm run emulators` in mobile/ starts them). Gated on `!existing` because
  * `connect*Emulator` throws once the instance has made a request, which a
@@ -83,6 +101,6 @@ if (
   process.env.NEXT_PUBLIC_FIREBASE_USE_EMULATOR === '1'
 ) {
   connectAuthEmulator(auth, 'http://localhost:9099', { disableWarnings: true });
-  connectFirestoreEmulator(db, 'localhost', 8080);
+  connectDatabaseEmulator(database, 'localhost', 9000);
   console.log('[firebase] using emulators at localhost');
 }

@@ -1,10 +1,10 @@
 /**
- * Every Firestore query and mutation the panel performs, in one file.
+ * Every Realtime Database query and mutation the panel performs, in one file.
  *
  * Split by intent, not by collection:
  *
- *   *Reflections* — `build*Query`/`*Ref` return plain `Query`/`DocumentReference`
- *   objects; they know nothing about React or React Query and are subscribed
+ *   *Reflections* — `build*Query`/`*Ref` return plain `Reference` objects;
+ *   they know nothing about React or React Query and are subscribed
  *   through `hooks/use-live.ts` from the pages.
  *
  *   *Mutations* — plain async functions that THROW on failure (with the raw
@@ -37,6 +37,10 @@ import {
   type DocumentReference,
 } from 'firebase/firestore';
 import {
+  ref,
+  once
+} from 'firebase/database';
+import {
   createUserWithEmailAndPassword,
   deleteUser,
   getAuth,
@@ -47,6 +51,7 @@ import {
 } from 'firebase/auth';
 import { initializeApp as initSecondaryApp } from 'firebase/app';
 import { app, auth, db } from '@/lib/firebase';
+import { adminAuth } from '@/lib/admin-firebase';
 import { phoneKey, type FinalizedContact } from '@/lib/contacts';
 import type {
   AccountVault,
@@ -64,61 +69,82 @@ import type { AppRole } from '@/lib/roles';
 // Reflections (queries / references)
 // ------------------------------------------------------------------
 
-export function buildVotersQuery(wardNo: number): Query {
-  // Equality only — the automatic single-field index serves it, which is why
-  // `firestore.indexes.json` stays empty. Multi-criteria filtering (search,
-  // gender chips, …) happens in-memory on the page, the same prototype-scale
-  // trade `lib/filters.ts` documents for the mobile app.
-  return query(collection(db, 'voters'), where('wardNo', '==', wardNo));
+export function buildVotersQuery(wardNo: number): Reference {
+  // RTDB: equality on wardNo becomes a path assertion under votersByWard.
+  // The roll is already sharded per-ward, so this is a single read.
+  return ref(db, `votersByWard/${wardNo}`);
 }
 
-export function buildWardsQuery(): Query {
-  return query(collection(db, 'wards'));
+export function buildWardsQuery(): Reference {
+  // RTDB: no compound queries. Read the wards node and sort client-side.
+  return ref(db, 'wards');
 }
 
-export function buildUsersQuery(): Query {
-  return query(collection(db, 'users'));
+export function buildUsersQuery(): Reference {
+  // RTDB: no compound queries. Read the users node and filter client-side.
+  return ref(db, 'users');
 }
 
-/**
- * Every team roster — the Teams dialog's list.
+/** Every team roster — the Teams dialog's list.
  *
  * `list` on `/teams` is `canManageAccounts` in firestore.rules, so this query
- * is denied for anyone below super admin (and the dialog is gated on the same
- * capability locally, which only spares them the permission-denied toast).
- * Members have no discovery path of their own by design: a karykarta reads
- * the ONE roster whose id matches their own `teamId`, never the collection.
+ * is denied for anyone below super admin (and the dialog is gated on the same * capability locally, which only spares them the permission-denied toast).
+ * Members have no discovery path of their own by design: a karykarta reads * the ONE roster whose id matches their own `teamId`, never the collection.
  */
 export function buildTeamsQuery(): Query {
   return query(collection(db, 'teams'));
 }
 
-export function buildTasksQuery(): Query {
-  return query(collection(db, 'tasks'));
+export function buildTasksQuery(): Reference {
+  // RTDB: no compound queries. Read tasks node and filter client-side.
+  return ref(db, 'tasks');
 }
 
 /** Tasks assigned to one account — the "current load" line in the details dialog. */
-export function buildAssignedTasksQuery(uid: string): Query {
-  // Single-field equality — served by the automatic index (see
-  // buildVotersQuery on why that matters here).
-  return query(collection(db, 'tasks'), where('assigneeId', '==', uid));
+export function buildAssignedTasksQuery(uid: string): Reference {
+  // RTDB: no compound queries. Read tasks node and filter client-side for assignee.
+  // The index node written alongside each task makes this a single read.
+  return ref(db, `tasksByAssignee/${uid}`);
 }
 
 /** The signed-in account's own voter edits — the overlay the drawer merges. */
-export function buildMyEditsQuery(uid: string): Query {
-  return query(collection(db, 'users', uid, 'voterEdits'));
+export function buildMyEditsQuery(uid: string): Reference {
+  // RTDB: multi-path get supports reading multiple voterEdits nodes.
+  return ref(db, `users/${uid}/voterEdits`);
 }
 
-export function overlayRef(uid: string, voterId: string): DocumentReference {
-  return doc(db, 'users', uid, 'voterEdits', voterId);
+// ------------------------------------------------------------------
+// New RTDB query functions for wards and voters
+// ------------------------------------------------------------------
+
+export function buildWardsQueryRTDB(): Reference {
+  // RTDB: read the flat wards node; sort client-side, no indexes needed.
+  return ref(db, 'wards');
 }
 
-export function boardRef(voterId: string): DocumentReference {
-  return doc(db, 'voterPhones', voterId);
+export function buildVotersQueryRTDB(wardNo: number): Reference {
+  // RTDB: read voters sharded per-ward; single equality on wardNo.
+  return ref(db, `votersByWard/${wardNo}`);
 }
 
-export function buildProposalsQuery(voterId: string): Query {
-  return query(collection(db, 'voterPhones', voterId, 'proposals'));
+export function buildMyEditsQueryRTDB(uid: string): Reference {
+  // RTDB: read the signed-in account's voter edits overlay.
+  return ref(db, `users/${uid}/voterEdits`);
+}
+
+export function overlayRef(uid: string, voterId: string): Reference {
+  // RTDB: single document read via multi-path get
+  return ref(db, `users/${uid}/voterEdits/${voterId}`);
+}
+
+export function boardRef(voterId: string): Reference {
+  // RTDB: single document read
+  return ref(db, `voterPhones/${voterId}`);
+}
+
+export function buildProposalsQuery(voterId: string): Reference {
+  // RTDB: read proposals node under voter
+  return ref(db, `voterPhones/${voterId}/proposals`);
 }
 
 // ------------------------------------------------------------------
@@ -329,6 +355,11 @@ export async function grantRole(args: {
   }
 
   await updateDoc(doc(db, 'users', args.targetUid), patch);
+
+  // Set Firebase Auth custom claims so RTDB rules evaluate immediately.
+  // The token refreshes within minutes; this is the cost of the "cleanest" role option.
+  const auth = adminAuth();
+  await auth.setCustomClaims(args.targetUid, { role: args.role, wardNo: args.wardNo });
 }
 
 export async function deleteAccount(targetUid: string): Promise<void> {
@@ -363,6 +394,34 @@ export async function saveAppConfig(
   editorUid: string
 ): Promise<void> {
   await setDoc(doc(db, 'appConfig', 'general'), {
+    ...config,
+    updatedAt: Date.now(),
+    updatedBy: editorUid,
+  });
+}
+
+/** Read `appConfig/general` from RTDB (no Firestore at all). */
+export async function readAppConfigRTDB(): Promise<AppConfig | null> {
+  const ref = ref(db, 'appConfig/general');
+  const snap = await once(ref);
+  if (!snap.exists()) return null;
+  const data = snap.val() as Partial<AppConfig>;
+  return {
+    latestVersion: typeof data.latestVersion === 'string' ? data.latestVersion : '',
+    requiredVersion:
+      typeof data.requiredVersion === 'string' ? data.requiredVersion : '',
+    supportPhone: typeof data.supportPhone === 'string' ? data.supportPhone : '',
+    updatedAt: typeof data.updatedAt === 'number' ? data.updatedAt : 0,
+    updatedBy: typeof data.updatedBy === 'string' ? data.updatedBy : '',
+  };
+}
+
+/** Save the whole `appConfig/general` document every time (`exactKeys` in rules). */
+export async function saveAppConfigRTDB(
+  config: Pick<AppConfig, 'latestVersion' | 'requiredVersion' | 'supportPhone'>,
+  editorUid: string
+): Promise<void> {
+  await set(ref(db, 'appConfig/general'), {
     ...config,
     updatedAt: Date.now(),
     updatedBy: editorUid,

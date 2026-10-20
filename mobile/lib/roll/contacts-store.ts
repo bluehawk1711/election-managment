@@ -14,8 +14,8 @@
  * an obviously-illegal write before it leaves the device turns a server
  * rejection (and its console error) into a quiet no-op.
  */
-import { doc, setDoc } from 'firebase/firestore';
-import { auth, db } from '@/lib/firebase';
+import { auth } from '@/lib/firebase';
+import { setDoc } from '@/lib/db';
 import { can, type AppRole } from '@/lib/roles';
 import { isValidPhone, phoneKey } from '@/lib/roll/contacts';
 
@@ -36,8 +36,8 @@ export interface ProposalWrite {
  * Returns `false` when the write was skipped as illegal (not signed in, no
  * `voterEdit`, karykarta outside their ward, number shape rules would
  * reject) — callers that mirror-share treat `false` as "kept local only" and
- * must not fail the local save over it. Throws only on a real Firestore
- * error, which the best-effort call sites catch.
+ * must not fail the local save over it. Throws only on a real error, which
+ * the best-effort call sites catch.
  */
 export async function writeProposal(args: ProposalWrite): Promise<boolean> {
   const user = auth.currentUser;
@@ -51,7 +51,9 @@ export async function writeProposal(args: ProposalWrite): Promise<boolean> {
   if (!isValidPhone(args.phone)) return false;
   const phone = phoneKey(args.phone);
 
-  await setDoc(doc(db, 'voterPhones', args.voterId, 'proposals', user.uid), {
+  // A full write, not a merge — the whole proposal document is this account's
+  // one proposal, so replacing it is the intended semantics.
+  await setDoc(`voterPhones/${args.voterId}/proposals/${user.uid}`, {
     phone,
     authorName: args.authorName.trim() || 'Unknown',
     wardNo: args.wardNo,

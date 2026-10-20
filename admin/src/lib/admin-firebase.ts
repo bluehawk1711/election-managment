@@ -68,3 +68,8 @@ export function adminDb() {
   adminApp();
   return getFirestore();
 }
+
+export function adminDatabase() {
+  adminApp();
+  return admin.database();
+}

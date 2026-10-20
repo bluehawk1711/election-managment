@@ -1,16 +1,15 @@
 {
   "firestore": {
-    "//database": [
-      "Enterprise edition databases are created with the unparenthesized id",
-      "`default` (the console and gcloud both name it that); firebase-tools",
-      "would otherwise assume `(default)`, fail the existence check and try —",
-      "and fail — to create a second database. `edition` only matters if this",
-      "config ever has to create the database itself."
-    ],
     "database": "default",
     "edition": "ENTERPRISE",
     "rules": "firestore.rules",
     "indexes": "firestore.indexes.json"
+  },
+  "realtime": {
+    "database": {
+      "rules": "database.rules",
+      "emulator": { "port": 9000 }
+    }
   },
   "storage": {
     "rules": "storage.rules"
@@ -30,6 +29,7 @@
     "auth": { "port": 9099 },
     "firestore": { "port": 8080 },
     "storage": { "port": 9199 },
+    "realtime": { "port": 9000 },
     "ui": { "enabled": true, "port": 4000 },
     "singleProjectMode": true
   }
