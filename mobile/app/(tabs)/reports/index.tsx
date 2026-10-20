@@ -58,7 +58,12 @@ export default function ReportsScreen() {
   // *every* ward, so it cannot page: a partial set of wards would report
   // confident, wrong numbers. Being honest about that beats being fast on the
   // one screen whose whole job is a total.
-  const roll = useRoll(null, { eager: true });
+  //
+  // `teamOverlay: false` for the same honesty reason: the counters claim THIS
+  // device's progress, and folding a teammate's pulled marks into them would
+  // make the report assert work it cannot attribute — two teammates would each
+  // see the union counted as their own.
+  const roll = useRoll(null, { eager: true, teamOverlay: false });
   const bundle: WardsBundle | null = roll.wards;
 
   const role = profile?.role ?? null;

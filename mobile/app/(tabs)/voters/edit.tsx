@@ -1,5 +1,6 @@
 import { DetailRow } from '@/components/roll/detail-row';
 import { ContactActions } from '@/components/roll/contact-actions';
+import { TeamTakeCard } from '@/components/roll/team-take-card';
 import { Chip, type ChipTone } from '@/components/campaign/chip';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -757,6 +758,18 @@ function EditForm({
         keyboardShouldPersistTaps='handled'
       >
         <Text variant='caption'>{t('voters.editHint')}</Text>
+
+        {/* Team sharing's write half: a teammate's entry is already merged
+            into every field above (own values win), and this copies the
+            fields this account does not have into its OWN overlay — so the
+            data survives leaving the team and syncs to this user's other
+            devices. Renders nothing when there is nothing to take. */}
+        <TeamTakeCard
+          voter={voter}
+          uid={uid}
+          wardNo={wardNo}
+          onTaken={onSaved}
+        />
 
         {/* Identity + photo. The box doubles as the add/replace control, which
             is why there is no separate "Add photo" button repeating it. */}

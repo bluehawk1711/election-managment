@@ -16,7 +16,7 @@ import {
   wardFromDoc,
 } from '@/lib/mappers';
 import type { Area, Booth, Campaign, Constituency, TeamMember, Ward } from '@/lib/models';
-import { doc, onSnapshot, serverTimestamp, updateDoc } from 'firebase/firestore';
+import { doc, onSnapshot, serverTimestamp, setDoc } from 'firebase/firestore';
 import {
   createContext,
   useCallback,
@@ -185,10 +185,18 @@ export function ReferenceProvider({ children }: { children: ReactNode }) {
 
   const updateCampaign = useCallback(
     async (patch: Partial<Omit<Campaign, 'id'>>) => {
-      await updateDoc(doc(db, COLLECTIONS.campaigns, CAMPAIGN_ID), {
-        ...patch,
-        updatedAt: serverTimestamp(),
-      });
+      // `setDoc` with `{ merge: true }`, NOT `updateDoc`: on a project where
+      // `campaigns/active` has never been written — which is the live state
+      // of this one — `updateDoc` fails outright ("no document to update")
+      // and the election-day picker could never save the date it was created
+      // to set. Merge writes the patch when the doc exists and CREATES it
+      // when it does not, and either way only these keys are affected, which
+      // is what the rules' delta check validates.
+      await setDoc(
+        doc(db, COLLECTIONS.campaigns, CAMPAIGN_ID),
+        { ...patch, updatedAt: serverTimestamp() },
+        { merge: true }
+      );
     },
     []
   );

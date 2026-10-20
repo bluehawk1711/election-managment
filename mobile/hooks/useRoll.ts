@@ -56,6 +56,12 @@ import {
   overlayStorage,
   subscribeOverlay,
 } from '@/lib/roll/overlay';
+import {
+  loadTeamOverlay,
+  subscribeTeamOverlay,
+  teamOverlayStorage,
+  type TeamOverlayMap,
+} from '@/lib/roll/team-overlay';
 import { buildIndex, type SearchIndex } from '@/lib/roll/search';
 import { getRollSource } from '@/lib/roll/source';
 import { syncVoterEdits } from '@/lib/roll/sync';
@@ -116,9 +122,28 @@ export interface RollState {
  */
 const WARD_BATCH = 3;
 
+/**
+ * The empty team layer, as a stable reference — the `teamOverlay: false`
+ * view (the booth report) merges from this, so it does not re-run the memo
+ * on every render the way a fresh `{}` would.
+ */
+const EMPTY_TEAM_OVERLAY: TeamOverlayMap = {};
+
 export function useRoll(
   initialWard: number | null = null,
-  options: { eager?: boolean; wardScope?: readonly number[] | null } = {}
+  options: {
+    eager?: boolean;
+    wardScope?: readonly number[] | null;
+    /**
+     * Merge teammates' pulled overlays into the rows (default on).
+     *
+     * The booth report turns this OFF: it tallies "this device's progress"
+     * and folding a teammate's voted marks/photos into that count would make
+     * it claim a number it cannot honestly own. The roll list and edit sheet
+     * keep it on — seeing a teammate's phone correction IS the feature.
+     */
+    teamOverlay?: boolean;
+  } = {}
 ): RollState {
   const source = useMemo(() => getRollSource(), []);
 
@@ -140,6 +165,11 @@ export function useRoll(
    * one screen whose entire job is a total.
    */
   const eager = options.eager ?? false;
+  /**
+   * Whether teammates' pulled overlays merge into the rows — see the option's
+   * doc comment. Resolved once here so the effects below depend on a boolean.
+   */
+  const teamOverlayEnabled = options.teamOverlay ?? true;
   /**
    * Which wards this account may READ, when the caller knows (`null` =
    * unrestricted, the admin case).
@@ -167,6 +197,18 @@ export function useRoll(
   const [rows, setRows] = useState<RollVoter[]>([]);
   const [overlays, setOverlays] = useState<Record<string, VoterOverlay>>({});
   const [pendingIds, setPendingIds] = useState<ReadonlySet<string>>(new Set());
+  /**
+   * Teammates' pulled overlays, keyed by voter id — the read-only second
+   * layer (`lib/roll/team-overlay.ts`). A plain map, not ward-scoped: the
+   * pull is by team, not by ward, and a voter's teammate edit attaches to
+   * that voter wherever the row is rendered.
+   *
+   * The store is unconditional and the ENABLED flag below is a view filter
+   * (`teamOverlays`), not a reset: clearing state inside an effect to react
+   * to a prop is a cascading render, and the derived form gets the same
+   * answer — nothing shown when the layer is off — without one.
+   */
+  const [storedTeamOverlays, setStoredTeamOverlays] = useState<TeamOverlayMap>({});
   /**
    * Whether the screen has nothing at all to show.
    *
@@ -293,6 +335,44 @@ export function useRoll(
 
   // Any overlay write anywhere re-reads the loaded ward's overlays.
   useEffect(() => subscribeOverlay(() => setRevision((n) => n + 1)), []);
+
+  // The team layer is local-only here (the NETWORK pull lives in
+  // `syncVoterEdits` → `pullTeamEdits`); this reads the last pull's result
+  // from storage and re-reads it whenever a new pull replaces it. Separate
+  // state rather than folded into `overlays` on purpose — see
+  // `lib/roll/team-overlay.ts` for why the two layers must never mix before
+  // render.
+  useEffect(() => {
+    if (!teamOverlayEnabled) return;
+    let cancelled = false;
+    const refresh = () => {
+      loadTeamOverlay(teamOverlayStorage)
+        .then((map) => {
+          if (!cancelled) setStoredTeamOverlays(map);
+        })
+        // A storage read failure leaves the previous map in place — the same
+        // best-effort contract the pull itself has.
+        .catch(() => undefined);
+    };
+    refresh();
+    return () => {
+      cancelled = true;
+    };
+  }, [teamOverlayEnabled, revision]);
+
+  /**
+   * What the merge below actually sees: the stored layer, or nothing when the
+   * caller turned it off (the booth report — see the option's doc comment).
+   */
+  const teamOverlays = useMemo(
+    () => (teamOverlayEnabled ? storedTeamOverlays : EMPTY_TEAM_OVERLAY),
+    [teamOverlayEnabled, storedTeamOverlays]
+  );
+
+  useEffect(() => {
+    if (!teamOverlayEnabled) return;
+    return subscribeTeamOverlay(() => setRevision((n) => n + 1));
+  }, [teamOverlayEnabled]);
 
   // -------------------------------------------------------------------------
   // 1. Ward metadata. Loaded once per retry; changing ward does not refetch it.
@@ -522,8 +602,16 @@ export function useRoll(
   }, [wardNo, eager, totalWards]);
 
   const voters = useMemo(
-    () => rows.map((row) => mergeVoter(row, overlays[row.id], pendingIds.has(row.id))),
-    [rows, overlays, pendingIds]
+    () =>
+      rows.map((row) =>
+        mergeVoter(
+          row,
+          overlays[row.id],
+          pendingIds.has(row.id),
+          teamOverlays[row.id]
+        )
+      ),
+    [rows, overlays, pendingIds, teamOverlays]
   );
 
   const index = useMemo(() => buildIndex(voters), [voters]);

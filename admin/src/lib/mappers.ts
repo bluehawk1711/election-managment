@@ -14,6 +14,7 @@ import {
   type Profile,
   type TaskStatus,
   type DeviceBinding,
+  type TeamRoster,
 } from '@/lib/types';
 import type { VoterRow, WardMeta, Gender, Relation } from '@/lib/types';
 import type {
@@ -97,6 +98,25 @@ export const wardFromDoc = (doc: AnyDoc): WardMeta => {
 
 // --------------------------------------------------------------- people ----
 
+/**
+ * `teams/{teamId}` → the roster the Teams dialog renders.
+ *
+ * The members map is walked rather than cast: rules cap it at 50 entries and
+ * cannot type-check individual values, so anything that is not a non-empty
+ * uid→name pair is dropped here instead of rendering as "undefined" in a
+ * member list.
+ */
+export const teamFromDoc = (doc: AnyDoc): TeamRoster => {
+  const raw = doc.data().members;
+  const members: Record<string, string> = {};
+  if (raw && typeof raw === 'object' && !Array.isArray(raw)) {
+    for (const [uid, name] of Object.entries(raw as Record<string, unknown>)) {
+      if (typeof name === 'string' && name !== '') members[uid] = name;
+    }
+  }
+  return { id: doc.id, members };
+};
+
 export const profileFromDoc = (doc: AnyDoc): Profile => {
   const data = doc.data();
   return {
@@ -118,6 +138,7 @@ export const profileFromDoc = (doc: AnyDoc): Profile => {
     lockedBy: typeof data.lockedBy === 'string' ? data.lockedBy : null,
     multiDevice: data.multiDevice === true,
     multiDeviceBy: typeof data.multiDeviceBy === 'string' ? data.multiDeviceBy : null,
+    teamId: typeof data.teamId === 'string' && data.teamId !== '' ? data.teamId : null,
   };
 };
 

@@ -12,7 +12,10 @@
  *   lucide has no brand icons) on white-dot green, white label. A brand
  *   colour, deliberately hardcoded rather than mapped to a theme token:
  *   WhatsApp green does not change with our dark mode any more than the logo
- *   does.
+ *   does. It is the one button that does NOT act on press: it opens the
+ *   compose sheet first, so the message that goes out is one the sender
+ *   wrote (there is no standing campaign text any more — see
+ *   `whatsapp-compose.tsx` and `lib/contact.ts::whatsappUrl`).
  * - **Message** — SMS blue (the `info` token), message glyph, white label.
  *
  * Two shapes from one component: the full trio (`compact={false}`) acts on
@@ -28,11 +31,13 @@
 import { Text } from '@/components/ui/text';
 import { useColor } from '@/hooks/useColor';
 import { useHaptics } from '@/hooks/useHaptics';
-import { openExternal, smsUrl, telUrl, whatsappUrl } from '@/lib/contact';
+import { WhatsAppCompose } from '@/components/roll/whatsapp-compose';
+import { openExternal, smsUrl, telUrl } from '@/lib/contact';
 import { isValidPhone, phoneKey } from '@/lib/roll/contacts';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { MessageSquare, Phone } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
+import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 /** WhatsApp brand green — a brand constant, not a theme token. */
@@ -60,6 +65,19 @@ export function ContactActions({ phone, compact = false, onFail }: Props) {
   const enabled = isValidPhone(raw);
   const number = enabled ? phoneKey(raw) : '';
 
+  /**
+   * The compose sheet's draft, kept across opens on this card so a second
+   * message to the next house does not mean retyping the first one. State on
+   * the component rather than in a store: the draft belongs to the voter
+   * being looked at, which is exactly what a component instance is.
+   *
+   * Starts EMPTY — there is no default campaign message any more (see
+   * `lib/contact.ts::whatsappUrl`), so nothing a user did not type can go
+   * out under their name.
+   */
+  const [message, setMessage] = useState('');
+  const [composing, setComposing] = useState(false);
+
   const open = (url: string | null) => {
     if (!enabled || !url) {
       onFail?.();
@@ -73,6 +91,32 @@ export function ContactActions({ phone, compact = false, onFail }: Props) {
       .catch(() => onFail?.());
   };
 
+  const press = (key: string, url: string | null) => {
+    if (!enabled) {
+      onFail?.();
+      return;
+    }
+    // WhatsApp never opens directly any more — the message has to be
+    // something the sender wrote, so the sheet comes first every time.
+    if (key === 'whatsapp') {
+      feedback('impact-light');
+      setComposing(true);
+      return;
+    }
+    open(url);
+  };
+
+  const compose = (
+    <WhatsAppCompose
+      visible={composing}
+      phone={number}
+      message={message}
+      onMessageChange={setMessage}
+      onClose={() => setComposing(false)}
+      onFail={onFail}
+    />
+  );
+
   const buttons = [
     { key: 'call', icon: <Phone size={16} color='#fff' strokeWidth={2.4} />, label: t('voters.call'), bg: success, url: telUrl(number) },
     {
@@ -80,7 +124,7 @@ export function ContactActions({ phone, compact = false, onFail }: Props) {
       icon: <MaterialCommunityIcons name='whatsapp' size={17} color='#fff' />,
       label: t('voters.whatsapp'),
       bg: WHATSAPP_GREEN,
-      url: whatsappUrl(number),
+      url: null as string | null,
     },
     {
       key: 'message',
@@ -94,10 +138,11 @@ export function ContactActions({ phone, compact = false, onFail }: Props) {
   if (compact) {
     return (
       <View style={styles.row}>
+        {compose}
         {buttons.map((button) => (
           <Pressable
             key={button.key}
-            onPress={() => open(button.url)}
+            onPress={() => press(button.key, button.url)}
             disabled={!enabled}
             accessibilityRole='button'
             accessibilityLabel={button.label}
@@ -118,10 +163,11 @@ export function ContactActions({ phone, compact = false, onFail }: Props) {
 
   return (
     <View style={styles.row}>
+      {compose}
       {buttons.map((button) => (
         <Pressable
           key={button.key}
-          onPress={() => open(button.url)}
+          onPress={() => press(button.key, button.url)}
           disabled={!enabled}
           accessibilityRole='button'
           accessibilityLabel={button.label}

@@ -34,7 +34,13 @@
  * Everything is fire-and-forget at the call sites (`void syncVoterEdits()`):
  * a screen must render and save whether or not the network is there.
  */
-import { collection, doc, getDocs, setDoc } from 'firebase/firestore';
+import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  setDoc,
+} from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import {
   loadQueue,
@@ -44,6 +50,11 @@ import {
   removeFromQueue,
 } from '@/lib/roll/overlay';
 import type { VoterOverlay } from '@/lib/roll/types';
+import {
+  replaceTeamOverlay,
+  teamOverlayStorage,
+  type TeamOverlayMap,
+} from '@/lib/roll/team-overlay';
 
 /**
  * Overlay keys that may leave the device, mirroring `VoterOverlay` minus
@@ -173,6 +184,78 @@ export async function pullEdits(): Promise<number> {
   return snapshot.size;
 }
 
+/**
+ * Downloads TEAMMATES' edits into the read-only team layer.
+ *
+ * Two accounts sharing a non-empty `teamId` may read each other's
+ * `voterEdits` (firestore.rules `sameTeam`). Membership itself lives on
+ * profiles, but the roster cannot be discovered by querying `/users` — that
+ * collection's `list` rule is `canViewAccounts` (admin and up), so a
+ * karykarta's `where('teamId', '==', …)` would be PERMISSION_DENIED and this
+ * feature would silently do nothing for exactly the users it exists for.
+ *
+ * The `teams/{teamId}` roster doc is the way out: a uid → displayName map the
+ * account managers maintain, readable by a member in one `get()` (its rule
+ * matches the doc id against the caller's own `teamId`). No collection scan,
+ * no profile exposure, and the roster is a HINT, not truth — actual reads of
+ * each member's `voterEdits` are still gated per-document by `sameTeam`, so a
+ * stale roster entry costs a denied query at worst, never a leaked document.
+ *
+ * Every step is best-effort and returns 0 on any failure: a member with no
+ * team, a rules rejection, or an offline device all leave the previous team
+ * layer untouched rather than clearing it. The one deliberate clear is the
+ * no-team case — a member removed from their team must not keep seeing the
+ * old teammates' data on this device.
+ *
+ * Returns how many teammate documents were pulled.
+ */
+export async function pullTeamEdits(): Promise<number> {
+  const uid = auth.currentUser?.uid;
+  if (!uid) return 0;
+
+  // 1. The caller's own team. No team → nothing to share; clear the layer so a
+  //    just-removed member's data does not linger on this device.
+  const me = await getDoc(doc(db, 'users', uid));
+  const teamId = me.exists() ? (me.data() as { teamId?: string }).teamId : undefined;
+  if (typeof teamId !== 'string' || teamId === '') {
+    await replaceTeamOverlay(teamOverlayStorage, {});
+    return 0;
+  }
+
+  // 2. The roster: uid → displayName, readable because the doc id equals the
+  //    caller's own teamId. A missing roster (team assigned before this doc
+  //    existed) clears the layer — there is nothing to pull, and inventing a
+  //    roster from profiles is exactly the query the rules forbid.
+  const rosterSnap = await getDoc(doc(db, 'teams', teamId));
+  const members: Record<string, string> = rosterSnap.exists()
+    ? ((rosterSnap.data() as { members?: Record<string, string> }).members ?? {})
+    : {};
+
+  const entries: TeamOverlayMap = {};
+  let pulled = 0;
+
+  for (const [memberUid, authorName] of Object.entries(members)) {
+    if (memberUid === uid) continue; // own edits already live in the ward overlay
+
+    // Rules evaluate `sameTeam` per returned doc, so this list only ever
+    // yields visible teammates' documents — the roster hint cannot widen it.
+    const edits = await getDocs(collection(db, 'users', memberUid, 'voterEdits'));
+    for (const change of edits.docs) {
+      const data = change.data() as VoterOverlay;
+      if (typeof data.updatedAt !== 'number') continue;
+      entries[change.id] = {
+        overlay: data,
+        authorUid: memberUid,
+        authorName: typeof authorName === 'string' && authorName !== '' ? authorName : null,
+      };
+      pulled += 1;
+    }
+  }
+
+  await replaceTeamOverlay(teamOverlayStorage, entries);
+  return pulled;
+}
+
 /** The single-flight guard for `syncVoterEdits`. */
 let syncing: Promise<void> | null = null;
 let lastRan = 0;
@@ -201,6 +284,9 @@ export async function syncVoterEdits(options: { force?: boolean } = {}): Promise
     // queue from being starved by a large pull.
     await pushEdits().catch(() => 0);
     await pullEdits().catch(() => 0);
+    // Teammates last: it is a read-only cache and must never block or
+    // gate the owner's own push/pull above.
+    await pullTeamEdits().catch(() => 0);
   })().finally(() => {
     lastRan = Date.now();
     syncing = null;

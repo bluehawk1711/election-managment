@@ -168,6 +168,26 @@ export interface Profile {
   multiDevice: boolean;
   /** The super admin/developer uid who granted `multiDevice`, or null. */
   multiDeviceBy: string | null;
+  /**
+   * Team label — accounts sharing a non-empty `teamId` may read each
+   * other's voterEdits overlay in the mobile app. Empty/null = no team.
+   */
+  teamId: string | null;
+}
+
+/**
+ * One team roster, `teams/{teamId}` — the uid → displayName map the mobile
+ * app pulls to discover its teammates (a member cannot list `/users`, so
+ * this document is the only discovery path the rules allow them).
+ *
+ * Membership truth stays on `users/{uid}.teamId`; this map is a HINT the
+ * rules re-check per document, so a stale entry costs a skipped pull, never
+ * a leak.
+ */
+export interface TeamRoster {
+  /** The team label — document id, and the value written to `teamId`. */
+  id: string;
+  members: Record<string, string>;
 }
 
 /**

@@ -136,6 +136,25 @@ beforeEach(async () => {
       updatedAt: now,
     });
 
+    // Two deliberately odd campaign shapes — the ones a live project ends up
+    // with when the seed script never ran, or ran against an older build.
+    // The rules must judge the WRITE, not the document it happens to land on.
+    await setDoc(doc(db, 'campaigns', 'partial'), {
+      name: 'Half-written campaign',
+      electionDate: null,
+      updatedAt: now,
+    });
+    await setDoc(doc(db, 'campaigns', 'legacy'), {
+      name: 'Campaign with a legacy field',
+      candidateName: 'Meera Sharma',
+      constituencyName: 'Jodhpur',
+      electionDate: 1793461800000,
+      tagline: '',
+      startDate: null,
+      updatedAt: now,
+      legacyNote: 'written by an older build',
+    });
+
     await setDoc(doc(db, 'constituencies', CONS_ID), { name: 'Jodhpur', code: 'RJ-11' });
     await setDoc(doc(db, 'wards', WARD_ID), { name: 'Ratanada', constituencyId: CONS_ID });
     await setDoc(doc(db, 'areas', AREA_ID), { name: 'Chowk', wardId: WARD_ID, constituencyId: CONS_ID });
@@ -629,6 +648,225 @@ describe('/users/{uid}/voterEdits — the account-private overlay sync', () => {
   });
 });
 
+describe('teams — roster, membership and cross-account overlay reads', () => {
+  const TEAM = 'ward-3-sweep';
+
+  /** Alice (superAdmin) puts Bob and Cara on TEAM, Daksh on another one. */
+  const seedTeams = async () => {
+    await assertSucceeds(
+      updateDoc(doc(alice(), 'users', BOB), {
+        teamId: TEAM,
+        updatedAt: serverTimestamp(),
+      })
+    );
+    await assertSucceeds(
+      updateDoc(doc(alice(), 'users', CARA), {
+        teamId: TEAM,
+        updatedAt: serverTimestamp(),
+      })
+    );
+    await assertSucceeds(
+      updateDoc(doc(alice(), 'users', DAKSH), {
+        teamId: 'cleaning-crew',
+        updatedAt: serverTimestamp(),
+      })
+    );
+    await assertSucceeds(
+      setDoc(doc(alice(), 'teams', TEAM), {
+        members: { [BOB]: 'Bob', [CARA]: 'Cara' },
+        updatedAt: serverTimestamp(),
+      })
+    );
+  };
+
+  const bobEdit = (db: Firestore) =>
+    doc(db, 'users', BOB, 'voterEdits', `w${ROLL_WARD}-1`);
+  const pushedByBob = {
+    wardNo: ROLL_WARD,
+    updatedAt: 1_770_000_000_000,
+    updatedBy: BOB,
+    phone: '9876543210',
+  };
+
+  describe('the roster doc', () => {
+    it('lets a member read their own team roster and no other', async () => {
+      await seedTeams();
+      await assertSucceeds(getDoc(doc(bob(), 'teams', TEAM)));
+      // Same signed-in karykarta, a roster of a team they are not on: the
+      // doc id must equal the caller's own teamId, or membership would leak.
+      await assertFails(getDoc(doc(bob(), 'teams', 'cleaning-crew')));
+    });
+
+    it('lets account managers read any roster, and nobody list', async () => {
+      await seedTeams();
+      await assertSucceeds(getDoc(doc(alice(), 'teams', TEAM)));
+      // No `list` for members: enumerating /teams would enumerate every
+      // team's membership. Managers list (they already see every profile's
+      // teamId); karykarta never do.
+      await assertSucceeds(getDocs(collection(alice(), 'teams')));
+      await assertFails(getDocs(collection(bob(), 'teams')));
+      await assertFails(getDoc(doc(anon(), 'teams', TEAM)));
+    });
+
+    it('is writable only by account managers, in exactly the roster shape', async () => {
+      await seedTeams();
+      // Karykarta cannot touch any roster — including their own team's,
+      // which is the self-service hole this closes.
+      await assertFails(
+        setDoc(doc(bob(), 'teams', TEAM), {
+          members: { [BOB]: 'Bob' },
+          updatedAt: serverTimestamp(),
+        })
+      );
+      // Shape: unknown keys, a non-map members, a stale timestamp and an
+      // oversized membership are each refused on their own.
+      await assertFails(
+        setDoc(doc(alice(), 'teams', 'shape-test'), {
+          members: {},
+          label: 'nope',
+          updatedAt: serverTimestamp(),
+        })
+      );
+      await assertFails(
+        setDoc(doc(alice(), 'teams', 'shape-test'), {
+          members: 'Bob',
+          updatedAt: serverTimestamp(),
+        })
+      );
+      await assertFails(
+        setDoc(doc(alice(), 'teams', 'shape-test'), {
+          members: {},
+          updatedAt: 1_770_000_000_000,
+        })
+      );
+      const tooMany = Object.fromEntries(
+        Array.from({ length: 51 }, (_, index) => [`uid-${index}`, `Member ${index}`])
+      );
+      await assertFails(
+        setDoc(doc(alice(), 'teams', 'shape-test'), {
+          members: tooMany,
+          updatedAt: serverTimestamp(),
+        })
+      );
+      // …and the legal shape passes, so the failures above are the shape
+      // checks firing rather than a blanket refusal.
+      await assertSucceeds(
+        setDoc(doc(alice(), 'teams', 'shape-test'), {
+          members: { [ALICE]: 'Alice' },
+          updatedAt: serverTimestamp(),
+        })
+      );
+      await assertSucceeds(deleteDoc(doc(alice(), 'teams', 'shape-test')));
+    });
+  });
+
+  describe('sameTeam on voterEdits', () => {
+    it('lets a teammate read another member’s edits — get and list', async () => {
+      await seedTeams();
+      await assertSucceeds(setDoc(bobEdit(bob()), pushedByBob));
+      await assertSucceeds(getDoc(bobEdit(cara())));
+      await assertSucceeds(getDocs(collection(cara(), 'users', BOB, 'voterEdits')));
+    });
+
+    it('keeps the teammate clause read-only — no write, no delete', async () => {
+      await seedTeams();
+      await assertSucceeds(setDoc(bobEdit(bob()), pushedByBob));
+      // Seeing a teammate's fieldwork must not grant touching it: every
+      // write path stays owner-only, which is the whole reason `sameTeam`
+      // appears on the read clause alone.
+      await assertFails(
+        setDoc(bobEdit(cara()), { ...pushedByBob, updatedBy: CARA }, { merge: true })
+      );
+      await assertFails(deleteDoc(bobEdit(cara())));
+    });
+
+    it('denies a different team, no team, and the signed-out', async () => {
+      await seedTeams();
+      await assertSucceeds(setDoc(bobEdit(bob()), pushedByBob));
+      // Daksh is on a DIFFERENT team — membership is not "has any team".
+      //
+      // Bob's own doc read from DAKSH's context would be allowed (an admin
+      // reads every overlay through `canViewAccounts`, which is the audit
+      // surface), so the case under test is Bob — karykarta, on TEAM —
+      // reaching for a member of the other team.
+      await assertFails(
+        getDoc(doc(bob(), 'users', DAKSH, 'voterEdits', `w${ROLL_WARD}-1`))
+      );
+      // Alice's own edits-visibility here comes from canViewAccounts, so the
+      // no-team case needs a roleless account: Cara without a teamId.
+      await testEnv.withSecurityRulesDisabled(async (context) => {
+        await updateDoc(doc(context.firestore(), 'users', CARA), { teamId: '' });
+      });
+      await assertFails(getDoc(bobEdit(cara())));
+      await assertFails(getDoc(bobEdit(anon())));
+    });
+
+    it('denies a locked teammate even mid-team', async () => {
+      await seedTeams();
+      await assertSucceeds(setDoc(bobEdit(bob()), pushedByBob));
+      await testEnv.withSecurityRulesDisabled(async (context) => {
+        await updateDoc(doc(context.firestore(), 'users', CARA), { locked: true });
+      });
+      await assertFails(getDoc(bobEdit(cara())));
+    });
+  });
+
+  describe('the teamId assignment path', () => {
+    it('refuses self-assignment, even for a super admin', async () => {
+      // The one account that must never choose its own team is the one that
+      // could otherwise put itself on every team at once. Alice editing her
+      // OWN profile is the same shape as a karykarta editing theirs.
+      await assertFails(
+        updateDoc(doc(alice(), 'users', ALICE), {
+          teamId: TEAM,
+          updatedAt: serverTimestamp(),
+        })
+      );
+    });
+
+    it('refuses smuggling role or ward through the team write', async () => {
+      await assertFails(
+        updateDoc(doc(alice(), 'users', BOB), {
+          teamId: TEAM,
+          role: 'superAdmin',
+          updatedAt: serverTimestamp(),
+        })
+      );
+      await assertFails(
+        updateDoc(doc(alice(), 'users', BOB), {
+          teamId: TEAM,
+          wardNo: 7,
+          updatedAt: serverTimestamp(),
+        })
+      );
+    });
+
+    it('refuses a non-string or oversized label', async () => {
+      await assertFails(
+        updateDoc(doc(alice(), 'users', BOB), {
+          teamId: 42,
+          updatedAt: serverTimestamp(),
+        })
+      );
+      await assertFails(
+        updateDoc(doc(alice(), 'users', BOB), {
+          teamId: 'x'.repeat(65),
+          updatedAt: serverTimestamp(),
+        })
+      );
+      // Clearing is the legal extreme: '' (or null) means no team, which
+      // shares nothing — the safe default, and the path the panel's
+      // "Clear team" button takes.
+      await assertSucceeds(
+        updateDoc(doc(alice(), 'users', BOB), {
+          teamId: '',
+          updatedAt: serverTimestamp(),
+        })
+      );
+    });
+  });
+});
+
 describe('the shared campaign', () => {
   it('is readable by any signed-in user and by nobody else', async () => {
     await assertSucceeds(getDoc(doc(alice(), 'campaigns', 'active')));
@@ -646,6 +884,74 @@ describe('the shared campaign', () => {
     await assertFails(
       updateDoc(doc(alice(), 'campaigns', 'active'), {
         isPaidCampaign: true,
+        updatedAt: serverTimestamp(),
+      })
+    );
+  });
+
+  // The regression this whole delta-based rule exists for. On the live
+  // project `campaigns/active` did not exist at all, so the dashboard's
+  // election-day picker — the first write that document ever saw — failed
+  // with `PERMISSION_DENIED` on a patch that changed exactly one field.
+  it('creates the campaign document when it does not exist yet', async () => {
+    await assertSucceeds(
+      setDoc(
+        doc(alice(), 'campaigns', 'fresh'),
+        { electionDate: 1793461800000, updatedAt: serverTimestamp() },
+        { merge: true }
+      )
+    );
+    // A create may still not invent fields…
+    await assertFails(
+      setDoc(doc(alice(), 'campaigns', 'fresh-unknown'), {
+        isPaidCampaign: true,
+        updatedAt: serverTimestamp(),
+      })
+    );
+    // …nor write an illegal value, whichever keys it carries.
+    await assertFails(
+      setDoc(doc(alice(), 'campaigns', 'fresh-bad'), {
+        tagline: 'x'.repeat(201),
+        updatedAt: serverTimestamp(),
+      })
+    );
+  });
+
+  it('patches one field of a document that is not the full seven-key shape', async () => {
+    // Missing four of the seven keys — the old `exactKeys(request.resource
+    // .data, [...])` rejected every edit to a document like this.
+    await assertSucceeds(
+      updateDoc(doc(alice(), 'campaigns', 'partial'), {
+        electionDate: 1793461800000,
+        updatedAt: serverTimestamp(),
+      })
+    );
+    // …and one carrying a field the rules do not know about. Pre-existing
+    // keys are not this write's business; keys it WRITES still are.
+    await assertSucceeds(
+      updateDoc(doc(bob(), 'campaigns', 'legacy'), {
+        electionDate: null,
+        updatedAt: serverTimestamp(),
+      })
+    );
+    await assertFails(
+      updateDoc(doc(bob(), 'campaigns', 'legacy'), {
+        legacyNote: 'smuggled through an update',
+        updatedAt: serverTimestamp(),
+      })
+    );
+  });
+
+  it('refuses an illegal value on the field the write touches', async () => {
+    await assertFails(
+      updateDoc(doc(alice(), 'campaigns', 'active'), {
+        electionDate: 'tomorrow',
+        updatedAt: serverTimestamp(),
+      })
+    );
+    await assertFails(
+      updateDoc(doc(alice(), 'campaigns', 'active'), {
+        tagline: 'x'.repeat(201),
         updatedAt: serverTimestamp(),
       })
     );

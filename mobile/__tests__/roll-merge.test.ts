@@ -1,6 +1,11 @@
 import { isEdited, mergeVoter } from '@/lib/roll/merge';
 import { buildIndex, haystackOf, normalizeToken, searchVoters } from '@/lib/roll/search';
-import type { RollVoter, VoterView } from '@/lib/roll/types';
+import type {
+  RollVoter,
+  TeamOverlayEntry,
+  VoterOverlay,
+  VoterView,
+} from '@/lib/roll/types';
 
 const base: RollVoter = {
   id: 'w1-7',
@@ -73,6 +78,137 @@ describe('mergeVoter', () => {
     const snapshot = JSON.stringify(base);
     mergeVoter(base, { name: 'changed', age: 99, updatedAt: 1, updatedBy: 'u1' });
     expect(JSON.stringify(base)).toBe(snapshot);
+  });
+});
+
+describe('mergeVoter — the read-only team layer', () => {
+  /**
+   * A teammate's overlay as it really arrives from Firestore.
+   *
+   * Pushed docs carry `wardNo` beside the content fields (rules require it
+   * on every write), even though `VoterOverlay` — the write-side type —
+   * does not model it. The read path stores the raw document, so this is
+   * the shape the merge actually sees.
+   */
+  const pushed = (fields: Record<string, unknown>): VoterOverlay =>
+    ({
+      wardNo: 1,
+      updatedAt: 2,
+      updatedBy: 'uid-teammate',
+      ...fields,
+    }) as VoterOverlay;
+
+  const teamEntry: TeamOverlayEntry = {
+    overlay: pushed({
+      phone: '9876543210',
+      note: 'Seen at the shop, evening',
+    }),
+    authorUid: 'uid-teammate',
+    authorName: 'Ramesh',
+  };
+
+  it('fills fields the own overlay does not carry', () => {
+    const view = mergeVoter(base, undefined, false, teamEntry);
+
+    // The teammate's phone becomes visible here — that is the feature —
+    // while the row's own identity fields still come from the base roll.
+    expect(view.effective.phone).toBe('9876543210');
+    expect(view.effective.name).toBe(base.name);
+  });
+
+  it('lets the own overlay win every field it carries', () => {
+    const view = mergeVoter(
+      base,
+      { phone: '9811112222', updatedAt: 3, updatedBy: 'u1' },
+      false,
+      teamEntry
+    );
+
+    expect(view.effective.phone).toBe('9811112222');
+    // …and fields it does not carry still fall through to the teammate.
+    expect(view.effective.name).toBe(base.name);
+  });
+
+  it('keeps an own-cleared field cleared instead of resurrecting the team copy', () => {
+    // An own `''` is a value — "the owner cleared this" — not an absence.
+    // The spread order (team first, own second) is what makes this hold.
+    const view = mergeVoter(
+      base,
+      { phone: '', updatedAt: 3, updatedBy: 'u1' },
+      false,
+      teamEntry
+    );
+
+    expect(view.effective.phone).toBe('');
+  });
+
+  it('never lands teammate data in the own overlay', () => {
+    // The load-bearing invariant: `overlay` feeds the edit sheet's note
+    // field and its pristine comparison. If a teammate's values landed here,
+    // the next save would re-attribute their work as the saver's own.
+    const view = mergeVoter(base, undefined, false, teamEntry);
+
+    expect(view.overlay).toEqual({});
+    expect(view.overlay.note).toBeUndefined();
+  });
+
+  it('surfaces the team entry only when it contributes unknown fields', () => {
+    // Teammate holds a phone the row has never had: badge it.
+    expect(mergeVoter(base, undefined, false, teamEntry).team).toBe(teamEntry);
+
+    // The own overlay already carries every field the teammate does: no
+    // badge — the teammate is not telling this user anything they do not
+    // know. (Isolated to the phone field: `teamEntry` above also carries a
+    // note, which the own overlay here does not, and THAT would badge.)
+    const phoneOnlyTeam: TeamOverlayEntry = {
+      overlay: pushed({ phone: '9876543210' }),
+      authorUid: 'uid-teammate',
+      authorName: 'Ramesh',
+    };
+    const ownKnowing = mergeVoter(
+      base,
+      { phone: '9811112222', updatedAt: 3, updatedBy: 'u1' },
+      false,
+      phoneOnlyTeam
+    );
+    expect(ownKnowing.team).toBeUndefined();
+
+    // Bookkeeping-only teammate doc (rules require wardNo/updatedAt/
+    // updatedBy on every pushed doc) must not earn a badge by itself.
+    const bookkeepingOnly: TeamOverlayEntry = {
+      overlay: pushed({}),
+      authorUid: 'uid-teammate',
+      authorName: 'Ramesh',
+    };
+    expect(mergeVoter(base, undefined, false, bookkeepingOnly).team).toBeUndefined();
+  });
+
+  it('carries teammate leaning and voted into the view, under own edits', () => {
+    const leaningTeam: TeamOverlayEntry = {
+      overlay: pushed({
+        leaning: 'centerRight',
+        voted: 'voted',
+      }),
+      authorUid: 'uid-teammate',
+      authorName: null,
+    };
+
+    const read = mergeVoter(base, undefined, false, leaningTeam);
+    expect(read.leaning).toBe('centerRight');
+    expect(read.voted).toBe('voted');
+    // A null roster name is the documented fallback case, not an error.
+    expect(read.team?.authorName).toBeNull();
+
+    // Own "not voted" beats the teammate's "voted" — the row's state is
+    // whichever layer the owner last spoke on.
+    const overridden = mergeVoter(
+      base,
+      { voted: 'notVoted', updatedAt: 3, updatedBy: 'u1' },
+      false,
+      leaningTeam
+    );
+    expect(overridden.voted).toBe('notVoted');
+    expect(overridden.leaning).toBe('centerRight');
   });
 });
 

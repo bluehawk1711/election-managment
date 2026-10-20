@@ -32,6 +32,7 @@ import {
   setDoc,
   updateDoc,
   where,
+  writeBatch,
   type Query,
   type DocumentReference,
 } from 'firebase/firestore';
@@ -77,6 +78,19 @@ export function buildWardsQuery(): Query {
 
 export function buildUsersQuery(): Query {
   return query(collection(db, 'users'));
+}
+
+/**
+ * Every team roster — the Teams dialog's list.
+ *
+ * `list` on `/teams` is `canManageAccounts` in firestore.rules, so this query
+ * is denied for anyone below super admin (and the dialog is gated on the same
+ * capability locally, which only spares them the permission-denied toast).
+ * Members have no discovery path of their own by design: a karykarta reads
+ * the ONE roster whose id matches their own `teamId`, never the collection.
+ */
+export function buildTeamsQuery(): Query {
+  return query(collection(db, 'teams'));
 }
 
 export function buildTasksQuery(): Query {
@@ -428,6 +442,181 @@ export async function setMultiDevice(
     multiDeviceBy: value ? managerUid : null,
     multiDeviceAt: value ? Date.now() : null,
   });
+}
+
+/**
+ * Assigns (or clears) the team label for one account — profile AND roster,
+ * in one batch.
+ *
+ * A `teamId` is a short string. Two accounts sharing a non-empty `teamId`
+ * may READ each other's `voterEdits` overlay in the mobile app (see
+ * `sameTeam` in firestore.rules). `''` clears it — the account joins no
+ * team and shares nothing. Write-only by account managers; the member cannot
+ * self-assign (rules require `userId != request.auth.uid`).
+ *
+ * Two documents change together, which is why this is a batch rather than
+ * the single `updateDoc` it started as:
+ *
+ *   - `users/{uid}.teamId` — membership. THIS is what `sameTeam` reads, so
+ *     it is the source of truth for whether edits are shared.
+ *   - `teams/{teamId}.members` — the uid → displayName roster the app pulls
+ *     to discover teammates and attribute their edits by name. `/users` list
+ *     is admin-only, so the roster is the only member-readable discovery
+ *     path; a stale roster entry costs a skipped pull, never a leak (the
+ *     rules re-check membership per document).
+ *
+ * Writing them in one batch means the app can never observe the half state
+ * — a `teamId` pointing at a roster that does not list its members yet.
+ *
+ * Rules: the dedicated team-assignment clause (affected keys exactly
+ * `['teamId', 'updatedAt']`, gated on `canManageAccounts`) plus the
+ * `/teams` clause (exact keys `['members', 'updatedAt']`,
+ * `updatedAt == request.time`, same gate).
+ */
+export async function setTeam(
+  targetUid: string,
+  teamId: string,
+  displayName: string
+): Promise<void> {
+  const trimmed = teamId.trim();
+  const rosterRef = trimmed !== '' ? doc(db, 'teams', trimmed) : null;
+  const profileRef = doc(db, 'users', targetUid);
+
+  // Resolve the CURRENT team so the account can be removed from its old
+  // roster. Read outside the batch: Firestore batches cannot read, and a
+  // missing profile (deleted account mid-dialog) simply has no old team.
+  const snapshot = await getDoc(profileRef);
+  const previousTeam = snapshot.exists()
+    ? ((snapshot.data() as { teamId?: unknown }).teamId ?? null)
+    : null;
+  const oldRosterRef =
+    typeof previousTeam === 'string' && previousTeam !== '' && previousTeam !== trimmed
+      ? doc(db, 'teams', previousTeam)
+      : null;
+
+  const batch = writeBatch(db);
+
+  batch.update(profileRef, {
+    teamId: trimmed,
+    updatedAt: serverTimestamp(),
+  });
+
+  if (oldRosterRef) {
+    // Leaving a team: drop this uid from the old roster. `deleteField()` on
+    // the map key, not a whole-map write — other members' entries must
+    // survive one member's departure.
+    batch.update(oldRosterRef, {
+      [`members.${targetUid}`]: deleteField(),
+      updatedAt: serverTimestamp(),
+    });
+  }
+
+  if (rosterRef) {
+    // Joining (or staying on) a team: upsert this uid's entry. Merge, not
+    // set — a full `set` would replace every other member's entry with this
+    // one. `deleteField()` on a member whose name is somehow empty keeps the
+    // map from accumulating blank attribution keys.
+    batch.set(
+      rosterRef,
+      {
+        members: {
+          [targetUid]:
+            displayName.trim() !== '' ? displayName.trim() : deleteField(),
+        },
+        updatedAt: serverTimestamp(),
+      },
+      { merge: true }
+    );
+  }
+
+  await batch.commit();
+}
+
+/**
+ * Creates a team — an EMPTY roster, ready for members.
+ *
+ * A team is nothing but `teams/{label}`: a uid → displayName map the mobile
+ * app reads to discover who else it may see (and to attribute their edits by
+ * name). Creating one does not put anybody on it; `setTeam` does that, one
+ * account at a time, in the same batch as the account's own `teamId`.
+ *
+ * The existence check is not cosmetic: `setDoc(..., { merge: true })` (the
+ * shape the roster rule accepts — `exactKeys` is validated on the RESULT, so
+ * a bare `set` would have to restate every member) upserts, which means a
+ * second click on "Create" would silently open an existing team and its
+ * members instead of refusing. "It already exists — add members to it" is a
+ * much better answer than a roster that quietly changed under someone.
+ */
+export async function createTeam(teamId: string): Promise<void> {
+  const label = teamId.trim();
+  if (!label) throw new Error('A team label is required.');
+
+  const ref = doc(db, 'teams', label);
+  const existing = await getDoc(ref);
+  if (existing.exists()) {
+    throw new Error(`A team named "${label}" already exists — add members to it instead.`);
+  }
+
+  await setDoc(ref, { members: {}, updatedAt: serverTimestamp() }, { merge: true });
+}
+
+/**
+ * Puts several accounts on one team, each through `setTeam` (which batches
+ * the profile write with the roster write, and clears the OLD roster when
+ * the account was on another team).
+ *
+ * Sequential rather than one big batch: each `setTeam` reads the account's
+ * current team first, and a Firestore batch cannot read. A dozen accounts is
+ * a dozen round trips, which for a dialog someone presses once a season is
+ * the right trade against a half-applied multi-account move.
+ */
+export async function addTeamMembers(
+  teamId: string,
+  members: readonly { uid: string; displayName: string }[]
+): Promise<void> {
+  for (const member of members) {
+    await setTeam(member.uid, teamId, member.displayName);
+  }
+}
+
+/** Takes several accounts off a team — `''` is the no-team state. */
+export async function removeTeamMembers(
+  teamId: string,
+  members: readonly { uid: string; displayName: string }[]
+): Promise<void> {
+  for (const member of members) {
+    await setTeam(member.uid, '', member.displayName);
+  }
+  // A roster left behind after its last member is gone reads as a team that
+  // exists to the panel and to `teams` list, with nobody on it.
+  const remaining = await getDoc(doc(db, 'teams', teamId));
+  const map = remaining.exists()
+    ? ((remaining.data() as { members?: Record<string, string> }).members ?? {})
+    : {};
+  if (Object.keys(map).length === 0) {
+    await deleteDoc(doc(db, 'teams', teamId));
+  }
+}
+
+/**
+ * Deletes a team outright: every member's `teamId` is cleared first, then
+ * the roster goes.
+ *
+ * Clearing first is the whole point — a deleted roster with profiles still
+ * pointing at it would leave members whose edits are still shared
+ * (`sameTeam` reads `users/{uid}.teamId`, never the roster) while the panel
+ * shows a team that no longer exists. Each clear goes through `setTeam`, so
+ * the rules' `userId != request.auth.uid` guard still applies: the
+ * super admin running this cannot strip their OWN team assignment here (they
+ * never should — see the button's own tooltip), and the call reports the
+ * refusal rather than skipping it silently.
+ */
+export async function deleteTeam(
+  teamId: string,
+  members: readonly { uid: string; displayName: string }[]
+): Promise<void> {
+  await removeTeamMembers(teamId, members);
+  await deleteDoc(doc(db, 'teams', teamId));
 }
 
 /** Reads the password vault for one account, or null when none exists. */

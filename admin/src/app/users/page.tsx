@@ -20,11 +20,29 @@
  * karykarta sends `deleteField()` for wardNo: the RESULT must not carry a
  * ward for a non-scoped role, and only a sentinel removes a key.
  */
-import { Eye, EyeOff, Info, KeyRound, Loader2, Lock, MonitorSmartphone, Plus, Search, ShieldCheck, Smartphone, Trash2, Unlock, UserCog, Users, X } from 'lucide-react';
+import {
+  Eye,
+  EyeOff,
+  Info,
+  KeyRound,
+  Loader2,
+  Lock,
+  MonitorSmartphone,
+  Plus,
+  Search,
+  ShieldCheck,
+  Smartphone,
+  Trash2,
+  Unlock,
+  UserCog,
+  Users,
+  X,
+} from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import {
   buildAssignedTasksQuery,
+  buildTeamsQuery,
   buildUsersQuery,
   changeAccountPassword,
   deleteAccount,
@@ -34,18 +52,20 @@ import {
   lockAccount,
   readVault,
   setMultiDevice,
+  setTeam,
   unlockAccount,
   updateVaultPassword,
 } from '@/lib/api';
 import { isVaultHash, vaultMatches } from '@/lib/vault';
 import { subscribeCollectionOf, useLiveQuery } from '@/hooks/use-live';
-import { profileFromDoc } from '@/lib/mappers';
+import { profileFromDoc, teamFromDoc } from '@/lib/mappers';
 import { APP_ROLES, can, roleLabel, type AppRole } from '@/lib/roles';
 import { formatWhen } from '@/lib/util';
-import type { AccountVault, AuthAccountDetail, Profile } from '@/lib/types';
+import type { AccountVault, AuthAccountDetail, Profile, TeamRoster } from '@/lib/types';
 import { messageFor, toast } from '@/stores/toast';
 import { useSession } from '@/stores/session';
 import { MotionPage } from '@/components/shell/motion-page';
+import { TeamsDialog } from '@/components/accounts/teams-dialog';
 import { ConfirmDialog } from '@/components/ui/confirm';
 import {
   Button,
@@ -106,6 +126,88 @@ export default function AccountsPage() {
   }, [users.data, search]);
 
   /* ---- role dialog ---- */
+  // ---- team assignment ----
+  // Teams are a free-form label: two accounts with the same non-empty `teamId`
+  // read each other's fieldwork overlay (firestore.rules `sameTeam`). Kept out
+  // of the role dialog because it is a DIFFERENT rules path (its own allow-list
+  // `['teamId','updatedAt']`), so coupling them would force two unrelated
+  // writes through one submit.
+  //
+  // Assigning also maintains `teams/{label}.members` (the uid → name roster
+  // the app pulls to discover teammates) — see `setTeam`, which batches both.
+  const [teamTarget, setTeamTarget] = useState<Profile | null>(null);
+  const [nextTeam, setNextTeam] = useState('');
+  const [teamBusy, setTeamBusy] = useState(false);
+  const [teamError, setTeamError] = useState<string | null>(null);
+  /**
+   * The team management surface — create a team, put accounts on it, take
+   * them off, delete it (`components/accounts/teams-dialog.tsx`).
+   *
+   * Same `canManageAccounts` gate as every write inside it: `/teams` list is
+   * denied below super admin in rules, so the query is gated here only to
+   * spare the permission-denied toast — enforcement stays in rules.
+   */
+  const [teamsOpen, setTeamsOpen] = useState(false);
+
+  const teams = useLiveQuery<TeamRoster[]>({
+    key: ['teams'],
+    enabled: can(role, 'accountManage'),
+    subscribe: ({ emit, fail }) =>
+      subscribeCollectionOf(buildTeamsQuery(), teamFromDoc, emit, fail),
+  });
+
+  /**
+   * Existing labels, offered as suggestions in the assign dialog below. A
+   * typed label and a suggested one must not differ by a stray space or case
+   * — two "same-looking" teams share nothing, and the symptom (nobody sees
+   * anyone's notes) is three screens away from the cause.
+   */
+  const teamLabels = useMemo(
+    () => [...(teams.data ?? [])].map((team) => team.id).sort(),
+    [teams.data]
+  );
+
+  const teamById = useMemo(
+    () => new Map((teams.data ?? []).map((team) => [team.id, team])),
+    [teams.data]
+  );
+
+  const openTeamDialog = (profile: Profile) => {
+    setTeamTarget(profile);
+    setNextTeam(profile.teamId ?? '');
+    setTeamError(null);
+  };
+
+  const submitTeam = async () => {
+    if (!teamTarget) return;
+    const label = nextTeam.trim();
+    if (label.length > 64) {
+      setTeamError('Team label must be 64 characters or fewer.');
+      return;
+    }
+    setTeamBusy(true);
+    setTeamError(null);
+    try {
+      await setTeam(
+        teamTarget.uid,
+        label,
+        teamTarget.displayName || teamTarget.email
+      );
+      toast.success(
+        label ? 'Team assigned' : 'Team cleared',
+        label
+          ? `${teamTarget.displayName || teamTarget.email} is on team "${label}" — members of that team can now see each other's field notes.`
+          : `${teamTarget.displayName || teamTarget.email} is on no team — their field notes are private again.`
+      );
+      setTeamTarget(null);
+    } catch (caught) {
+      setTeamError(messageFor(caught));
+      toast.error('Team change refused', messageFor(caught));
+    } finally {
+      setTeamBusy(false);
+    }
+  };
+
   const [roleTarget, setRoleTarget] = useState<Profile | null>(null);
   const [nextRole, setNextRole] = useState<AppRole>('karykarta');
   const [nextWard, setNextWard] = useState('');
@@ -431,11 +533,20 @@ export default function AccountsPage() {
             />
           </div>
           {canManage ? (
-            <Link href="/users/new">
-              <Button variant="primary">
-                <Plus className="size-4" /> New account
+            <>
+              <Button
+                variant='ghost'
+                onClick={() => setTeamsOpen(true)}
+                title='Create a team and put accounts on it — members of a team read each other’s field notes in the app.'
+              >
+                <Users className='size-4' /> Teams
               </Button>
-            </Link>
+              <Link href="/users/new">
+                <Button variant="primary">
+                  <Plus className="size-4" /> New account
+                </Button>
+              </Link>
+            </>
           ) : null}
         </div>
       </div>
@@ -526,6 +637,15 @@ export default function AccountsPage() {
                         >
                           <MonitorSmartphone className="size-3" />
                           multi-device
+                        </span>
+                      ) : null}
+                      {profile.teamId ? (
+                        <span
+                          title={`Team "${profile.teamId}" — members of this team can see each other's field notes in the app.`}
+                          className="inline-flex items-center gap-1 rounded-md border border-brand-400/35 bg-brand-400/10 px-1.5 py-0.5 text-[10px] font-medium text-brand-300"
+                        >
+                          <Users className="size-3" />
+                          {profile.teamId}
                         </span>
                       ) : null}
                     </div>
@@ -635,6 +755,28 @@ export default function AccountsPage() {
                         className="rounded-lg p-2 text-mist-600 transition-colors hover:bg-brand-500/10 hover:text-brand-400 disabled:cursor-not-allowed disabled:opacity-35"
                       >
                         <KeyRound className="size-4" />
+                      </button>
+                      {/* Team assignment — free-form label; same-label
+                          accounts read each other's field notes. Same
+                          canManageAccounts gate. */}
+                      <button
+                        onClick={() => openTeamDialog(profile)}
+                        disabled={isSelf}
+                        title={
+                          isSelf
+                            ? 'You cannot change your own team'
+                            : profile.teamId
+                              ? `On team "${profile.teamId}" — change or clear`
+                              : 'Assign to a team'
+                        }
+                        aria-label="Assign team"
+                        className={`rounded-lg p-2 transition-colors disabled:cursor-not-allowed disabled:opacity-35 ${
+                          profile.teamId
+                            ? 'bg-signal-amber/10 text-signal-amber hover:bg-signal-amber/20'
+                            : 'text-mist-600 hover:bg-brand-500/10 hover:text-brand-400'
+                        }`}
+                      >
+                        <Users className="size-4" />
                       </button>
                       <button
                         onClick={() => setDeleteTarget(profile)}
@@ -761,6 +903,125 @@ export default function AccountsPage() {
           </motion.div>
         ) : null}
       </AnimatePresence>
+
+      {/* Team assignment dialog */}
+      <AnimatePresence>
+        {teamTarget ? (
+          <motion.div
+            className="fixed inset-0 z-[70] grid place-items-center p-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.16 }}
+          >
+            <div
+              className="absolute inset-0 bg-black/65 backdrop-blur-sm"
+              onClick={() => {
+                if (!teamBusy) setTeamTarget(null);
+              }}
+            />
+            <motion.div
+              role="dialog"
+              aria-modal="true"
+              aria-label="Assign team"
+              initial={{ opacity: 0, y: 14, scale: 0.97 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 8, scale: 0.97, transition: { duration: 0.12 } }}
+              transition={{ type: 'spring', stiffness: 420, damping: 32 }}
+              className="panel edge-lit relative w-full max-w-[440px] p-6"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <div className="flex items-center gap-3">
+                <span className="brand-gradient grid size-10 place-items-center rounded-xl">
+                  <Users className="size-5 text-white" />
+                </span>
+                <div>
+                  <h2 className="text-[15px] font-semibold text-mist-50">Assign team</h2>
+                  <p className="text-xs text-mist-600">
+                    {teamTarget.displayName || teamTarget.email}
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-5 space-y-4">
+                <Field
+                  label="Team label"
+                  hint="Two accounts with the same label can read each other's field notes in the app. Leave empty to keep this account private."
+                >
+                  <Input
+                    value={nextTeam}
+                    onChange={(event) => {
+                      setNextTeam(event.target.value);
+                      setTeamError(null);
+                    }}
+                    maxLength={64}
+                    placeholder="e.g. ward-3-sweep"
+                  />
+                </Field>
+
+                {/* Existing labels, one tap each. Typing the same team twice
+                    creates two teams that share nothing — the suggestion is
+                    the fix, and it is also how someone discovers the team a
+                    colleague already made. */}
+                {teamLabels.length > 0 ? (
+                  <div className="space-y-1.5">
+                    <span className="block text-[11px] uppercase tracking-[0.08em] text-mist-600">
+                      Existing teams
+                    </span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {teamLabels.map((label) => (
+                        <button
+                          key={label}
+                          onClick={() => {
+                            setNextTeam(label);
+                            setTeamError(null);
+                          }}
+                          className={`rounded-md border px-2 py-1 text-[11px] transition-colors ${
+                            nextTeam.trim() === label
+                              ? 'border-brand-400/60 bg-brand-500/15 text-brand-300'
+                              : 'border-line-strong bg-white/[0.03] text-mist-300 hover:border-brand-400/50 hover:text-mist-50'
+                          }`}
+                        >
+                          {label}
+                          <span className="ml-1.5 opacity-60">
+                            {teamById.get(label)
+                              ? Object.keys(teamById.get(label)!.members).length
+                              : 0}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+
+                {teamError ? (
+                  <p className="rounded-lg border border-signal-rose/30 bg-signal-rose/10 px-3 py-2 text-xs text-signal-rose">
+                    {teamError}
+                  </p>
+                ) : null}
+
+                <div className="flex justify-end gap-2.5 pt-1">
+                  <Button variant="ghost" onClick={() => setTeamTarget(null)} disabled={teamBusy}>
+                    Cancel
+                  </Button>
+                  <Button variant="primary" onClick={() => void submitTeam()} disabled={teamBusy}>
+                    {teamBusy ? <Loader2 className="size-4 animate-spin" /> : <ShieldCheck className="size-4" />}
+                    {nextTeam.trim() ? 'Assign' : 'Clear team'}
+                  </Button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
+
+      {/* Team management — the make-a-team surface behind the header button. */}
+      <TeamsDialog
+        open={teamsOpen}
+        onClose={() => setTeamsOpen(false)}
+        profiles={users.data ?? []}
+        myUid={myUid}
+      />
 
       {/* Password vault: reveal the stored password + quick rotate */}
       <AnimatePresence>

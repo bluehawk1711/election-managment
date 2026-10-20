@@ -87,6 +87,14 @@ export interface Profile {
   multiDevice: boolean;
   /** The super admin/developer uid who granted `multiDevice`, or null. */
   multiDeviceBy: string | null;
+  /**
+   * Team label (firestore.rules §users `teamId`). Two accounts sharing a
+   * non-empty `teamId` may READ each other's voterEdits overlay (field
+   * notes, leaning). Empty string / null = no team, shares nothing.
+   * Writable only by account managers via the dedicated team-assignment
+   * rule path — never self-assigned.
+   */
+  teamId: string | null;
   createdAt: number | null;
   updatedAt: number | null;
 }
@@ -191,6 +199,7 @@ export function profileFromDoc(
     lockedBy: typeof data.lockedBy === 'string' ? data.lockedBy : null,
     multiDevice: data.multiDevice === true,
     multiDeviceBy: typeof data.multiDeviceBy === 'string' ? data.multiDeviceBy : null,
+    teamId: typeof data.teamId === 'string' && data.teamId !== '' ? data.teamId : null,
     createdAt: millisOf(data.createdAt),
     updatedAt: millisOf(data.updatedAt),
   };

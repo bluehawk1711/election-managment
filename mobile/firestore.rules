@@ -251,6 +251,89 @@ service cloud.firestore {
              && callerProfile().data.role in ['admin', 'superAdmin', 'developer'];
     }
 
+    // ----- teams ----------------------------------------------------------
+    //
+    // A `teamId` is a short string label (e.g. "ward-3-sweep") written onto a
+    // user's profile by an account manager. Membership is a FIELD on the profile
+    // rather than a separate collection precisely because rules cannot do joins
+    // and cannot `list()` inside a rule: reading a teammate's private overlay
+    // must resolve "am I on the same team?" in O(1), which only a `get()` of
+    // two profile docs can do. Two users share a team when their `teamId`
+    // values are equal AND non-empty — an empty/absent `teamId` is "no team",
+    // so the default (every existing profile) shares nothing.
+    //
+    // Sharing is READ-ONLY by design (see `sameTeamRead`): field notes and
+    // leaning are sensitive, and letting one member overwrite another's edits
+    // through a shared write path would be a silent-corruption surface. Write
+    // stays owner-only.
+    function teamId() {
+      return callerProfile().data.get('teamId', '');
+    }
+
+    // The profile of the user whose subcollection is being read.
+    function ownerTeamId(ownerUid) {
+      return get(/databases/$(database)/documents/users/$(ownerUid)).data.get('teamId', '');
+    }
+
+    // `true` when caller and the doc-owner are on the SAME non-empty team.
+    // Both `.get()` calls default to '' so a profile predating the field reads
+    // as "no team" rather than erroring (rules && does not short-circuit).
+    // `exists()` guards the owner read so a missing owner doc denies cleanly.
+    function sameTeam(ownerUid) {
+      return signedIn() && !isLocked()
+             && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+             && exists(/databases/$(database)/documents/users/$(ownerUid))
+             && teamId() != ''
+             && teamId() == ownerTeamId(ownerUid);
+    }
+
+    // ----- team roster -----------------------------------------------------
+    //
+    // A team's uid → displayName map, written ONLY by account managers in the
+    // same batch that sets `users/{uid}.teamId`. It exists because of a rules
+    // constraint the first design hit head-on: a `list` rule cannot be scoped
+    // by a query filter, so `users.where('teamId', '==', mine)` — the obvious
+    // roster lookup — is denied for every non-admin (`/users` list is
+    // `canViewAccounts`). Instead the app reads ONE document, its own team's
+    // roster, which the rule below gates with the same O(1) field comparison
+    // `sameTeam` uses. No join, no collection scan, no profile exposure.
+    //
+    // The roster is not a source of membership truth — `users/{uid}.teamId`
+    // is, and `sameTeam` (the clause that actually opens a teammate's
+    // `voterEdits`) reads only that. A stale roster entry therefore cannot
+    // grant a read; it just makes the app skip a member whose edits the rules
+    // would deny anyway. The worst failure of this doc is a missed pull, never
+    // a leaked document.
+    match /teams/{team} {
+      // A member reads their OWN team's roster — that is the app's pull. The
+      // doc id must equal the caller's own `teamId`, so a karykarta can never
+      // read a different team's membership, and account managers may read any
+      // roster (they maintain them).
+      //
+      // No member-facing `list`: enumerating every team would leak every
+      // team's membership, and the app only ever reads the roster whose id it
+      // already holds from its own profile. Account managers may list, which
+      // is what powers the label suggestions in the assign dialog — they can
+      // already see every profile's `teamId` via the `/users` list, so this
+      // exposes nothing new.
+      allow get: if signedIn() && !isLocked()
+                    && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+                    && (teamId() == team
+                        || callerProfile().data.role in ['superAdmin', 'developer']);
+      allow list: if canManageAccounts();
+
+      allow create, update: if canManageAccounts()
+                    && exactKeys(request.resource.data, ['members', 'updatedAt'])
+                    && request.resource.data.updatedAt == request.time
+                    // A map of uid → display name, bounded: the size cap is
+                    // what keeps this from being used as a general-purpose
+                    // payload, since rules cannot iterate a map to validate
+                    // its entries.
+                    && request.resource.data.members is map
+                    && request.resource.data.members.size() <= 50;
+      allow delete: if canManageAccounts();
+    }
+
     // ----- profile --------------------------------------------------------
 
     match /users/{userId} {
@@ -427,6 +510,25 @@ service cloud.firestore {
                         || request.resource.data.get('multiDeviceAt', null) is float)
                     && text(request.resource.data.get('multiDeviceBy', ''), 0, 128);
 
+      // Assigning or clearing a team — account management, same
+      // `canManageAccounts` gate as the role-grant and lock paths. A
+      // `teamId` is a short label; when it is present it decides which
+      // peers' overlays this account may read (see `sameTeam`). This is a
+      // SEPARATE path from role grant so moving someone between teams cannot
+      // be a side effect of changing their role, and the exact-key allowlist
+      // keeps it from smuggling `role`/`wardNo`/`device` through.
+      //
+      // `''` (or null) is the "no team" state — the normal one. A karykarta
+      // with no team simply shares nothing, which is the safe default.
+      allow update: if canManageAccounts()
+                    && resource != null
+                    && userId != request.auth.uid
+                    && request.resource.data.diff(resource.data).affectedKeys()
+                         .hasOnly(['teamId', 'updatedAt'])
+                    && (request.resource.data.get('teamId', null) == null
+                        || (request.resource.data.get('teamId', '') is string
+                            && request.resource.data.get('teamId', '').size() <= 64));
+
       // Locking, unlocking and clearing the device binding — account
       // management (`accountManage`: super admin + developer, and only while
       // the caller is not locked themselves).
@@ -560,10 +662,18 @@ service cloud.firestore {
       // `PUSHED_KEYS` in `lib/roll/sync.ts` plus `wardNo`/`updatedAt`/
       // `updatedBy`; `rules-tests/firestore.test.ts` pins both directions.
       match /voterEdits/{voterId} {
-        // The owner, or an account manager auditing whose hands touched which
-        // voter (`list` included — the pull AND the audit page both read the
-        // whole collection in one query).
-        allow read: if isOwner(userId) || canViewAccounts();
+        // The owner, a teammate on the same `teamId`, or an account manager
+        // auditing whose hands touched which voter (`list` included — the
+        // pull AND the audit page both read the whole collection in one
+        // query).
+        //
+        // The teammate clause (`sameTeam`) is READ-ONLY visibility into a
+        // peer's fieldwork: it appears only here, never on the create/update
+        // or delete clauses below, so sharing a team lets you SEE a teammate's
+        // notes and leaning but never WRITE or DELETE them. The split mirrors
+        // `canViewAccounts` vs `canManageAccounts` for exactly the same reason
+        // — widening visibility must not widen write access by one field.
+        allow read: if isOwner(userId) || sameTeam(userId) || canViewAccounts();
 
         allow create, update: if isOwner(userId)
           && !isLocked()
@@ -683,22 +793,84 @@ service cloud.firestore {
 
     // ----- campaign -------------------------------------------------------
 
+    // Every field of the campaign profile — and the only fields a client may
+    // ever write there. A function rather than two inlined copies so the
+    // create and update clauses below cannot drift apart.
+    function campaignKeys() {
+      return ['name', 'candidateName', 'constituencyName', 'electionDate',
+              'tagline', 'startDate', 'updatedAt'];
+    }
+
+    /**
+     * `true` when THIS write carries `key` — the delta between the document
+     * before and after. On a create every key is carried (`previous` is `{}`).
+     */
+    function campaignWritten(data, previous, key) {
+      return data.diff(previous).affectedKeys().hasAny([key]);
+    }
+
+    /**
+     * Validates exactly the campaign fields this write changes, and nothing
+     * else. Two deliberate properties, both learned the hard way from a live
+     * project where the dashboard's election-date picker could never save:
+     *
+     * 1. DELTA, not document. The previous rule ran
+     *    `exactKeys(request.resource.data, [...all seven...])`, and on an
+     *    update `request.resource.data` is the whole RESULTING document — so a
+     *    single `{ electionDate, updatedAt }` patch was judged on keys it does
+     *    not touch. A campaign document missing one of the seven (or carrying
+     *    one extra legacy field) rejected every edit to it, forever, with an
+     *    opaque PERMISSION_DENIED.
+     * 2. A field is checked only when the write carries it, through
+     *    `.get(field, default)` (rules `&&` does not short-circuit, so a
+     *    direct field read would ERROR on an absent key rather than skip).
+     *    Pre-existing junk therefore cannot veto an unrelated edit — while a
+     *    client still can never WRITE an invalid value.
+     */
+    function campaignValid(data, previous) {
+      return (!campaignWritten(data, previous, 'name')
+              || text(data.get('name', ''), 1, 120))
+          && (!campaignWritten(data, previous, 'candidateName')
+              || text(data.get('candidateName', ''), 0, 120))
+          && (!campaignWritten(data, previous, 'constituencyName')
+              || text(data.get('constituencyName', ''), 0, 120))
+          && (!campaignWritten(data, previous, 'electionDate')
+              || nullableMillis(data.get('electionDate', null)))
+          && (!campaignWritten(data, previous, 'startDate')
+              || nullableMillis(data.get('startDate', null)))
+          && (!campaignWritten(data, previous, 'tagline')
+              || text(data.get('tagline', ''), 0, 200))
+          && (!campaignWritten(data, previous, 'updatedAt')
+              || data.get('updatedAt', null) == null
+              || data.get('updatedAt', null) is timestamp);
+    }
+
     match /campaigns/{campaignId} {
       allow read: if signedIn() && !isLocked();
 
-      allow create, update: if canEditCampaign()
+      // Create and update are SEPARATE clauses because they are checked
+      // against different pictures: a create's whole payload is the delta,
+      // an update's is not (`resource` is null on a create, so one clause
+      // would need a ternary to express both).
+      //
+      // That split is what lets the dashboard picker do its job on a project
+      // where `campaigns/active` does not exist yet: it writes
+      // `{ electionDate, updatedAt }` through `setDoc(..., { merge: true })`,
+      // which is a CREATE on a fresh project and an UPDATE everywhere else.
+      // The old single clause demanded all seven keys on the create, so the
+      // write could never bring the document into being.
+      allow create: if canEditCampaign()
         && noPoliticalFields(request.resource.data)
-        && exactKeys(request.resource.data,
-            ['name', 'candidateName', 'constituencyName', 'electionDate',
-             'tagline', 'startDate', 'updatedAt'])
-        && text(request.resource.data.name, 1, 120)
-        && text(request.resource.data.candidateName, 0, 120)
-        && text(request.resource.data.constituencyName, 0, 120)
-        && nullableMillis(request.resource.data.electionDate)
-        && nullableMillis(request.resource.data.startDate)
-        && text(request.resource.data.tagline, 0, 200)
-        && (request.resource.data.updatedAt == null
-            || request.resource.data.updatedAt is timestamp);
+        && request.resource.data.keys().hasOnly(campaignKeys())
+        && campaignValid(request.resource.data, {});
+
+      allow update: if canEditCampaign()
+        && resource != null
+        && noPoliticalFields(request.resource.data)
+        // Delta only: keys this write does not change are not its business.
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(campaignKeys())
+        && campaignValid(request.resource.data, resource.data);
 
       // The campaign document is the campaign.
       allow delete: if false;

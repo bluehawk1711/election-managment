@@ -147,6 +147,28 @@ export type VoterPatch = Partial<
   Omit<VoterOverlay, 'updatedAt' | 'updatedBy' | 'location' | 'photoUrl' | 'photoPublicId'>
 >;
 
+/**
+ * One teammate's overlay for one voter — the read-only team layer
+ * (plan-voters.md §4), pulled by `lib/roll/sync.ts::pullTeamEdits` and stored
+ * in `lib/roll/team-overlay.ts`.
+ *
+ * Lives here rather than in `team-overlay.ts` so the render side (`mergeVoter`,
+ * `VoterView`) can take the type without an import cycle back into types.ts.
+ */
+export interface TeamOverlayEntry {
+  overlay: VoterOverlay;
+  /** The uid of the teammate who wrote it — provenance, shown as "by X". */
+  authorUid: string;
+  /**
+   * The teammate's display name at pull time, copied from the team roster
+   * (`teams/{teamId}.members`). Stored rather than looked up at render
+   * because `/users` is get-by-owner-only — a teammate's profile cannot be
+   * read from this device, so the roster's copy is the only name available.
+   * `null` when the roster somehow lacked one; UI falls back to "Team".
+   */
+  authorName: string | null;
+}
+
 /** `RollVoter` ⨯ `VoterOverlay` — what every screen actually renders. */
 export interface VoterView extends RollVoter {
   /** The overlay in effect (empty object when nothing was edited). */
@@ -169,6 +191,16 @@ export interface VoterView extends RollVoter {
   location: VoterLocation | null;
   /** True when the overlay is newer than the last sync (queue non-empty). */
   pending: boolean;
+  /**
+   * A teammate's overlay for this voter, merged UNDER the own overlay
+   * (own values win every field they carry; the team layer only fills gaps).
+   *
+   * `undefined` when no teammate has touched this voter. The team layer never
+   * lands in `overlay` — that stays this account's own edits, which is what
+   * keeps the edit sheet's save diff (against `effective`) from silently
+   * re-attributing a teammate's work as the saver's own.
+   */
+  team?: TeamOverlayEntry;
 }
 
 // ---------------------------------------------------------------------------

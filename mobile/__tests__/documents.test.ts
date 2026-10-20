@@ -153,6 +153,12 @@ describe('profileFromDoc', () => {
       lockedReason: null,
       lockedAt: null,
       lockedBy: null,
+      // Multi-device exemption: absent here, so the default holds — the
+      // account is device-bound and no super admin has lifted it.
+      multiDevice: false,
+      multiDeviceBy: null,
+      // Team label: absent means no team, which shares nothing.
+      teamId: null,
       createdAt: 1000,
       updatedAt: null,
     });

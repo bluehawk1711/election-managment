@@ -226,14 +226,15 @@ export function VoterCard({ voter, meters, onPress, onLongPress, selected = fals
             {t('voters.serial', { no: voter.serialNo })} · {voter.epicId}
           </Text>
           {/* The voter's intention first — with us / against us is what a
-              karykarta scans for — then turnout and sync state. `active` on
-              the centre-leaning chip: a bare `default` tone renders
-              unfilled, which would read as *unselected* rather than
-              *neutral*. */}
+              karykarta scans for — then turnout, sync state and team
+              provenance. `active` on the centre-leaning chip: a bare
+              `default` tone renders unfilled, which would read as
+              *unselected* rather than *neutral*. */}
           {voter.support !== 'unknown' ||
           voter.leaning !== 'unknown' ||
           voter.voted === 'voted' ||
-          voter.pending ? (
+          voter.pending ||
+          voter.team ? (
             <View style={styles.chips}>
               {/* Support and leaning badges are English-only on purpose —
                   see lib/roll/badges.ts. */}
@@ -255,6 +256,21 @@ export function VoterCard({ voter, meters, onPress, onLongPress, selected = fals
               ) : null}
               {voter.pending ? (
                 <Chip label={t('voters.pendingSync')} tone='primary' />
+              ) : null}
+              {/* A teammate's overlay contributed fields this account has not
+                  set — the row carries someone else's fieldwork. Named when
+                  the roster had a name (the usual case), plain "Team" when it
+                  did not; the entry only exists when it actually contributes,
+                  so this chip never lies about there being more here. */}
+              {voter.team ? (
+                <Chip
+                  label={
+                    voter.team.authorName
+                      ? t('voters.teamEditBy', { name: voter.team.authorName })
+                      : t('voters.teamEdit')
+                  }
+                  tone='info'
+                />
               ) : null}
             </View>
           ) : null}
