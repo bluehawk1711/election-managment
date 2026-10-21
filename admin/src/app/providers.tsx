@@ -12,7 +12,10 @@
  *  3. `Gate` — the route guard. Firebase's client SDK cannot run on the
  *     server, so this is deliberately client-side: loading shows a boot
  *     screen, anon renders `/login` (and rewrites any other path), signed-in
- *     on `/login` bounces home, signed-in pages get `<AppShell>`.
+ *     on `/login` bounces home, signed-in pages get `<AppShell>`. A plain
+ *     `admin` is pinned to `/voters` here as well as in the sidebar — a deep
+ *     link to `/users` must not mount the account screen just because the
+ *     nav hid the link.
  *  4. `Toaster` — one host for stores/toast.ts messages.
  *
  * No middleware: `middleware.ts` cannot await Firebase client auth (no
@@ -29,6 +32,7 @@ import { useEffect, useMemo, type ReactNode } from 'react';
 import { onDoc } from '@/lib/db';
 import { auth } from '@/lib/firebase';
 import { enforceDeviceLock } from '@/lib/device-lock';
+import { canOpenPanelRoute, panelHome } from '@/lib/roles';
 import { AppShell } from '@/components/shell/app-shell';
 import { Toaster } from '@/components/ui/toaster';
 import { useSession } from '@/stores/session';
@@ -148,22 +152,39 @@ export function Providers({ children }: { children: ReactNode }) {
   );
 
   const status = useSession((s) => s.status);
+  const role = useSession((s) => s.role);
+  const profileReady = useSession((s) => s.profileReady);
   const pathname = usePathname();
   const router = useRouter();
 
   useEffect(() => {
-    if (status === 'anon' && pathname !== '/login') router.replace('/login');
-    if (status === 'ready' && pathname === '/login') router.replace('/');
-  }, [status, pathname, router]);
+    if (status === 'anon') {
+      if (pathname !== '/login') router.replace('/login');
+      return;
+    }
+    // Wait for the profile before routing on `role`: at sign-in the auth
+    // listener fires before the `users/{uid}` snapshot, so acting early would
+    // send an admin to `/` and only then discover they belong on `/voters`.
+    if (status !== 'ready' || !profileReady) return;
+
+    if (pathname === '/login') {
+      router.replace(panelHome(role));
+      return;
+    }
+    if (!canOpenPanelRoute(role, pathname)) {
+      router.replace(panelHome(role));
+    }
+  }, [status, profileReady, role, pathname, router]);
 
   let view: ReactNode;
-  if (status === 'loading') {
+  if (status === 'loading' || (status === 'ready' && !profileReady)) {
     view = <Boot />;
   } else if (status === 'anon') {
     view = pathname === '/login' ? children : <NoAccess />;
-  } else if (pathname === '/login') {
-    // Signed in but still parked on /login — one frame of the boot screen
-    // while the replacement navigation runs.
+  } else if (pathname === '/login' || !canOpenPanelRoute(role, pathname)) {
+    // Signed in but parked on /login or a route this role may not open — one
+    // frame of the boot screen while the replacement navigation runs. Keeping
+    // the page from mounting is the point: a hidden nav link is not a guard.
     view = <Boot />;
   } else {
     view = <AppShell>{children}</AppShell>;

@@ -35,6 +35,13 @@ export interface SessionState {
   /** Only meaningful when `role === 'karykarta'`. */
   wardNo: number | null;
   onboarded: boolean;
+  /**
+   * True once the `users/{uid}` listener has emitted its first snapshot.
+   * The gate uses this to hold the boot screen until the role is known, so a
+   * plain admin is never briefly shown the Overview (or any other route)
+   * before the `/voters` redirect can happen.
+   */
+  profileReady: boolean;
 
   /** Auth listener result: a user identity (profile merge happens next). */
   signIn: (payload: { uid: string; email: string; displayName: string }) => void;
@@ -56,20 +63,25 @@ export const useSession = create<SessionState>((set) => ({
   role: null,
   wardNo: null,
   onboarded: false,
+  profileReady: false,
 
   signIn: (payload) =>
-    set({
+    set((state) => ({
       status: 'ready',
       uid: payload.uid,
       // Auth's own values for now — a fresher profile snapshot overwrites
-      // them on the next line of the bootstrap sequence.
+      // them on the next line of the bootstrap sequence. A token refresh for
+      // the same identity keeps the already-loaded profile; a different uid
+      // starts the boot wait again.
+      profileReady: state.uid === payload.uid ? state.profileReady : false,
       email: payload.email,
       displayName: payload.displayName,
-    }),
+    })),
 
   applyProfile: (payload) =>
     set((state) => ({
       status: state.uid ? 'ready' : state.status,
+      profileReady: true,
       displayName: payload.displayName ?? state.displayName,
       role: payload.role === undefined ? state.role : payload.role,
       wardNo: payload.wardNo === undefined ? state.wardNo : payload.wardNo,
@@ -85,5 +97,6 @@ export const useSession = create<SessionState>((set) => ({
       role: null,
       wardNo: null,
       onboarded: false,
+      profileReady: false,
     }),
 }));

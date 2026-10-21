@@ -31,7 +31,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import type { ComponentType } from 'react';
 import { signOut } from '@/lib/api';
-import { can, type Capability } from '@/lib/roles';
+import { can, canOpenPanelRoute, type Capability } from '@/lib/roles';
 import { cn } from '@/lib/util';
 import { useSession } from '@/stores/session';
 import { useUi } from '@/stores/ui';
@@ -69,9 +69,16 @@ export const NAV: NavItem[] = [
   { href: '/settings', label: 'Settings', icon: Settings, cap: 'accountManage' },
 ];
 
-/** What THIS session may see in the nav — same capability words as rules. */
+/**
+ * What THIS session may see in the nav — same capability words as rules,
+ * narrowed further by the panel's own role routes (a plain `admin` sees only
+ * the voter roll).
+ */
 export function visibleNav(role: string | null): NavItem[] {
-  return NAV.filter((item) => !item.cap || can(role, item.cap));
+  return NAV.filter(
+    (item) =>
+      (!item.cap || can(role, item.cap)) && canOpenPanelRoute(role, item.href)
+  );
 }
 
 function isActive(pathname: string, href: string): boolean {

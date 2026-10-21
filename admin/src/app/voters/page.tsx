@@ -19,9 +19,11 @@
  *            in the panel's dark idiom.
  *   slip     one tap opens `VoterSlipModal` — the printable मतदाता पर्ची
  *            (mock: `public/clipboard-image.png`).
- *   select   tick rows (or Select page) to drive the two bulk actions:
- *            `VoterSlipsBatchModal` tiles compact slips 3 × 7 per A4 sheet,
- *            and `BulkPhoneModal` is mobile's one-number-fills-all editor.
+ *   select   tick rows, Select page, or Select all (the current search/ward
+ *            result) to drive the two bulk actions: `VoterSlipsBatchModal`
+ *            tiles compact slips 3 × 7 per A4 sheet, and `BulkPhoneModal` is
+ *            mobile's one-number-fills-all editor. One more print path
+ *            ignores search and prints the active ward in full.
  *   overlay  the signed-in account's `users/{uid}/voterEdits` is merged over
  *            the bundled rows, so a bulk-saved number and a phone-side
  *            correction appear live without a reload.
@@ -34,7 +36,7 @@
  * Karykarta see only their own ward (`visibleWards`), the same scope the
  * mobile app applies; the ward selector offers exactly the allowed wards.
  */
-import { Check, FileText, Phone, Printer, Search, Users } from 'lucide-react';
+import { Check, FileText, Minus, Phone, Printer, Search, Users } from 'lucide-react';
 import { MotionPage } from '@/components/shell/motion-page';
 import { Button, Chip, EmptyState, Input, Panel, Select, Skeleton } from '@/components/ui/kit';
 import { BulkPhoneModal } from '@/components/voters/bulk-phone-modal';
@@ -63,7 +65,7 @@ import type {
 } from '@/lib/roll/types';
 import { viewOf } from '@/lib/roll/types';
 import { cn } from '@/lib/util';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 /** The scope chips' labels — same four groups the mobile list exposes. */
@@ -100,7 +102,15 @@ export default function VotersPage() {
    */
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
   const [bulkPhoneOpen, setBulkPhoneOpen] = useState(false);
-  const [batchOpen, setBatchOpen] = useState(false);
+  /**
+   * The batch sheet's snapshot. Opened from the selection bar or from the
+   * full-ward button; mapping to slip payloads happens at click time so the
+   * page is not rebuilding every voter's slip on each keystroke.
+   */
+  const [batch, setBatch] = useState<{
+    items: BatchSlipItem[];
+    label: string;
+  } | null>(null);
 
   const allowed = useMemo(
     () => (bundle ? visibleWards(role, { wardNo }, bundle.wards.map((w) => w.wardNo)) : null),
@@ -218,6 +228,27 @@ export default function VotersPage() {
     [bundle]
   );
 
+  /** One row → one printable compact slip, built when a print is requested. */
+  const batchItemFor = useCallback(
+    (row: VoterView): BatchSlipItem => ({
+      id: row.id,
+      data: buildSlipData({
+        voter: row,
+        ward: wardMeta.get(row.wardNo),
+        photoUrl: photoUrlFor(row.id, row.wardNo),
+      }),
+    }),
+    [wardMeta]
+  );
+
+  const openBatch = useCallback(
+    (rows: readonly VoterView[], label: string) => {
+      if (rows.length === 0) return;
+      setBatch({ items: rows.map(batchItemFor), label });
+    },
+    [batchItemFor]
+  );
+
   /**
    * Everything the role may touch, not just the current search/ward slice.
    * Selection deliberately survives a search or ward change: the operator
@@ -235,11 +266,33 @@ export default function VotersPage() {
     [selectableRows, selectedIds]
   );
 
+  /** The current search/ward result — what "Select all" acts on. */
+  const allFilteredSelected =
+    filtered != null &&
+    filtered.length > 0 &&
+    filtered.every((row) => selectedIds.has(row.id));
+  const someFilteredSelected =
+    filtered != null && filtered.some((row) => selectedIds.has(row.id));
+
   const toggleSelected = (voterId: string) => {
     setSelectedIds((previous) => {
       const next = new Set(previous);
       if (next.has(voterId)) next.delete(voterId);
       else next.add(voterId);
+      return next;
+    });
+  };
+
+  /** Master checkbox: all current results on, or all of them off. */
+  const toggleFiltered = () => {
+    if (!filtered || filtered.length === 0) return;
+    setSelectedIds((previous) => {
+      const next = new Set(previous);
+      const everySelected = filtered.every((row) => next.has(row.id));
+      for (const row of filtered) {
+        if (everySelected) next.delete(row.id);
+        else next.add(row.id);
+      }
       return next;
     });
   };
@@ -255,19 +308,6 @@ export default function VotersPage() {
   };
 
   const clearSelection = () => setSelectedIds(new Set());
-
-  const batchItems = useMemo<BatchSlipItem[]>(
-    () =>
-      selectedRows.map((row) => ({
-        id: row.id,
-        data: buildSlipData({
-          voter: row,
-          ward: wardMeta.get(row.wardNo),
-          photoUrl: photoUrlFor(row.id, row.wardNo),
-        }),
-      })),
-    [selectedRows, wardMeta]
-  );
 
   const openSlip = (row: VoterView) => {
     setSlip(row);
@@ -310,8 +350,8 @@ export default function VotersPage() {
             </span>
           ) : null}
           <div className='ml-auto w-64'>
-          <Select
-            value={activeWard === 'all' ? 'all' : String(activeWard)}
+            <Select
+              value={activeWard === 'all' ? 'all' : String(activeWard)}
               onChange={(event) =>
                 setWard(event.target.value === 'all' ? 'all' : Number(event.target.value))
               }
@@ -358,22 +398,79 @@ export default function VotersPage() {
 
         {/* Selection survives a scroll: the actions themselves live in the
             floating bar below, so a tick 40 rows down is still one press from
-            printing. This row only starts the selection. */}
-        <div className='flex flex-wrap items-center gap-2 border-t border-line pt-3'>
+            printing. This row starts the selection and owns the "whole ward"
+            print, which deliberately ignores the search box. */}
+        <div className='flex flex-wrap items-center gap-x-3 gap-y-2 border-t border-line pt-3'>
+          <button
+            type='button'
+            role='checkbox'
+            aria-checked={
+              allFilteredSelected ? true : someFilteredSelected ? 'mixed' : false
+            }
+            aria-label={
+              allFilteredSelected
+                ? 'Clear the selection for the current results'
+                : 'Select every voter in the current results'
+            }
+            onClick={toggleFiltered}
+            disabled={!filtered || filtered.length === 0}
+            className='inline-flex items-center gap-2 rounded-lg text-xs font-medium text-mist-300 transition-colors hover:text-mist-50 disabled:cursor-not-allowed disabled:opacity-45'
+          >
+            <span
+              className={cn(
+                'grid size-4.5 shrink-0 place-items-center rounded border transition-colors',
+                allFilteredSelected
+                  ? 'border-brand-400 bg-brand-500 text-white'
+                  : someFilteredSelected
+                    ? 'border-brand-400/70 bg-brand-500/20 text-brand-400'
+                    : 'border-line-strong bg-white/[0.03] text-transparent'
+              )}
+            >
+              {someFilteredSelected && !allFilteredSelected ? (
+                <Minus className='size-3' strokeWidth={3} />
+              ) : (
+                <Check className='size-3' strokeWidth={3} />
+              )}
+            </span>
+            Select all
+            {filtered ? ` (${filtered.length.toLocaleString()})` : ''}
+          </button>
+
           <span className='text-xs text-mist-600'>
             {selectedRows.length > 0
               ? `${selectedRows.length.toLocaleString()} selected · use the action bar below`
               : 'Select voters to print slips or update phone numbers in bulk.'}
           </span>
-          <Button
-            variant='ghost'
-            className='ml-auto'
-            onClick={selectShown}
-            disabled={!filtered || filtered.length === 0}
-          >
-            Select page (
-            {filtered ? Math.min(shown, filtered.length).toLocaleString() : 0})
-          </Button>
+
+          <div className='ml-auto flex flex-wrap items-center gap-2'>
+            <Button
+              variant='secondary'
+              onClick={() => {
+                if (!scoped || activeWard === 'all') return;
+                openBatch(scoped, `वार्ड ${activeWard} · पूरा वार्ड`);
+              }}
+              disabled={activeWard === 'all' || !scoped || scoped.length === 0}
+              title={
+                activeWard === 'all'
+                  ? 'Choose a specific ward first — this prints every voter in that ward.'
+                  : `Print every voter in ward ${activeWard}, ignoring the search box.`
+              }
+            >
+              <Printer className='size-3.5' />
+              Print full ward
+              {activeWard !== 'all' && scoped
+                ? ` (${scoped.length.toLocaleString()})`
+                : ''}
+            </Button>
+            <Button
+              variant='ghost'
+              onClick={selectShown}
+              disabled={!filtered || filtered.length === 0}
+            >
+              Select page (
+              {filtered ? Math.min(shown, filtered.length).toLocaleString() : 0})
+            </Button>
+          </div>
         </div>
       </Panel>
 
@@ -428,7 +525,7 @@ export default function VotersPage() {
         <SelectionBar
           count={selectedRows.length}
           onBulkPhone={() => setBulkPhoneOpen(true)}
-          onPrint={() => setBatchOpen(true)}
+          onPrint={() => openBatch(selectedRows, 'चयनित मतदाता')}
           onClear={clearSelection}
         />
       ) : null}
@@ -446,10 +543,11 @@ export default function VotersPage() {
       ) : null}
 
       {/* ── the batch sheet ────────────────────────────────────────── */}
-      {batchOpen && batchItems.length > 0 ? (
+      {batch ? (
         <VoterSlipsBatchModal
-          items={batchItems}
-          onClose={() => setBatchOpen(false)}
+          items={batch.items}
+          label={batch.label}
+          onClose={() => setBatch(null)}
         />
       ) : null}
 

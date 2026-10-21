@@ -1,0 +1,21 @@
+{
+  "name": "election-capaign-managment",
+  "version": "1.0.0",
+  "description": "A field-ready mobile app (Expo / React Native) that turns the official voter roll into a working campaign tool: search every voter, record what the field team learns, and see the campaign's state at a glance — **fully offline**.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bluehawk1711/election-managment.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/bluehawk1711/election-managment/issues"
+  },
+  "homepage": "https://github.com/bluehawk1711/election-managment#readme"
+}

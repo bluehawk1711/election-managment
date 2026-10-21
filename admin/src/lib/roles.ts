@@ -95,3 +95,34 @@ export function roleLabel(role: unknown): string {
   const parsed = toAppRole(role);
   return parsed ? labels[parsed] : 'No role';
 }
+
+/**
+ * Panel routes a role may open. `null` means no panel-level restriction — the
+ * nav's own capability filter still decides what is visible.
+ *
+ * The console is deliberately NARROWER than the capability matrix for a plain
+ * `admin`: that role is the field-data operator, so it gets the voter roll
+ * (print + bulk phone) and nothing else. Accounts, the voter-change audit,
+ * tasks, overview and settings belong to the roles that own those surfaces.
+ *
+ * This is a UI/route guard, not a security boundary. RTDB rules still decide
+ * what the signed-in token can read or write; this only keeps a screen the
+ * product has scoped away from ever mounting in the console.
+ */
+export function panelRoutes(role: unknown): readonly string[] | null {
+  return role === 'admin' ? ['/voters'] : null;
+}
+
+/** Whether `pathname` is inside one of the role's allowed panel routes. */
+export function canOpenPanelRoute(role: unknown, pathname: string): boolean {
+  const routes = panelRoutes(role);
+  if (!routes) return true;
+  return routes.some(
+    (href) => pathname === href || pathname.startsWith(`${href}/`)
+  );
+}
+
+/** Where a signed-in role lands, and where a blocked route sends it. */
+export function panelHome(role: unknown): string {
+  return role === 'admin' ? '/voters' : '/';
+}

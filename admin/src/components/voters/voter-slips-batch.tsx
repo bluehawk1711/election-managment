@@ -33,6 +33,8 @@ export interface BatchSlipItem {
 
 interface Props {
   items: BatchSlipItem[];
+  /** Optional source label — "selected voters" vs "full ward N". */
+  label?: string;
   onClose: () => void;
 }
 
@@ -45,7 +47,7 @@ function paginate(items: readonly BatchSlipItem[]): BatchSlipItem[][] {
   return pages;
 }
 
-export function VoterSlipsBatchModal({ items, onClose }: Props) {
+export function VoterSlipsBatchModal({ items, label, onClose }: Props) {
   const pages = useMemo(() => paginate(items), [items]);
 
   // ESC closes — same promise the single slip's shortcut strip makes.
@@ -80,6 +82,7 @@ export function VoterSlipsBatchModal({ items, onClose }: Props) {
           <div className="slip-headerText">
             <div className="slip-headerTitle">मतदाता पर्ची — एक साथ प्रिंट</div>
             <div className="slip-headerSub">
+              {label ? `${label} · ` : ''}
               {items.length.toLocaleString()} पर्चियाँ · {pages.length.toLocaleString()} A4 पेज ·
               हर पेज पर 3 × 7
             </div>

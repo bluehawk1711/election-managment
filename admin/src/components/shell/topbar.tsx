@@ -16,12 +16,9 @@ import { Initials, RoleBadge } from '@/components/ui/kit';
 
 function titleFor(pathname: string): { title: string; section: string } {
   if (pathname === '/') return { title: 'Overview', section: 'Dashboard' };
-  // The roll itself is deliberately not in the panel — `/voters` redirects
-  // here (see its file header), so this is where a "voter roll" link lands.
-  if (pathname === '/voters' || pathname === '/changes') {
-    return { title: 'Voter changes', section: 'Field data' };
-  }
+  if (pathname === '/voters') return { title: 'Voter roll', section: 'Field data' };
   if (pathname.startsWith('/voters/')) return { title: 'Voter detail', section: 'Field data' };
+  if (pathname === '/changes') return { title: 'Voter changes', section: 'Field data' };
   if (pathname === '/users') return { title: 'Accounts', section: 'Team' };
   if (pathname === '/users/new') return { title: 'New account', section: 'Team' };
   if (pathname === '/tasks') return { title: 'Tasks', section: 'Operations' };
