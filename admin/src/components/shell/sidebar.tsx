@@ -21,6 +21,7 @@ import {
   LayoutDashboard,
   LogOut,
   PanelLeft,
+  ScrollText,
   Settings,
   UserCog,
   Vote,
@@ -46,11 +47,12 @@ export interface NavItem {
 
 export const NAV: NavItem[] = [
   { href: '/', label: 'Overview', icon: LayoutDashboard },
-  // NOTE: the "Voter roll" entry is gone on purpose, not by accident. The
-  // panel shows the ~7 000 imported voters nowhere — that is reference data
-  // the phone carries, and a table over it is not a decision surface. What a
-  // manager asks is which voters their team actually touched, which is the
-  // `/changes` entry below (and `/voters` redirects straight to it).
+  // The roll itself, back as a real page: it now reads the STATIC bundled
+  // JSON (`public/roll/`, copied from mobile's assets) instead of Firestore,
+  // so the rules objection that forced the old redirect — no collection-level
+  // roll read — no longer applies. Same data, same search as the field app,
+  // plus the printable voter slip. `/changes` stays the audit surface.
+  { href: '/voters', label: 'Voter roll', icon: ScrollText, cap: 'voterRead' },
   { href: '/tasks', label: 'Tasks', icon: ClipboardList },
   { href: '/users', label: 'Accounts', icon: UserCog, cap: 'accountView' },
   // "Which voter data changes did each user make" — the per-account

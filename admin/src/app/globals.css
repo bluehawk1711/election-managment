@@ -52,6 +52,11 @@ html {
 
 body {
   min-height: 100%;
+  /* Latin rides Geist (next/font variable), Devanagari its own face — the
+     roll, the slip and half the panel's labels are Hindi, and Geist has no
+     matras. Per-glyph fallback: Latin never leaves Geist. */
+  font-family: var(--font-geist-sans), var(--font-devanagari),
+    ui-sans-serif, system-ui, sans-serif;
   color: var(--color-mist-50);
   background:
     radial-gradient(1100px 560px at 78% -8%, rgb(99 102 241 / 0.15), transparent 60%),
