@@ -96,6 +96,16 @@ const RANG: { value: string; label: string; color: string }[] = [
   { value: "orange", label: "नारंगी", color: "#f97316" },
 ];
 
+/**
+ * The saved रंगदर्शक colour for one voter — the batch sheet prints the same
+ * strip the single slip would, so a stack sorted by colour stays consistent
+ * whether it came from one print or twenty-one.
+ */
+export function savedRangColor(voterId: string): string {
+  const value = readLocal(rangKey(voterId)) ?? "green";
+  return RANG.find((option) => option.value === value)?.color ?? "#22c55e";
+}
+
 /* ------------------------------------------------------------------- modal */
 
 export function VoterSlipModal({

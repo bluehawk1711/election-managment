@@ -19,6 +19,12 @@
  *            in the panel's dark idiom.
  *   slip     one tap opens `VoterSlipModal` — the printable मतदाता पर्ची
  *            (mock: `public/clipboard-image.png`).
+ *   select   tick rows (or Select page) to drive the two bulk actions:
+ *            `VoterSlipsBatchModal` tiles compact slips 3 × 7 per A4 sheet,
+ *            and `BulkPhoneModal` is mobile's one-number-fills-all editor.
+ *   overlay  the signed-in account's `users/{uid}/voterEdits` is merged over
+ *            the bundled rows, so a bulk-saved number and a phone-side
+ *            correction appear live without a reload.
  *
  * Bilingual by construction: the bundled rows carry both scripts (`nameEn`
  * & co. generated beside their Hindi source), so the list shows both and
@@ -28,11 +34,16 @@
  * Karykarta see only their own ward (`visibleWards`), the same scope the
  * mobile app applies; the ward selector offers exactly the allowed wards.
  */
-import { FileText, Search, Users } from 'lucide-react';
+import { Check, FileText, Phone, Printer, Search, Users } from 'lucide-react';
 import { MotionPage } from '@/components/shell/motion-page';
 import { Button, Chip, EmptyState, Input, Panel, Select, Skeleton } from '@/components/ui/kit';
+import { BulkPhoneModal } from '@/components/voters/bulk-phone-modal';
 import { VoterSlipModal } from '@/components/voters/voter-slip';
+import { VoterSlipsBatchModal, type BatchSlipItem } from '@/components/voters/voter-slips-batch';
+import { subscribeCollectionOf, useLiveQuery } from '@/hooks/use-live';
 import { useSession } from '@/stores/session';
+import { useUi } from '@/stores/ui';
+import { buildMyEditsQuery } from '@/lib/api';
 import { can, visibleWards } from '@/lib/roles';
 import { getAllVoters, getWards, photoUrlFor } from '@/lib/roll/bundled';
 import {
@@ -43,10 +54,17 @@ import {
   type SearchIndex,
 } from '@/lib/roll/search';
 import { buildSlipData } from '@/lib/roll/slip';
-import type { RollVoter, VoterView, WardMeta, WardsBundle } from '@/lib/roll/types';
+import type {
+  RollVoter,
+  VoterOverlay,
+  VoterView,
+  WardMeta,
+  WardsBundle,
+} from '@/lib/roll/types';
 import { viewOf } from '@/lib/roll/types';
 import { cn } from '@/lib/util';
 import { useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 /** The scope chips' labels — same four groups the mobile list exposes. */
 const SCOPE_LABELS: Record<SearchScope, string> = {
@@ -62,9 +80,10 @@ const PAGE_SIZE = 60;
 export default function VotersPage() {
   const role = useSession((s) => s.role);
   const wardNo = useSession((s) => s.wardNo);
+  const uid = useSession((s) => s.uid);
 
   const [bundle, setBundle] = useState<WardsBundle | null>(null);
-  const [rows, setRows] = useState<VoterView[] | null>(null);
+  const [rows, setRows] = useState<RollVoter[] | null>(null);
   const [failed, setFailed] = useState(false);
 
   const [ward, setWard] = useState<number | 'all'>('all');
@@ -73,12 +92,58 @@ export default function VotersPage() {
   const [shown, setShown] = useState(PAGE_SIZE);
   const [slip, setSlip] = useState<VoterView | null>(null);
 
+  /**
+   * Ticked voters, shared by the two bulk actions: `Print slips` tiles their
+   * papers on A4, and `Bulk phone` opens mobile's phone-update screen. Ids,
+   * not row objects — a live overlay update replaces the row while the
+   * selection must survive.
+   */
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
+  const [bulkPhoneOpen, setBulkPhoneOpen] = useState(false);
+  const [batchOpen, setBatchOpen] = useState(false);
+
   const allowed = useMemo(
     () => (bundle ? visibleWards(role, { wardNo }, bundle.wards.map((w) => w.wardNo)) : null),
     [role, wardNo, bundle]
   );
 
   const mayRead = can(role, 'voterRead');
+
+  /**
+   * The signed-in account's private overlay — the same `voterEdits` documents
+   * the mobile sync pushes and the single-voter drawer writes. The bundled
+   * roll stays the base; this subscription only overlays the rows this
+   * account has edited, so a bulk-saved phone number is visible immediately
+   * and a number saved on the phone appears here without a reload.
+   */
+  const editsQuery = useLiveQuery<Array<{ id: string; overlay: VoterOverlay }>>({
+    key: ['my-voter-edits', uid ?? '-'],
+    enabled: mayRead && uid != null,
+    subscribe: ({ emit, fail }) =>
+      subscribeCollectionOf(
+        buildMyEditsQuery(uid ?? '-'),
+        (entry) => ({ id: entry.id, overlay: entry.data() as VoterOverlay }),
+        emit,
+        fail
+      ),
+  });
+
+  const overlayById = useMemo(
+    () =>
+      new Map(
+        (editsQuery.data ?? []).map((entry) => [entry.id, entry.overlay])
+      ),
+    [editsQuery.data]
+  );
+
+  /** Bundled rows with this account's overlay applied — what the page renders. */
+  const viewRows = useMemo(
+    () =>
+      rows
+        ? rows.map((voter) => viewOf(voter, overlayById.get(voter.id)))
+        : null,
+    [rows, overlayById]
+  );
 
   // One load of the whole bundled roll — 3.8 MB of static JSON, cached by
   // the browser and by `bundled.ts` for the session after that.
@@ -89,7 +154,7 @@ export default function VotersPage() {
       .then(([wards, voters]) => {
         if (cancelled) return;
         setBundle(wards);
-        setRows(voters.map((voter: RollVoter) => viewOf(voter)));
+        setRows(voters);
       })
       .catch(() => {
         if (!cancelled) setFailed(true);
@@ -118,13 +183,15 @@ export default function VotersPage() {
 
   /** Ward-scoped rows — the list never shows a ward the role cannot read. */
   const scoped = useMemo(() => {
-    if (!rows) return null;
+    if (!viewRows) return null;
     const visible =
-      allowed === null ? rows : rows.filter((row) => allowed.includes(row.wardNo));
+      allowed === null
+        ? viewRows
+        : viewRows.filter((row) => allowed.includes(row.wardNo));
     return activeWard === 'all'
       ? visible
       : visible.filter((row) => row.wardNo === activeWard);
-  }, [rows, allowed, activeWard]);
+  }, [viewRows, allowed, activeWard]);
 
   /** The search index — built once per loaded row set, never per keystroke. */
   const index = useMemo<SearchIndex>(
@@ -151,6 +218,57 @@ export default function VotersPage() {
     [bundle]
   );
 
+  /**
+   * Everything the role may touch, not just the current search/ward slice.
+   * Selection deliberately survives a search or ward change: the operator
+   * ticks voters while scanning, then prints the whole stack.
+   */
+  const selectableRows = useMemo(() => {
+    if (!viewRows) return [];
+    return allowed === null
+      ? viewRows
+      : viewRows.filter((row) => allowed.includes(row.wardNo));
+  }, [viewRows, allowed]);
+
+  const selectedRows = useMemo(
+    () => selectableRows.filter((row) => selectedIds.has(row.id)),
+    [selectableRows, selectedIds]
+  );
+
+  const toggleSelected = (voterId: string) => {
+    setSelectedIds((previous) => {
+      const next = new Set(previous);
+      if (next.has(voterId)) next.delete(voterId);
+      else next.add(voterId);
+      return next;
+    });
+  };
+
+  /** Tick the current page — the fast path to a 21-slip A4 sheet. */
+  const selectShown = () => {
+    if (!filtered) return;
+    setSelectedIds((previous) => {
+      const next = new Set(previous);
+      for (const row of filtered.slice(0, shown)) next.add(row.id);
+      return next;
+    });
+  };
+
+  const clearSelection = () => setSelectedIds(new Set());
+
+  const batchItems = useMemo<BatchSlipItem[]>(
+    () =>
+      selectedRows.map((row) => ({
+        id: row.id,
+        data: buildSlipData({
+          voter: row,
+          ward: wardMeta.get(row.wardNo),
+          photoUrl: photoUrlFor(row.id, row.wardNo),
+        }),
+      })),
+    [selectedRows, wardMeta]
+  );
+
   const openSlip = (row: VoterView) => {
     setSlip(row);
   };
@@ -163,13 +281,6 @@ export default function VotersPage() {
       photoUrl: photoUrlFor(slip.id, slip.wardNo),
     });
   }, [slip, wardMeta]);
-
-  useEffect(() => {
-    console.log("Voter slip debug:", {
-      selectedVoter: !!slip,
-      payloadAvailable: !!slipPayload,
-    });
-  }, [slip, slipPayload]);
 
   /* ------------------------------------------------------------------ gates */
 
@@ -186,7 +297,9 @@ export default function VotersPage() {
   }
 
   return (
-    <MotionPage className='space-y-5'>
+    <MotionPage
+      className={cn('space-y-5', selectedRows.length > 0 && 'pb-24')}
+    >
       {/* ── header + controls ─────────────────────────────────────── */}
       <Panel className='flex flex-col gap-3 p-4'>
         <div className='flex flex-wrap items-center gap-3'>
@@ -242,6 +355,26 @@ export default function VotersPage() {
             </Chip>
           ))}
         </div>
+
+        {/* Selection survives a scroll: the actions themselves live in the
+            floating bar below, so a tick 40 rows down is still one press from
+            printing. This row only starts the selection. */}
+        <div className='flex flex-wrap items-center gap-2 border-t border-line pt-3'>
+          <span className='text-xs text-mist-600'>
+            {selectedRows.length > 0
+              ? `${selectedRows.length.toLocaleString()} selected · use the action bar below`
+              : 'Select voters to print slips or update phone numbers in bulk.'}
+          </span>
+          <Button
+            variant='ghost'
+            className='ml-auto'
+            onClick={selectShown}
+            disabled={!filtered || filtered.length === 0}
+          >
+            Select page (
+            {filtered ? Math.min(shown, filtered.length).toLocaleString() : 0})
+          </Button>
+        </div>
       </Panel>
 
       {/* ── states ────────────────────────────────────────────────── */}
@@ -271,7 +404,13 @@ export default function VotersPage() {
         /* ── the list ──────────────────────────────────────────────── */
         <div className='space-y-3'>
           {filtered.slice(0, shown).map((row) => (
-            <RollRow key={row.id} row={row} onOpen={() => openSlip(row)} />
+            <RollRow
+              key={row.id}
+              row={row}
+              selected={selectedIds.has(row.id)}
+              onToggle={() => toggleSelected(row.id)}
+              onOpen={() => openSlip(row)}
+            />
           ))}
           {filtered.length > shown ? (
             <Panel className='p-3 text-center'>
@@ -283,6 +422,17 @@ export default function VotersPage() {
         </div>
       )}
 
+      {/* ── the selection bar (portalled: the page animates with a transform,
+             and a fixed child of that transform would scroll with the page) ── */}
+      {selectedRows.length > 0 ? (
+        <SelectionBar
+          count={selectedRows.length}
+          onBulkPhone={() => setBulkPhoneOpen(true)}
+          onPrint={() => setBatchOpen(true)}
+          onClear={clearSelection}
+        />
+      ) : null}
+
       {/* ── the slip ───────────────────────────────────────────────── */}
       {slip && slipPayload ? (
         <VoterSlipModal
@@ -292,6 +442,23 @@ export default function VotersPage() {
           data={slipPayload}
           voterId={slip.id}
           onClose={() => setSlip(null)}
+        />
+      ) : null}
+
+      {/* ── the batch sheet ────────────────────────────────────────── */}
+      {batchOpen && batchItems.length > 0 ? (
+        <VoterSlipsBatchModal
+          items={batchItems}
+          onClose={() => setBatchOpen(false)}
+        />
+      ) : null}
+
+      {/* ── bulk phone, the mobile screen ──────────────────────────── */}
+      {bulkPhoneOpen && selectedRows.length > 0 ? (
+        <BulkPhoneModal
+          voters={selectedRows}
+          onSaved={clearSelection}
+          onClose={() => setBulkPhoneOpen(false)}
         />
       ) : null}
     </MotionPage>
@@ -306,7 +473,17 @@ export default function VotersPage() {
  * labelled data slots, and the slip button. Clicking the row opens the slip;
  * the EPIC stays selectable text (people copy it constantly).
  */
-function RollRow({ row, onOpen }: { row: VoterView; onOpen: () => void }) {
+function RollRow({
+  row,
+  selected,
+  onToggle,
+  onOpen,
+}: {
+  row: VoterView;
+  selected: boolean;
+  onToggle: () => void;
+  onOpen: () => void;
+}) {
   const [photoFailed, setPhotoFailed] = useState(false);
   const e = row.effective;
   const photo = photoUrlFor(row.id, row.wardNo);
@@ -324,7 +501,34 @@ function RollRow({ row, onOpen }: { row: VoterView; onOpen: () => void }) {
         }
       }}
     >
-      <Panel className='flex items-start gap-4 p-4 transition-colors hover:border-brand-400/40'>
+      <Panel
+        className={cn(
+          'flex items-start gap-3 p-4 transition-colors hover:border-brand-400/40',
+          selected && 'border-brand-400/60 bg-brand-500/[0.06]'
+        )}
+      >
+      {/* The tick is what "select these for the batch" means; it sits before
+          the photo so a scanned column of ticks reads as one stack. */}
+      <button
+        type='button'
+        role='checkbox'
+        aria-checked={selected}
+        aria-label={`Select ${e.name}`}
+        onClick={(event) => {
+          event.stopPropagation();
+          onToggle();
+        }}
+        onKeyDown={(event) => event.stopPropagation()}
+        className={cn(
+          'mt-5 grid size-5 shrink-0 place-items-center rounded border transition-colors',
+          selected
+            ? 'border-brand-400 bg-brand-500 text-white'
+            : 'border-line-strong bg-white/[0.03] text-transparent hover:border-brand-400/60'
+        )}
+      >
+        <Check className='size-3.5' strokeWidth={3} />
+      </button>
+
       {/* Photo — placeholder box when the bundle has no portrait for this
           id, exactly the mobile precedence minus the user-captured layer. */}
       {photo && !photoFailed ? (
@@ -362,6 +566,7 @@ function RollRow({ row, onOpen }: { row: VoterView; onOpen: () => void }) {
           <Slot label='वार्ड' value={String(row.wardNo).padStart(2, '0')} />
           <Slot label='क्रमांक' value={String(row.serialNo)} />
           <Slot label='EPIC' value={row.epicId} mono />
+          {e.phone ? <Slot label='मोबाइल' value={e.phone} mono /> : null}
           <Slot label='मकान' value={e.houseNo || '—'} />
           <Slot label='आयु/लिंग' value={`${row.age} / ${row.gender === 'female' ? 'महिला' : row.gender === 'male' ? 'पुरुष' : 'अन्य'}`} />
           {e.locality ? (
@@ -405,5 +610,57 @@ function Slot({
       <span className='text-mist-600'>{label}: </span>
       <span className={cn('font-medium text-mist-200', mono && 'font-mono')}>{value}</span>
     </span>
+  );
+}
+
+/**
+ * The two bulk actions, pinned to the viewport rather than left at the head of
+ * a sixty-row page. Portalled to <body> because the routed page animates with
+ * a transform, which would otherwise become the containing block for a
+ * `position: fixed` child and make the bar scroll with the list.
+ */
+function SelectionBar({
+  count,
+  onBulkPhone,
+  onPrint,
+  onClear,
+}: {
+  count: number;
+  onBulkPhone: () => void;
+  onPrint: () => void;
+  onClear: () => void;
+}) {
+  const collapsed = useUi((s) => s.sidebarCollapsed);
+  if (typeof document === 'undefined') return null;
+
+  return createPortal(
+    <div
+      className={cn(
+        'fixed bottom-0 right-0 z-40 border-t border-line bg-ink-900/95 px-4 py-3 shadow-[0_-24px_50px_-30px_rgb(0_0_0/0.9)] backdrop-blur transition-[left] duration-200 sm:px-6',
+        // Match the shell's content offset: the bar must not cover the rail.
+        collapsed ? 'left-0 md:left-[84px]' : 'left-0 md:left-[264px]'
+      )}
+    >
+      <div className='mx-auto flex max-w-6xl flex-wrap items-center gap-2'>
+        <span className='text-xs font-semibold text-brand-400'>
+          {count.toLocaleString()} selected
+        </span>
+        <span className='hidden text-xs text-mist-600 sm:inline'>
+          · one A4 sheet holds 21 slips
+        </span>
+        <Button variant='secondary' className='ml-auto' onClick={onBulkPhone}>
+          <Phone className='size-3.5' />
+          Bulk phone
+        </Button>
+        <Button variant='primary' onClick={onPrint}>
+          <Printer className='size-3.5' />
+          Print slips ({count.toLocaleString()})
+        </Button>
+        <Button variant='ghost' onClick={onClear}>
+          Clear
+        </Button>
+      </div>
+    </div>,
+    document.body
   );
 }

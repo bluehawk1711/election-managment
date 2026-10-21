@@ -865,3 +865,343 @@ body {
     margin: 0 auto !important;
   }
 }
+
+/* ================================================================ */
+/* Batch voter slips — 3 columns × 7 rows on A4 (21 per sheet)        */
+/*                                                                    */
+/* The single slip is a cut-out artefact at 420px; twenty-one of them */
+/* on one A4 sheet need a compact variant. These styles own ONLY the  */
+/* batch modal and the compact paper, so the single-slip design (and  */
+/* its reference PDF) is untouched.                                   */
+/*                                                                    */
+/* A4 printable box at the global 10mm margin is 190 × 277mm. With a  */
+/* 2mm gutter that is 62 × 38.1mm per slip; the compact paper is      */
+/* built to that budget, not scaled with `transform` (which would     */
+/* blur the text and break pagination).                                */
+/* ================================================================ */
+
+.slip-batch-overlay {
+  padding: 16px;
+}
+
+.slip-batch-modal {
+  display: flex;
+  flex-direction: column;
+  width: min(1000px, 100%);
+  max-height: 94vh;
+  overflow: hidden;
+  border-radius: 18px;
+  background: #d1d5db;
+  color: #1f2937;
+  font-family: var(--font-devanagari, 'Noto Sans Devanagari'), 'Mukta',
+    system-ui, sans-serif;
+  box-shadow: 0 40px 90px -30px rgb(0 0 0 / 0.65);
+  animation: slip-riseIn 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.slip-batch-header {
+  flex-shrink: 0;
+}
+
+.slip-batch-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  padding: 10px 14px;
+  border-bottom: 1px solid #d1d5db;
+  background: #f9fafb;
+  font-size: 11px;
+  color: #4b5563;
+}
+
+.slip-batch-toolbar > span {
+  flex: 1;
+  min-width: 220px;
+}
+
+.slip-batch-toolbar .slip-printBtn {
+  margin-left: auto;
+}
+
+.slip-batch-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 14px;
+  background: #d1d5db;
+}
+
+/* One A4 page on screen: real millimetres, so the preview is the print. */
+.slip-batch-page {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-rows: repeat(7, minmax(0, 1fr));
+  gap: 2mm;
+  width: 190mm;
+  height: 276mm;
+  margin: 0 auto 18px;
+  padding: 0;
+  box-sizing: border-box;
+  background: #fff;
+  box-shadow: 0 8px 30px -12px rgb(0 0 0 / 0.45);
+}
+
+.slip-batch-page:last-child {
+  margin-bottom: 0;
+}
+
+.slip-batch-cell {
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* ------------------------------------------------------------- compact paper */
+
+.slip-compact {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35mm;
+  width: 100%;
+  height: 100%;
+  padding: 1.2mm 1.4mm;
+  box-sizing: border-box;
+  overflow: hidden;
+  border: 0.3mm dashed #6b7280;
+  border-radius: 0.8mm;
+  background: #fff;
+  color: #1f2937;
+  font-family: var(--font-devanagari, 'Noto Sans Devanagari'), 'Mukta',
+    system-ui, sans-serif;
+  font-size: 5.2pt;
+  line-height: 1.14;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+.slip-compact-strip {
+  flex-shrink: 0;
+  height: 0.9mm;
+  border-radius: 999px;
+}
+
+.slip-compact-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1mm;
+  min-width: 0;
+}
+
+.slip-compact-badge {
+  display: inline-block;
+  flex-shrink: 0;
+  border-radius: 999px;
+  padding: 0.15mm 1mm;
+  background: #ea580c;
+  color: #fff;
+  font-size: 4.2pt;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+
+.slip-compact-ward {
+  flex-shrink: 0;
+  border-radius: 0.8mm;
+  padding: 0.1mm 0.8mm;
+  background: #fef3c7;
+  color: #92400e;
+  font-size: 4.6pt;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.slip-compact-title {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  color: #111827;
+  font-size: 5.6pt;
+  font-weight: 800;
+  line-height: 1.1;
+  text-align: center;
+}
+
+.slip-compact-main {
+  display: flex;
+  align-items: flex-start;
+  gap: 1mm;
+  min-height: 0;
+}
+
+.slip-compact-fields {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.3mm;
+  min-width: 0;
+}
+
+.slip-compact-name {
+  overflow: hidden;
+  color: #111827;
+  font-size: 6.6pt;
+  font-weight: 800;
+  line-height: 1.05;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.slip-compact-nameEn {
+  display: block;
+  overflow: hidden;
+  color: #6b7280;
+  font-size: 4.3pt;
+  font-weight: 500;
+  line-height: 1.05;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.slip-compact-line {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.slip-compact-label {
+  color: #6b7280;
+  font-weight: 600;
+}
+
+.slip-compact-photoBox {
+  flex-shrink: 0;
+}
+
+.slip-compact-photo {
+  display: block;
+  width: 10.5mm;
+  height: 12.5mm;
+  border: 0.25mm solid #d1d5db;
+  border-radius: 0.8mm;
+  object-fit: cover;
+}
+
+.slip-compact-photoPlaceholder {
+  display: grid;
+  place-items: center;
+  border-style: dashed;
+  background: #f9fafb;
+  color: #9ca3af;
+  font-size: 3.8pt;
+  line-height: 1;
+}
+
+.slip-compact-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.7mm;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.slip-compact-epic {
+  overflow: hidden;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 5pt;
+  text-overflow: ellipsis;
+}
+
+.slip-compact-booth {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  border: 0.25mm solid #e5e7eb;
+  border-radius: 0.8mm;
+  padding: 0.25mm 0.8mm;
+  background: #f9fafb;
+  color: #374151;
+  font-size: 4.6pt;
+  line-height: 1.12;
+}
+
+.slip-compact-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.8mm;
+  margin-top: auto;
+  overflow: hidden;
+  border-top: 0.25mm solid #d1d5db;
+  padding-top: 0.3mm;
+  color: #111827;
+  font-size: 4.2pt;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .slip-batch-modal { animation: none; }
+}
+
+/* ---------- batch print: only the 3 × 7 pages survive ---------- */
+@media print {
+  .slip-batch-header,
+  .slip-batch-toolbar {
+    display: none !important;
+  }
+
+  .slip-batch-modal,
+  .slip-batch-body {
+    display: block !important;
+    position: static !important;
+    width: auto !important;
+    height: auto !important;
+    max-width: none !important;
+    max-height: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    border-radius: 0 !important;
+    background: none !important;
+    box-shadow: none !important;
+    animation: none !important;
+  }
+
+  .slip-batch-page {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    grid-template-rows: repeat(7, minmax(0, 1fr)) !important;
+    gap: 2mm !important;
+    width: 100% !important;
+    /* 276mm inside the 277mm printable box: the spare millimetre stops
+       Chrome from rounding the last row onto a blank second page. */
+    height: 276mm !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    break-after: page;
+    page-break-after: always;
+  }
+
+  .slip-batch-page:last-child {
+    break-after: auto;
+    page-break-after: auto;
+  }
+
+  .slip-batch-cell {
+    overflow: hidden !important;
+    break-inside: avoid;
+  }
+
+  .slip-compact {
+    border: 0.3mm dashed #000 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}
