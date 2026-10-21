@@ -21,7 +21,7 @@
  *
  * Three overlay fields deliberately do NOT travel:
  *
- *   support      `firestore.rules` §2 bans political profiling keys on every
+ *   support      `database.rules.json` §2 bans political profiling keys on every
  *                client-writable path, and `support` (with us / against us) is
  *                on that banlist — the boundary holds for this collection too.
  *   photoUrl     when it is a `file://`/`data:` URI it only exists on the
@@ -55,7 +55,7 @@ import {
  * bookkeeping (`updatedAt`/`updatedBy` are added below) minus `support`
  * minus non-http `photoUrl`/`photoPublicId`.
  *
- * Kept as an explicit allowlist because `firestore.rules` rejects anything
+ * Kept as an explicit allowlist because `database.rules.json` rejects anything
  * outside its own allowlist — the two lists must agree, and a name that does
  * not exist server-side fails loudly here first.
  */

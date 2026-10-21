@@ -35,7 +35,7 @@
  */
 import { initializeApp, applicationDefault } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
-import { getFirestore, FieldValue } from 'firebase-admin/firestore';
+import { getDatabaseWithUrl } from 'firebase-admin/database';
 import { randomBytes } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
@@ -43,9 +43,6 @@ import { fileURLToPath } from 'node:url';
 
 const DIR = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(DIR, '..');
-
-/** Must match `FIRESTORE_DATABASE_ID` in `lib/firebase.ts`. */
-const FIRESTORE_DATABASE_ID = 'default';
 
 /** Must match the `AppRole` union in `lib/roles.ts`. */
 const ROLES = ['karykarta', 'admin', 'superAdmin', 'developer'];
@@ -118,9 +115,17 @@ async function main() {
     process.exit(1);
   }
 
-  initializeApp({ credential: applicationDefault(), projectId });
-  const auth = getAuth();
-  const db = getFirestore(FIRESTORE_DATABASE_ID);
+  const app = initializeApp({ credential: applicationDefault(), projectId });
+  const auth = getAuth(app);
+  // `getDatabaseWithUrl`, not `getDatabase`: the Admin SDK cannot discover the
+  // regional host from the service account, and the legacy `.firebaseio.com`
+  // form 404s with an empty body.
+  const rtdb = getDatabaseWithUrl(
+    process.env.EXPO_PUBLIC_FIREBASE_DATABASE_URL ||
+      dotEnv.EXPO_PUBLIC_FIREBASE_DATABASE_URL ||
+      `https://${projectId}-default-rtdb.asia-southeast1.firebasedatabase.app`,
+    app
+  );
 
   // 1. Refuse rather than reset. Resetting a password here would be a way to
   //    lock a real account owner out of their own project. `--adopt` is the
@@ -181,23 +186,27 @@ async function main() {
   // 3. The profile. Same shape as `hooks/useCreateAccount.ts`, and
   //    `onboarded: true` because a role was assigned deliberately — there is
   //    nothing left for the onboarding flow to ask.
-  await db
-    .collection('users')
-    .doc(user.uid)
-    .set({
-      email: user.email ?? null,
-      displayName: user.displayName ?? null,
-      photoURL: user.photoURL ?? null,
-      onboarded: true,
-      role,
-      ...(wardNo != null ? { wardNo } : {}),
-      createdAt: FieldValue.serverTimestamp(),
-      updatedAt: FieldValue.serverTimestamp(),
-    });
+  await rtdb.ref(`users/${user.uid}`).set({
+    email: user.email ?? null,
+    displayName: user.displayName ?? null,
+    photoURL: user.photoURL ?? null,
+    onboarded: true,
+    role,
+    ...(wardNo != null ? { wardNo } : {}),
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+  });
 
-  console.log(`\n✔ Created ${email} in ${projectId} (database "${FIRESTORE_DATABASE_ID}")\n`);
+  // 4. The claim. Authority lives on the token, not in the profile: an account
+  //    with a profile role and no claim renders the right UI and is refused by
+  //    every rule. `grant-claims.mjs` remains the bulk/repair path.
+  const claims = { role, ...(wardNo != null ? { wardNo } : {}) };
+  await auth.setCustomUserClaims(user.uid, claims);
+
+  console.log(`\n✔ Created ${email} in ${projectId} (Realtime Database)\n`);
   console.log(`  uid        : ${user.uid}`);
   console.log(`  role       : ${role}${wardNo != null ? ` (ward ${wardNo})` : ''}`);
+  console.log(`  claims     : ${JSON.stringify(claims)}`);
   console.log(`  verified   : ${verifyEmail}`);
   console.log(`  onboarded  : true — the app goes straight to the tabs\n`);
   console.log('  Sign in with:');
@@ -210,11 +219,13 @@ async function main() {
       console.log('  Save it now — it is not stored anywhere and cannot be re-shown.\n');
     }
   }
-  console.log('  The firestore.rules "role grant" path now allows this account to');
+  console.log('  database.rules.json\'s "role grant" path now allows this account to');
   console.log('  create others in-app from More → Accounts.\n');
 }
 
-main().catch((error) => {
-  console.error(`\n✖ Could not create the account: ${error.message}\n`);
-  process.exit(1);
-});
+main()
+  .then(() => process.exit(0))
+  .catch((error) => {
+    console.error(`\n✖ Could not create the account: ${error.message}\n`);
+    process.exit(1);
+  });

@@ -40,7 +40,7 @@ export default function TabsLayout() {
       <Tabs.Screen name='voters' options={{ title: t('nav.voters') }} />
       {/* Hidden, not deleted: the route stays (deep links and the booth
           detail screen survive) but the tab is gone — its data source is the
-          Firestore `booths` collection, which the campaign has not seeded, so
+          `booths` collection, which the campaign has not seeded, so
           the screen could only ever render empty. The booth REPORT in the
           Reports tab derives from the roll bundle and is the screen that
           actually has data. `href: null` is what `FloatingTabBar` filters on. */}

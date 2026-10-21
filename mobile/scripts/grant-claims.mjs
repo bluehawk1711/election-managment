@@ -25,14 +25,14 @@
  *
  * ## Reading the source of truth
  *
- * Role/ward/team/lock are read from the profile in Firestore, which is still
- * the place the app writes them during the migration — `lib/db` is the RTDB
- * door, but this script is deliberately independent of the client code it
- * configures.
+ * Role/ward/team/lock are read from the profile in **Realtime Database** — the
+ * same node the app and the admin panel write. Reading Firestore here would be
+ * reading a backup: after the cutover, a role change lands in RTDB and this
+ * script would happily re-grant the old one.
  */
 import { initializeApp, cert, getApps } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
-import { getFirestore } from 'firebase-admin/firestore';
+import { getDatabaseWithUrl } from 'firebase-admin/database';
 import { readFileSync } from 'node:fs';
 
 const sa = JSON.parse(readFileSync(new URL('../service-account.json', import.meta.url), 'utf8'));
@@ -40,7 +40,16 @@ const app = getApps().length
   ? getApps()[0]
   : initializeApp({ credential: cert(sa), projectId: sa.project_id });
 const auth = getAuth(app);
-const db = getFirestore(app, 'default');
+const DATABASE_URL =
+  process.env.EXPO_PUBLIC_FIREBASE_DATABASE_URL ||
+  `https://${sa.project_id}-default-rtdb.asia-southeast1.firebasedatabase.app`;
+const db = getDatabaseWithUrl(DATABASE_URL, app);
+
+/** The profile node, or `null` when no profile exists yet. */
+async function profileFor(uid) {
+  const snapshot = await db.ref(`users/${uid}`).once('value');
+  return snapshot.exists() ? snapshot.val() : null;
+}
 
 const ROLES = ['karykarta', 'admin', 'superAdmin', 'developer'];
 
@@ -64,6 +73,9 @@ function claimsFor(profile) {
     ...(typeof profile.wardNo === 'number' ? { wardNo: profile.wardNo } : {}),
     ...(typeof profile.teamId === 'string' && profile.teamId !== '' ? { teamId: profile.teamId } : {}),
     ...(profile.locked === true ? { locked: true } : {}),
+    // Not device-bound. The rules cannot read this sibling from the `device`
+    // node, so the exemption has to ride on the token like the role does.
+    ...(profile.multiDevice === true ? { multiDevice: true } : {}),
   };
 }
 
@@ -72,6 +84,7 @@ function describe(c) {
   if ('wardNo' in c) parts.push(`wardNo=${c.wardNo}`);
   if ('teamId' in c) parts.push(`teamId=${c.teamId}`);
   if ('locked' in c) parts.push('LOCKED');
+  if ('multiDevice' in c) parts.push('MULTI-DEVICE');
   return parts.join(' ');
 }
 
@@ -110,8 +123,7 @@ async function main() {
     for (const target of positional) {
       const user = users.find((u) => (u.email || '').toLowerCase() === target.toLowerCase());
       if (!user) throw new Error(`No Auth user for ${target}`);
-      const doc = await db.doc(`users/${user.uid}`).get();
-      await apply(user, doc.exists ? doc.data() : null);
+      await apply(user, await profileFor(user.uid));
     }
     console.log('\nTokens refresh within the hour; sessions are NOT signed out.');
     return;
@@ -119,17 +131,18 @@ async function main() {
 
   let changed = 0;
   for (const user of users) {
-    const doc = await db.doc(`users/${user.uid}`).get();
     // An Auth user with no profile gets NO claims: inert, but still able to
     // onboard their own profile, which needs no role at all.
-    await apply(user, doc.exists ? doc.data() : null);
+    await apply(user, await profileFor(user.uid));
     changed += 1;
   }
   console.log(`\nSet claims on ${changed}/${users.length} Auth users.`);
   console.log('Tokens refresh within the hour; sessions are NOT signed out.');
 }
 
-main().catch((err) => {
-  console.error(err.message || err);
-  process.exit(1);
-});
+main()
+  .then(() => process.exit(0))
+  .catch((err) => {
+    console.error(err.message || err);
+    process.exit(1);
+  });

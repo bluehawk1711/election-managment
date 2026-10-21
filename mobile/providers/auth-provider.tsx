@@ -210,7 +210,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   // ---------------------------------------------------------------------
-  // Per-device account lock (firestore.rules §users).
+  // Per-device account lock (database.rules.json §users).
   //
   // Runs on every profile snapshot for a signed-in user and enforces three
   // states, in this order:
@@ -230,7 +230,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   //     to swap the binding (from a modified client) is rejected server-side.
   //
   // The super-admin exemption: a super admin skips step 2 entirely. They
-  // rebind instead of locking (firestore.rules §users allows a device write
+  // rebind instead of locking (database.rules.json §users allows a device write
   // for the `superAdmin` role on any write, not just the first), because
   // freezing the one account that unlocks everyone else behind a single
   // phone would be recovery-hostage-taking. A deliberate admin lock

@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useToast } from '@/components/ui/toast';
 
 /**
- * The one way every screen runs a Firestore write.
+ * The one way every screen runs a database write.
  *
  * Catches, translates the Firebase error code to prose and shows it; on
  * success shows the caller's toast. Returns a boolean so a form can stay open

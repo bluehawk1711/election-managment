@@ -200,7 +200,7 @@ function Credentials({
         // Not a missing password — one this caller is not entitled to. An
         // `accountView` holder (admin upward) reads the roster; only
         // `accountManage` (super admin upward) reads what it was created with,
-        // which is the same split `firestore.rules` draws for the writes.
+        // which is the same split `database.rules.json` draws for the writes.
         <Text variant='caption'>{t('accounts.passwordNotForRole')}</Text>
       ) : loading ? (
         <View style={styles.loading}>

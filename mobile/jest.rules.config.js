@@ -1,10 +1,13 @@
 /**
- * Security rules tests, run against the Firestore and Storage emulators.
+ * Security rules tests, run against the Storage emulator.
  *
  * A separate project from `npm test` on purpose: these run under Node rather
- * than jest-expo, they need the emulators up, and they are the one place the
- * rules files are actually executed. Drive them with `npm run rules:test`,
- * which starts the emulators, runs this config, and shuts them down again.
+ * than jest-expo, they need the emulator up, and they are the one place
+ * `storage.rules` is actually executed. The Realtime Database rules cannot be
+ * exercised this way (they depend on custom claims and cross-node paths), so
+ * they are covered by `scripts/probe-writes.mjs` against the live project.
+ * Drive these with `npm run rules:test`, which starts the emulator, runs this
+ * config, and shuts it down again.
  *
  * @type {import('jest').Config}
  */

@@ -1,7 +1,7 @@
 /**
  * The release gate the app reads before anything else works.
  *
- * `appConfig/general` (firestore.rules gives it an unauthenticated read on
+ * `appConfig/general` (database.rules.json gives it an unauthenticated read on
  * purpose — an outdated build must be able to learn WHY it is locked, even
  * before sign-in):
  *
@@ -16,7 +16,7 @@
  *
  * Failure policy: **fail open.** A missing doc, an offline launch or a
  * malformed value all resolve to `null` → no gate. Locking every user out
- * because Firestore was unreachable would be a far worse failure than
+ * because the database was unreachable would be a far worse failure than
  * letting one stale build run a little longer — the rules server-side still
  * reject whatever the old client cannot understand.
  */

@@ -23,13 +23,13 @@
     "verify:live": "node scripts/verify-live.mjs",
     "verify:client": "node scripts/verify-client.mjs",
     "probe:owner": "node scripts/probe-owner-write.mjs",
+    "probe:writes": "node scripts/probe-writes.mjs",
+    "reconcile:profiles": "node scripts/reconcile-profiles.mjs",
     "grant:claims": "node scripts/grant-claims.mjs",
     "emulators": "firebase emulators:start",
-    "emulators:seed": "firebase emulators:exec --only firestore \"node scripts/seed.mjs\"",
-    "rules:test": "firebase emulators:exec --only firestore,storage \"npm run test:rules\"",
+    "rules:test": "firebase emulators:exec --only storage \"npm run test:rules\"",
     "//deploy:rules": "The database rules are the live ones. Firestore is a read-only backup now: deploying its rules would only re-publish a file nothing enforces, so it is deliberately NOT in this list.",
     "deploy:rules": "firebase deploy --only database,storage",
-    "deploy:indexes": "firebase deploy --only firestore:indexes",
     "deploy": "firebase deploy --only database,storage"
   },
   "dependencies": {

@@ -1,14 +1,14 @@
 /**
  * Role model and permission checks (plan-voters.md §5).
  *
- * Pure and synchronous on purpose: guards call this during render, rules-tests
- * mirror the same vocabulary, and neither should need a Firebase round-trip.
+ * Pure and synchronous on purpose: guards call this during render, and neither
+ * should need a Firebase round-trip.
  *
  * Two things this file deliberately does NOT do:
- * - it never decides anything server-side — `firestore.rules` re-checks every
- *   capability with `get(/users/$(uid))`, this is UX only;
+ * - it never decides anything server-side — `database.rules.json` re-checks
+ *   every capability against the caller's custom CLAIM, this is UX only;
  * - it never treats a missing role as a role. A user whose `users/{uid}`
- *   document has no `role` yet has no capabilities, so a freshly created
+ *   node has no `role` yet has no capabilities, so a freshly created
  *   account starts inert rather than privileged.
  */
 import type { TranslationKey } from '@/i18n/locales/en';
@@ -36,7 +36,8 @@ const RANK: Record<AppRole, number> = {
  * and sees who is on the team — while creating accounts and granting roles
  * stays with `accountManage`. View and manage are separate capabilities on
  * purpose, so widening visibility cannot accidentally widen write access; the
- * same split exists in `firestore.rules` (`canViewAccounts` / `canManageAccounts`).
+ * same split exists in `database.rules.json` (the R2/R3 predicates in its
+ * header).
  */
 const CAPABILITIES = {
   voterRead: ['karykarta', 'admin', 'superAdmin', 'developer'],

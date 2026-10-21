@@ -1,7 +1,7 @@
 /**
  * The device identity this install reports to `users/{uid}.device`.
  *
- * The per-device account lock (firestore.rules §users) works on three facts,
+ * The per-device account lock (database.rules.json §users) works on three facts,
  * all of them client-reported because rules cannot see the device:
  *
  *   1. a stable per-install fingerprint — a UUID minted once into SecureStore
@@ -24,7 +24,7 @@ import * as SecureStore from 'expo-secure-store';
 const FINGERPRINT_KEY = 'device.fingerprint.id';
 const LOCK_NOTICE_KEY = 'auth.lockNotice';
 
-/** The four keys `firestore.rules`' `validDevice` accepts — byte for byte. */
+/** The four keys `database.rules.json` accepts on `device` — byte for byte. */
 export interface DeviceInfo {
   /** Stable per-install UUID (36 chars — rules demand 8..128). */
   id: string;
@@ -36,7 +36,7 @@ export interface DeviceInfo {
   lastActiveAt: number;
 }
 
-/** Why an account was locked — the same enum firestore.rules validates. */
+/** Why an account was locked — the same enum database.rules.json validates. */
 export type LockReason = 'device_change' | 'admin';
 
 /** The lock message shown on the sign-in screen after a forced sign-out. */

@@ -24,7 +24,7 @@ export default function OnboardingScreen() {
           id: 'realtime',
           title: 'Everything stays in sync',
           description:
-            'Your tasks are a live Firestore listener. Change one on another device and it lands here without a refresh.',
+            'Your tasks are a live database listener. Change one on another device and it lands here without a refresh.',
           icon: <Icon name={Zap} size={48} color={primary} />,
         },
         {

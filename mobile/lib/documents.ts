@@ -1,17 +1,14 @@
 /**
- * The Firestore snapshot → plain object boundary.
+ * The database snapshot → plain object boundary.
  *
  * `import type` only, so nothing here reaches `firebase/*` at runtime. That is
  * what lets `__tests__/documents.test.ts` run with no mocks, no emulator and no
- * environment variables — and it is why the Timestamp check below is
- * structural rather than `instanceof Timestamp`, which is unreliable the moment
- * two copies of the SDK end up in a bundle.
+ * environment variables.
  *
- * This module exists where a Supabase project would have `lib/realtime.ts`.
- * There is no `applyChange` equivalent: `onSnapshot` hands back the entire
- * ordered result set on every change, so folding `docChanges()` into a local
- * array by hand would redo work the SDK just did. `docChanges()` is for
- * animating a diff, not for staying correct.
+ * This module predates the RTDB port and still carries the old Task mapper,
+ * which no screen imports any more — `lib/mappers.ts` is the live one. `Profile`
+ * and `profileFromDoc` below are still the app's profile boundary (the auth
+ * provider and the roster screens import them).
  *
  * The one runtime import is `lib/roles.ts`, which is itself pure — no
  * Firebase, no React — so the no-mock property of the tests here is kept.
@@ -27,9 +24,9 @@ export interface Task {
   createdAt: number | null;
   /** True while this device's write has not been acknowledged by the server. */
   pending: boolean;
-  /** Lowercased words from `text`. Firestore has no `ilike`. */
+  /** Lowercased words from `text`. There is no server-side `ilike`. */
   searchTokens: string[];
-  /** The uid that owns this task. firestore.rules checks it on every operation. */
+  /** The uid recorded as the task's creator. */
   ownerId: string;
 }
 
@@ -53,15 +50,20 @@ export interface Profile {
    * "the" device. `null` before the first launch and after a super-admin
    * unlock, which clears the binding on purpose so the next sign-in re-binds.
    *
-   * Written by the auth provider on first sign-in only; firestore.rules
-   * refuses every owner-side modification of an existing binding, so a
-   * modified client cannot swap it out from under the lock.
+   * Written by the auth provider on first sign-in, and re-bound only by a
+   * `superAdmin` (deliberately not device-bound) or a `multiDevice` account —
+   * both exemptions arrive as custom claims, because a rule on `device` cannot
+   * read the sibling `multiDevice` field. Every other owner-side modification
+   * of an existing binding is refused, so a modified client cannot swap it out
+   * from under the lock.
    */
   device: { id: string; name: string; platform: string; lastActiveAt: number } | null;
   /**
-   * Account lock. Rules AND this into every capability (`isLocked()`), so
+   * Account lock. In the APP this gates every capability (`isLocked()`), so
    * `true` means zero voter reads, zero campaign writes, zero roster access —
    * while `users/{uid}` itself stays readable so the app can explain why.
+   * Server-side, RTDB rules cannot read this field from another path; the
+   * `locked` custom claim is what gates them (`auth.token.locked`).
    */
   locked: boolean;
   /** `'device_change'` (self-locked by a foreign sign-in) or `'admin'`. */
@@ -71,7 +73,7 @@ export interface Profile {
   /** The super admin who locked it, or `'system'` for a device lock. */
   lockedBy: string | null;
   /**
-   * Multi-device exemption (firestore.rules §users `multiDevice` path).
+   * Multi-device exemption (database.rules.json §users `multiDevice` path).
    *
    * `true` means this account is NOT single-device bound: it may sign in from
    * any number of installs and never self-locks on a foreign one — the same
@@ -83,7 +85,7 @@ export interface Profile {
   /** The super admin/developer uid who granted `multiDevice`, or null. */
   multiDeviceBy: string | null;
   /**
-   * Team label (firestore.rules §users `teamId`). Two accounts sharing a
+   * Team label (database.rules.json §users `teamId`). Two accounts sharing a
    * non-empty `teamId` may READ each other's voterEdits overlay (field
    * notes, leaning). Empty string / null = no team, shares nothing.
    * Writable only by account managers via the dedicated team-assignment
@@ -249,10 +251,10 @@ const MAX_TOKENS = 20;
  * The consequence, and it is a real one: this matches whole words only. "migra"
  * will not find "migration" the way Postgres' `ilike '%migra%'` would. When you
  * need real search, put a Typesense, Algolia or Elastic extension in front of
- * the collection — the Firestore docs list the official ones.
+ * the data.
  *
- * Capped at MAX_TOKENS because `array-contains` indexes every entry, and
- * firestore.rules rejects a longer array outright.
+ * Capped at MAX_TOKENS to bound the client-side scan; RTDB has no server-side
+ * text index, so this is the only place the cap can be enforced.
  */
 export function tokenize(text: string): string[] {
   const words = text

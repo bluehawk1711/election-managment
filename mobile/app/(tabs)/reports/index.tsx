@@ -143,7 +143,7 @@ export default function ReportsScreen() {
   }
 
   // No role is a real state, not an empty report. Every signed-in account starts
-  // with no capabilities, and `firestore.rules` denies every read — so without
+  // with no capabilities, and `database.rules.json` denies every read — so without
   // this branch a user with no role sees "No voters synced yet", which reads as
   // a data problem and sends them chasing one that does not exist.
   if (!can(role, 'voterRead')) {

@@ -17,9 +17,9 @@ import { Pressable, StyleSheet } from 'react-native';
  * of the dashboard — and the picker for the date it counts to.
  *
  * Tap anywhere on it to change the date (any signed-in voter-reader may; see
- * `canEditCampaign()` in firestore.rules), which is why the whole card is a
- * button rather than a chevron on an otherwise inert surface: there is exactly
- * one thing to do here besides read the number.
+ * the `campaigns/$campaignId` write rule in database.rules.json), which is why
+ * the whole card is a button rather than a chevron on an otherwise inert
+ * surface: there is exactly one thing to do here besides read the number.
  *
  * Four states, decided in `lib/election.ts` so Settings and this banner can
  * never disagree:

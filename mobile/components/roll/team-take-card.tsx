@@ -2,8 +2,9 @@
  * "Save to my account" — the WRITE half of team sharing.
  *
  * Two accounts on the same team read each other's `voterEdits`
- * (firestore.rules `sameTeam`), and `useRoll` merges a teammate's entry
- * UNDER the local one, so the fields they filled in are already on screen.
+ * (the `teamId` comparison in database.rules.json), and `useRoll` merges a
+ * teammate's entry UNDER the local one, so the fields they filled in are
+ * already on screen.
  * What was missing is the second half of the workflow the campaign actually
  * runs in the field: one person collects a family's numbers at the door, the
  * other finishes the round later and needs those numbers on THEIR account
@@ -24,7 +25,7 @@
  *    when it contributes something new), so `takenPatch` reads the same
  *    difference rather than recomputing a different one.
  *  - `support` is NOT taken. Political profiling never leaves the device
- *    (`firestore.rules` rejects `support` on every writable collection), and
+ *    (`database.rules.json` rejects `support` on every writable collection), and
  *    a take that wrote it locally would be data the sync can never push —
  *    a silent lie about what is stored where.
  */

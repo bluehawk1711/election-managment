@@ -2,9 +2,9 @@
  * Teammates' overlays — a READ-ONLY second layer under the roll (plan-voters.md §4).
  *
  * Two accounts sharing a non-empty `teamId` may read each other's
- * `voterEdits` (firestore.rules `sameTeam`). Those pulled documents land HERE,
- * keyed `voterId → { overlay, author }`, and deliberately do NOT touch
- * `lib/roll/overlay.ts`'s ward map:
+ * `voterEdits` (the `teamId` comparison in `database.rules.json`). Those pulled
+ * documents land HERE, keyed `voterId → { overlay, author }`, and deliberately
+ * do NOT touch `lib/roll/overlay.ts`'s ward map:
  *
  *   The owner's ward overlay is the PUSH source — `pushEdits` reads
  *   `loadWardOverlay` and uploads every queued entry back to
@@ -17,9 +17,8 @@
  *
  * Read-only by construction: this module exposes a setter and a getter, and
  * nothing that enqueues, patches or pushes. A teammate's data is never
- * writable from this device — `firestore.rules` keeps `create`/`update`/
- * `delete` on `voterEdits` owner-only, and this store has no path that could
- * even try.
+ * writable from this device — the `.write` rule on `voterEdits` is owner-only,
+ * and this store has no path that could even try.
  *
  * Storage is injected, matching `overlay.ts`, so the logic is unit-testable
  * without AsyncStorage.

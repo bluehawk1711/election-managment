@@ -21,12 +21,12 @@ import { StyleSheet } from 'react-native';
  *
  * The date is written to `campaigns/active.electionDate` through
  * `reference.updateCampaign`, which every signed-in voter-reader is allowed to
- * do (see `canEditCampaign()` in firestore.rules), and the dashboard banner
- * reacts through the same document's live snapshot. Nothing here is local:
- * one campaign, one election day, one answer for everyone.
+ * do (see the `campaigns/$campaignId` write rule in database.rules.json), and
+ * the dashboard banner reacts through the same node's live snapshot. Nothing
+ * here is local: one campaign, one election day, one answer for everyone.
  *
  * A failed save keeps this dialog OPEN. `closeOnConfirm` is off for exactly
- * this reason — Firestore here runs with a memory-only cache (lib/firebase.ts),
+ * this reason — the app runs with a memory-only cache (lib/firebase.ts),
  * so a save that cannot reach the backend rejects rather than queueing, and a
  * dialog that closes on the reader the moment it fails turns "could not save"
  * into "did it save?".

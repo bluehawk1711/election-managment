@@ -8,7 +8,7 @@ import { deleteObject, getBytes, ref, uploadBytes } from 'firebase/storage';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 
-/** storage.rules, actually executed. See rules-tests/firestore.test.ts. */
+/** storage.rules, actually executed. The RTDB rules are covered by scripts/probe-writes.mjs. */
 
 const ALICE = 'uid-alice';
 const BOB = 'uid-bob';

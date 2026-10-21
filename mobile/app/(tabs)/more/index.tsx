@@ -24,15 +24,15 @@ import { StyleSheet } from 'react-native';
  * More hub — the grid of secondary modules (plan-voters.md §6.6).
  *
  * Voted on the client's `can(role, capability)` rather than on a role string,
- * so the grid and `firestore.rules` cannot drift: both read the same vocabulary
- * from `lib/roles.ts`, and a capability that does not exist yet cannot be
- * rendered without adding it there.
+ * mirroring the capability predicates in `database.rules.json`: both read the
+ * same vocabulary from `lib/roles.ts`, and a capability that does not exist yet
+ * cannot be rendered without adding it there.
  *
  * The important case is Accounts. It is hidden entirely from anyone without
  * `accountView` rather than shown and then refused — the route exists for
  * every signed-in user, so a visible-but-broken entry is worse than an absent
  * one. Viewing the roster is admin-and-above; the create button inside the
- * screen is harder (`accountManage`), and `firestore.rules` matches both, so a
+ * screen is harder (`accountManage`), and `database.rules.json` matches both, so a
  * grid entry can never promise a write the rules deny.
  */
 interface HubEntry {

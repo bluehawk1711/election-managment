@@ -21,7 +21,7 @@
  */
 import { initializeApp, cert, getApps } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
-import { getFirestore } from 'firebase-admin/firestore';
+import { getDatabaseWithUrl } from 'firebase-admin/database';
 import { readFileSync } from 'node:fs';
 
 const PROJECT = 'election-managment';
@@ -35,7 +35,9 @@ const app = getApps().length
   ? getApps()[0]
   : initializeApp({ credential: cert(sa), projectId: sa.project_id });
 const auth = getAuth(app);
-const db = getFirestore(app, 'default');
+// Admin SDK on purpose: it bypasses rules, which is what lets this script pick
+// fixture keys. Every assertion below then goes over REST as the real account.
+const adminDb = getDatabaseWithUrl(URL_BASE, app);
 
 /** The three rungs `database.rules` actually checks, from `lib/roles.ts`. */
 const ROLES = {
@@ -110,16 +112,12 @@ const other = allUsers.find(
 );
 
 /** One voter inside this account's ward, and one provably outside it. */
-const inMyWard =
-  typeof wardNo === 'number'
-    ? (await db.collection('voters').where('wardNo', '==', wardNo).limit(1).get()).docs[0]?.id
-    : null;
-const otherWard = await db
-  .collection('voters')
-  .where('wardNo', '==', wardNo === 13 ? 12 : 13)
-  .limit(1)
-  .get();
-const outside = otherWard.docs[0]?.id;
+const voterSnap = await adminDb.ref('voters').once('value');
+const voters = voterSnap.val() ?? {};
+const voterInWard = (ward) =>
+  Object.keys(voters).find((id) => voters[id]?.wardNo === ward) ?? null;
+const inMyWard = typeof wardNo === 'number' ? voterInWard(wardNo) : null;
+const outside = voterInWard(wardNo === 13 ? 12 : 13);
 
 const can = ROLES[role];
 

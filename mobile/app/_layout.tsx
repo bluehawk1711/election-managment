@@ -41,7 +41,7 @@ SplashScreen.setOptions({
  * navigation path into `(tabs)` at all, deep link or otherwise. The guards are
  * mutually exclusive, so exactly one group is mounted at a time.
  *
- * Guards are a convenience, not the boundary — firestore.rules says the same
+ * Guards are a convenience, not the boundary — database.rules.json says the same
  * thing server-side, where a modified client cannot argue. A query that is not
  * scoped to the signed-in uid fails there regardless of what this file does.
  */
@@ -59,7 +59,7 @@ function RootNavigator() {
   // resolves flashes the sign-in screen at a user who is already signed in.
   //
   // The second wait is `profileLoading`: the signed-in user arrives from one
-  // source and their profile document from another (a Firestore snapshot), and
+  // source and their profile node from another (a database snapshot), and
   // nothing routes correctly until both are known. Rendering early meant the
   // guard below read `profile === null` as "no role" and the first screen a
   // user saw was the "no role assigned yet" empty state, which then vanished a

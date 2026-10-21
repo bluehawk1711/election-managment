@@ -132,7 +132,7 @@ export function activePhone(
  * digits of a typo'd number alone are a perfectly valid number of *somebody
  * else's*. The first pattern allows the separators people actually type
  * (spaces, dashes, brackets, a leading `+`); the second re-checks what will
- * actually be stored, because that is what `firestore.rules` matches
+ * actually be stored, because that is what `database.rules.json` matches
  * against.
  */
 export function isValidPhone(phone: string): boolean {

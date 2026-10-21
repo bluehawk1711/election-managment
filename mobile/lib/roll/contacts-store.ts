@@ -8,11 +8,11 @@
  * and reads identity from `lib/firebase`'s auth singleton, mirroring how
  * `lib/roll/sync.ts` works.
  *
- * The checks here are pre-flight only, never the boundary: `firestore.rules`
- * re-checks role, ward scoping, owner path and the `^[+]?[0-9]{6,15}$` shape
- * on every write, and `rules-tests/firestore.test.ts` asserts them. Skipping
- * an obviously-illegal write before it leaves the device turns a server
- * rejection (and its console error) into a quiet no-op.
+ * The checks here are pre-flight only, never the boundary: `database.rules.json`
+ * re-checks role, ward scoping, owner path and the phone shape on every write,
+ * and `scripts/probe-writes.mjs` asserts the proposal path. Skipping an
+ * obviously-illegal write before it leaves the device turns a server rejection
+ * (and its console error) into a quiet no-op.
  */
 import { auth } from '@/lib/firebase';
 import { setDoc } from '@/lib/db';

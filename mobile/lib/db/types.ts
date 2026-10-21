@@ -49,11 +49,11 @@ export interface DbMetadata {
  *
  * This replaces `Pick<QueryDocumentSnapshot<DocumentData>, 'id' | 'data'>`,
  * which is the same contract spelled in `firebase/firestore`'s names. The
- * swap matters for one reason: leaving that type in `lib/mappers.ts` and
- * `lib/documents.ts` keeps `firebase/firestore` as a dependency of the app's
- * pure logic, which is how a port that is "done" still pulls the Firestore SDK
- * into the bundle — and still looks, to the next reader, like Firestore is in
- * use. Mappers were already written structurally, so nothing else changes.
+ * swap is what let every mapper and `lib/documents.ts` drop that import: a
+ * structural type means the app's pure logic no longer depends on the Firestore
+ * SDK, so the port is real rather than "the code still imports it, nobody calls
+ * it". Nothing in the app imports `firebase/firestore`; if one ever does again,
+ * the bundle grows and the migration has regressed.
  */
 export interface DbDoc {
   /** The key — `push()` keys are time-sortable. */

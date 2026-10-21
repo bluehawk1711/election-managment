@@ -35,7 +35,7 @@ const extensionOf = (uri: string) =>
  * Firebase mints a fresh download token per upload, so `getDownloadURL` already
  * returns a different URL.
  *
- * The Firebase Auth `photoURL` is updated alongside the Firestore document, so
+ * The Firebase Auth `photoURL` is updated alongside the profile node, so
  * `user.photoURL` and `profile.photoURL` agree — several Firebase features read
  * the former.
  */
@@ -90,7 +90,7 @@ export function useAvatarUpload() {
 
         const downloadUrl = await getDownloadURL(task.snapshot.ref);
 
-        // Best-effort: the Firestore document is the source of truth the app
+        // Best-effort: the profile node is the source of truth the app
         // renders from, so a failure here is not worth failing the upload over.
         if (auth.currentUser) {
           await updateProfile(auth.currentUser, {

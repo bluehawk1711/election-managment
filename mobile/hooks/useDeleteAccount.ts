@@ -36,7 +36,7 @@ const BATCH_LIMIT = 500;
  * **Known limitation, inherited not introduced.** `users/{uid}`'s delete rule
  * requires `auth.uid !== $uid`, so an owner cannot delete their OWN profile —
  * it is a deliberate lockout guard, carried over verbatim from
- * `firestore.rules`, and the profile step below therefore fails and aborts the
+ * `database.rules.json`, and the profile step below therefore fails and aborts the
  * deletion before the auth record is touched. Making "delete my account" work
  * needs a rules decision (allow an owner to delete exactly their own node), not
  * a client change.
@@ -92,7 +92,7 @@ export function useDeleteAccount() {
 async function deleteTasks(uid: string): Promise<void> {
   for (;;) {
     const rows = await getDocs('tasks', {
-      where: { field: 'ownerId', value: uid },
+      where: { field: 'createdBy', value: uid },
       limit: BATCH_LIMIT,
     });
 

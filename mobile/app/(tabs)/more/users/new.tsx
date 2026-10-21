@@ -63,7 +63,7 @@ function TrailingButton({
  * New account (plan-voters.md §6.5).
  *
  * The ward field appears only for a karykarta, and is required there. That is
- * not a UI convenience: `firestore.rules` refuses to create a karykarta
+ * not a UI convenience: `database.rules.json` refuses to create a karykarta
  * without a positive ward, and refuses to create any other role *with* one —
  * a `wardNo` on an admin is invisible in `visibleWards` but shows up in the
  * document, which is exactly the kind of disagreement that becomes "why can

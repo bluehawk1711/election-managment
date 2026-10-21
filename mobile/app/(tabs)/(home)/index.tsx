@@ -73,7 +73,7 @@ const EXPENSE_CAT_KEY: Record<ExpenseCategory, TranslationKey> = {
 
 /**
  * Dashboard — the campaign's command surface. Every number is derived from
- * live Firestore collections through `lib/dashboard-data` (pure, tested);
+ * live database collections through `lib/dashboard-data` (pure, tested);
  * the layout mirrors the light mock section for section.
  */
 export default function HomeScreen() {
@@ -190,7 +190,7 @@ export default function HomeScreen() {
           actionLabel: t('dash.assign'),
           // To the booth REPORT, not the hidden Booths tab: the report
           // derives its numbers from the roll bundle and always has data,
-          // while the tab's Firestore source was never seeded.
+          // while the tab's database source was never seeded.
           onPress: () => router.push('/(tabs)/reports'),
           onAction: () => router.push('/(tabs)/reports'),
         };

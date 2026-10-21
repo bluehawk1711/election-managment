@@ -105,9 +105,9 @@ export function useCreateAccount() {
       // Writing `role` from the client is deliberate and is what
       // react-doctor's `firebase-client-owned-authz-field` rule flags. There is
       // no trusted server to delegate to here — Cloud Functions need the paid
-      // Blaze plan — so authorisation lives in `firestore.rules` instead: the
-      // create path allows a `role` write only when the caller is
-      // superAdmin/developer, and `rules-tests/firestore.test.ts` asserts both
+      // Blaze plan — so authorisation lives in `database.rules.json` instead:
+      // the create path allows a `role` write only when the caller is
+      // superAdmin/developer, and `scripts/probe-owner-write.mjs` asserts both
       // that a super admin can and that a karykarta cannot. The client asking is
       // not the client deciding.
       // `{ merge: true }` for the same reason as `ensureProfile`: a plain set is

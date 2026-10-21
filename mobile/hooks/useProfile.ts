@@ -3,7 +3,7 @@ import { messageFor } from '@/lib/errors';
 import { serverTimestamp, updateDoc } from '@/lib/db';
 import { useAuth } from '@/providers/auth-provider';
 
-/** The fields firestore.rules lets a user change on their own document. */
+/** The fields database.rules.json lets a user change on their own document. */
 export interface ProfilePatch {
   displayName?: string | null;
   photoURL?: string | null;
@@ -18,7 +18,7 @@ export interface ProfilePatch {
  * here.
  *
  * `email` is never sent: it mirrors the Firebase Auth record, and the update
- * rule in firestore.rules rejects it outright rather than letting the two drift
+ * rule in database.rules.json rejects it outright rather than letting the two drift
  * apart. `updatedAt` is always sent because the rule's `affectedKeys().hasOnly`
  * list includes it and nothing else refreshes it.
  */

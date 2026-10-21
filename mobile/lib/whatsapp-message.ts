@@ -12,7 +12,7 @@
  * next WhatsApp tap on any screen — a voter row, Help, the update gate —
  * offers that same text back instead of asking them to retype it. It lives
  * in AsyncStorage: the message belongs to this device's drafts, not to the
- * campaign record, so it is deliberately NOT synced to Firestore.
+ * campaign record, so it is deliberately NOT synced to the database.
  *
  * `useWhatsappMessage` (hooks/useWhatsappMessage.ts) is the React face of
  * this module; everything here is framework-free so Settings and the compose

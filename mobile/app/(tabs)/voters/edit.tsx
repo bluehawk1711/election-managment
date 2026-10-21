@@ -187,7 +187,7 @@ async function captureCurrentLocation(): Promise<VoterLocation | null> {
  * every edit two taps and a push/pop away.
  *
  * Writes go to the **overlay** only — the "base roll is read-only" rule.
- * Nothing here calls Firestore, so the save works offline by construction and
+ * Nothing here calls the database, so the save works offline by construction and
  * the queued entry is what a later sync will push.
  *
  * ## Two kinds of write on one screen
@@ -585,7 +585,7 @@ function EditForm({
       void pushEdits();
       // Mirror the number to the team's shared layer, best-effort: the local
       // overlay write above IS the save, and a rejected share reports rather
-      // than rolls back. Shapes `firestore.rules` would refuse are never
+      // than rolls back. Shapes `database.rules.json` would refuse are never
       // attempted, and unchanged digits are skipped inside `propose`.
       if (isValidPhone(phone)) {
         void contacts

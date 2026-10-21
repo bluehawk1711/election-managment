@@ -13,8 +13,8 @@ module.exports = {
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/$1',
   },
-  // `rules-tests/` is a separate Node project against the emulator — see
-  // jest.rules.config.js. Running it here would try to boot it under Metro.
+  // `rules-tests/` is a separate Node project against the Storage emulator —
+  // see jest.rules.config.js. Running it here would try to boot it under Metro.
   testPathIgnorePatterns: ['<rootDir>/node_modules/', '<rootDir>/rules-tests/'],
   collectCoverageFrom: [
     'hooks/**/*.ts',

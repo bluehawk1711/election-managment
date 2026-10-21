@@ -19,7 +19,7 @@ import * as SecureStore from 'expo-secure-store';
  *
  * - **Device-local, keystore-protected.** One `expo-secure-store` entry per
  *   account — Keychain on iOS, EncryptedSharedPreferences-backed Keystore on
- *   Android. It is never written to Firestore, so no rule can be mis-written
+ *   Android. It is never written to the database, so no rule can be mis-written
  *   into exposing it, and no other device can read it: an account created on
  *   the super admin's phone is simply "not stored here" on the admin's tablet.
  * - **A copy, not a source of truth.** Auth owns the password; this only

@@ -182,7 +182,7 @@
         ".read": "auth != null && auth.token.locked !== true && (auth.token.role === 'karykarta' || auth.token.role === 'admin' || auth.token.role === 'superAdmin' || auth.token.role === 'developer')",
         ".write": "auth != null && auth.token.locked !== true && (auth.token.role === 'karykarta' || auth.token.role === 'admin' || auth.token.role === 'superAdmin' || auth.token.role === 'developer') && !newData.child('party').exists() && !newData.child('partyAffiliation').exists() && !newData.child('preference').exists() && !newData.child('votedFor').exists() && !newData.child('support').exists() && !newData.child('voteChoice').exists()",
         "title":     { ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 200" },
-        "status":    { ".validate": "newData.val() === 'todo' || newData.val() === 'doing' || newData.val() === 'done' || newData.val() === 'blocked'" },
+        "status":    { ".validate": "newData.val() === 'pending' || newData.val() === 'in_progress' || newData.val() === 'completed' || newData.val() === 'issue'" },
         "createdBy": { ".validate": "newData.isString() && newData.val().length >= 1" },
         "createdAt": { ".validate": "newData.isNumber()" },
         "updatedAt": { ".validate": "newData.isNumber()" }
@@ -194,8 +194,8 @@
       "$docId": {
         ".read": "auth != null && auth.token.locked !== true && (auth.token.role === 'karykarta' || auth.token.role === 'admin' || auth.token.role === 'superAdmin' || auth.token.role === 'developer')",
         ".write": "auth != null && auth.token.locked !== true && (auth.token.role === 'karykarta' || auth.token.role === 'admin' || auth.token.role === 'superAdmin' || auth.token.role === 'developer') && !newData.child('party').exists() && !newData.child('partyAffiliation').exists() && !newData.child('preference').exists() && !newData.child('votedFor').exists() && !newData.child('support').exists() && !newData.child('voteChoice').exists()",
-        "category":   { ".validate": "newData.isString() && newData.val().length >= 1" },
-        "status":     { ".validate": "newData.isString() && newData.val().length >= 1" },
+        "category":   { ".validate": "newData.val() === 'road' || newData.val() === 'water' || newData.val() === 'electricity' || newData.val() === 'drainage' || newData.val() === 'streetlight' || newData.val() === 'sanitation'" },
+        "status":     { ".validate": "newData.val() === 'open' || newData.val() === 'in_progress' || newData.val() === 'resolved'" },
         "reportedAt": { ".validate": "newData.isNumber()" },
         "updatedAt":  { ".validate": "newData.isNumber()" }
       }
@@ -206,7 +206,7 @@
       "$docId": {
         ".read": "auth != null && auth.token.locked !== true && (auth.token.role === 'karykarta' || auth.token.role === 'admin' || auth.token.role === 'superAdmin' || auth.token.role === 'developer')",
         ".write": "auth != null && auth.token.locked !== true && (auth.token.role === 'karykarta' || auth.token.role === 'admin' || auth.token.role === 'superAdmin' || auth.token.role === 'developer') && !newData.child('party').exists() && !newData.child('partyAffiliation').exists() && !newData.child('preference').exists() && !newData.child('votedFor').exists() && !newData.child('support').exists() && !newData.child('voteChoice').exists()",
-        "type":      { ".validate": "newData.val() === 'rally' || newData.val() === 'doorToDoor' || newData.val() === 'meeting' || newData.val() === 'party' || newData.val() === 'other'" },
+        "type":      { ".validate": "newData.val() === 'meeting' || newData.val() === 'training' || newData.val() === 'public' || newData.val() === 'deadline'" },
         "startsAt":  { ".validate": "newData.isNumber()" },
         "createdAt": { ".validate": "newData.isNumber()" }
       }
@@ -229,6 +229,7 @@
         ".read": "auth != null && auth.token.locked !== true && (auth.token.role === 'karykarta' || auth.token.role === 'admin' || auth.token.role === 'superAdmin' || auth.token.role === 'developer')",
         ".write": "auth != null && auth.token.locked !== true && (auth.token.role === 'karykarta' || auth.token.role === 'admin' || auth.token.role === 'superAdmin' || auth.token.role === 'developer') && !newData.child('party').exists() && !newData.child('partyAffiliation').exists() && !newData.child('preference').exists() && !newData.child('votedFor').exists() && !newData.child('support').exists() && !newData.child('voteChoice').exists()",
         "title":     { ".validate": "newData.isString() && newData.val().length >= 1" },
+        "status":    { ".validate": "newData.val() === 'done' || newData.val() === 'pending' || newData.val() === 'attention'" },
         "updatedAt": { ".validate": "newData.isNumber()" }
       }
     },
@@ -332,27 +333,49 @@
         // A device is bound ONCE by its owner. Only an account manager may
         // re-bind or clear it — the point of the lock is that a phone found in
         // the wrong hands cannot declare itself the new owner.
+        //
+        // **`data` here is the DEVICE node, not the profile.** RTDB scopes
+        // `data` to the location of the rule, so `data.child('device')` would
+        // ask for `device/device` and be permanently absent — which is exactly
+        // how the first port let any owner rebind at will. `!data.exists()` is
+        // the correct "no binding yet" test.
+        //
+        // Sibling fields are unreadable from this node, so the two owner-side
+        // exemptions travel on the TOKEN: `superAdmin` (deliberately not
+        // device-bound — they must stay reachable to unlock everyone else) and
+        // `multiDevice` (granted by an account manager, and added to the claim
+        // by `grant-claims.mjs` for exactly this reason). Both are unforgeable.
         "device": {
-          ".write": "auth != null && ((auth.uid === $uid && !data.child('device').exists()) || (auth.token.locked !== true && (auth.token.role === 'superAdmin' || auth.token.role === 'developer') && auth.uid !== $uid))",
+          ".write": "auth != null && ((auth.uid === $uid && auth.token.locked !== true && (!data.exists() || auth.token.role === 'superAdmin' || auth.token.multiDevice === true)) || (auth.token.locked !== true && (auth.token.role === 'superAdmin' || auth.token.role === 'developer') && auth.uid !== $uid))",
           ".validate": "!newData.exists() || (newData.hasChildren(['id', 'name', 'platform']) && newData.child('id').isString() && newData.child('id').val().length >= 8 && newData.child('id').val().length <= 128 && newData.child('name').isString() && newData.child('name').val().length >= 1 && newData.child('name').val().length <= 120 && (newData.child('lastActiveAt').isNumber() || !newData.child('lastActiveAt').exists()))"
         },
 
         // The owner may set the lock ON and never off — clearing it is an
         // account manager's call, so a stolen phone cannot unlock itself.
+        //
+        // `data.val()` here is the current LOCK VALUE (this rule sits on the
+        // `locked` node), which is exactly what the check needs. The first port
+        // wrote `data.child('locked')` — a child of a boolean, permanently
+        // absent — so every owner could unlock themselves.
         "locked": {
-          ".write": "auth != null && ((auth.uid === $uid && data.child('locked').val() !== true) || (auth.token.locked !== true && (auth.token.role === 'superAdmin' || auth.token.role === 'developer') && auth.uid !== $uid))",
+          ".write": "auth != null && ((auth.uid === $uid && auth.token.locked !== true && data.val() !== true) || (auth.token.locked !== true && (auth.token.role === 'superAdmin' || auth.token.role === 'developer') && auth.uid !== $uid))",
           ".validate": "newData.isBoolean() || !newData.exists()"
         },
+        // These three are display metadata for the panel. A rule on one sibling
+        // cannot read the `locked` sibling at all, so they carry the CLAIM gate
+        // (`auth.token.locked`) rather than the profile's lock value: enough to
+        // stop a server-locked account, and the boolean above is the real gate.
+        // The owner writes all four in one multi-path update when self-locking.
         "lockedReason": {
-          ".write": "auth != null && ((auth.uid === $uid && data.child('locked').val() !== true) || (auth.token.locked !== true && (auth.token.role === 'superAdmin' || auth.token.role === 'developer') && auth.uid !== $uid))",
+          ".write": "auth != null && ((auth.uid === $uid && auth.token.locked !== true) || (auth.token.locked !== true && (auth.token.role === 'superAdmin' || auth.token.role === 'developer') && auth.uid !== $uid))",
           ".validate": "newData.val() === '' || newData.val() === 'device_change' || newData.val() === 'admin' || !newData.exists()"
         },
         "lockedAt": {
-          ".write": "auth != null && ((auth.uid === $uid && data.child('locked').val() !== true) || (auth.token.locked !== true && (auth.token.role === 'superAdmin' || auth.token.role === 'developer') && auth.uid !== $uid))",
+          ".write": "auth != null && ((auth.uid === $uid && auth.token.locked !== true) || (auth.token.locked !== true && (auth.token.role === 'superAdmin' || auth.token.role === 'developer') && auth.uid !== $uid))",
           ".validate": "newData.isNumber() || !newData.exists()"
         },
         "lockedBy": {
-          ".write": "auth != null && ((auth.uid === $uid && data.child('locked').val() !== true) || (auth.token.locked !== true && (auth.token.role === 'superAdmin' || auth.token.role === 'developer') && auth.uid !== $uid))",
+          ".write": "auth != null && ((auth.uid === $uid && auth.token.locked !== true) || (auth.token.locked !== true && (auth.token.role === 'superAdmin' || auth.token.role === 'developer') && auth.uid !== $uid))",
           ".validate": "newData.isString() && newData.val().length <= 128 || !newData.exists()"
         },
 
