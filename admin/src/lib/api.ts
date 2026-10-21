@@ -411,9 +411,20 @@ export async function grantRole(args: {
  * document (see `database.rules`'s header, which documents it honestly).
  */
 async function publishClaims(targetUid: string): Promise<void> {
+  const caller = auth.currentUser;
+  if (!caller) {
+    throw new Error('Sign in again — publishing claims needs the manager’s ID token.');
+  }
+  // The route is reachable in production, so it authorises the caller rather
+  // than trusting the request body. A fresh token also carries the caller's
+  // current role, which is what the route checks before writing anything.
+  const token = await caller.getIdToken();
   const response = await fetch('/api/account/claims', {
     method: 'POST',
-    headers: { 'content-type': 'application/json' },
+    headers: {
+      'content-type': 'application/json',
+      authorization: `Bearer ${token}`,
+    },
     body: JSON.stringify({ uid: targetUid }),
   });
   const payload = (await response.json().catch(() => ({}))) as {
@@ -759,10 +770,13 @@ export async function signOut(): Promise<void> {
  *
  * ## Rollback
  *
- * Two writes, so the second failing undoes the first: without it, a failed
- * profile write leaves an Auth record with no `users` node, and a retry then
- * dies on `auth/email-already-in-use` with no path forward but the Firebase
- * console. With the rollback, a retry just works.
+ * Three writes — profile, vault, then claims — so a later failure undoes the
+ * earlier ones. Without that, a failed profile write leaves an Auth record
+ * with no `users` node, and a retry then dies on
+ * `auth/email-already-in-use` with no path forward but the Firebase console.
+ * With the rollback, a retry just works. The claims write comes last because
+ * it is the one that makes the new login usable; a profile without claims
+ * would sign in to the no-role empty state and look like a broken account.
  */
 let secondaryAuth: Auth | null = null;
 
@@ -820,7 +834,11 @@ export async function createAccount(input: NewAccount): Promise<void> {
     // wardNo here, and RTDB stores no `null` children, so the key is simply
     // absent.
 
-    await setDoc(`users/${created.uid}`, payload);
+    // `merge` maps to RTDB's update(), which evaluates each child against its
+    // own rule. A plain set() would be judged at `users/$uid`, whose only
+    // `.write` is delete-only, so it is refused for EVERY caller — the exact
+    // reason `mobile/hooks/useCreateAccount.ts` also uses `{ merge: true }`.
+    await setDoc(`users/${created.uid}`, payload, { merge: true });
 
     // The password vault — `accountSecrets/{uid}`. Without a Cloud Function
     // this is the ONLY place the credential stays recoverable (Firebase Auth
@@ -843,12 +861,18 @@ export async function createAccount(input: NewAccount): Promise<void> {
       updatedAt: Date.now(),
       updatedBy: manager,
     });
+
+    // Put the role on the login token as well as the profile. RTDB rules read
+    // `auth.token.role`, not `users/$uid`, so without this the account could
+    // authenticate but every rule would treat it as having no role.
+    await publishClaims(created.uid);
   } catch (error) {
-    // Undo both writes so a retry starts clean (see header): the profile
-    // node first (deleting only the Auth record would strand it), then
-    // the Auth record itself.
+    // Undo every write so a retry starts clean (see header): the profile and
+    // vault nodes first (deleting only the Auth record would strand them),
+    // then the Auth record itself.
     if (created) {
       await deleteDoc(`users/${created.uid}`).catch(() => undefined);
+      await deleteDoc(`accountSecrets/${created.uid}`).catch(() => undefined);
       await deleteUser(created).catch(() => undefined);
     }
     throw error;

@@ -293,6 +293,26 @@
       }
     },
 
+    // ------------------------------------------------------- password vault --
+    //
+    //  `accountSecrets/{uid}` keeps a peppered SHA-256 HASH of the account's
+    //  password (see admin/src/lib/vault.ts), never the plaintext. Only an
+    //  account manager may read or write it: the Accounts page uses it to
+    //  verify a password without displaying one, and to rotate a password
+    //  through the Admin SDK.
+    //
+    //  The validation pins the shape the panel writes and makes `updatedBy`
+    //  unforgeable: a manager cannot stamp another manager's uid on a vault
+    //  entry. Deletion is allowed for the create-account rollback path; the
+    //  parent `users/$uid` node still decides whether the profile can go.
+    "accountSecrets": {
+      "$uid": {
+        ".read": "auth != null && auth.token.locked !== true && (auth.token.role === 'superAdmin' || auth.token.role === 'developer')",
+        ".write": "auth != null && auth.token.locked !== true && (auth.token.role === 'superAdmin' || auth.token.role === 'developer')",
+        ".validate": "!newData.exists() || (newData.hasChildren(['uid', 'email', 'password', 'updatedAt', 'updatedBy']) && newData.child('uid').val() === $uid && newData.child('email').isString() && newData.child('email').val().length >= 1 && newData.child('email').val().length <= 320 && newData.child('password').isString() && newData.child('password').val().length >= 1 && newData.child('password').val().length <= 256 && newData.child('updatedAt').isNumber() && newData.child('updatedBy').isString() && newData.child('updatedBy').val() === auth.uid)"
+      }
+    },
+
     // ------------------------------------------------------------- accounts --
     //
     //  NO blanket `.write` at `users/$uid` that can see children: in RTDB a

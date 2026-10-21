@@ -52,7 +52,13 @@ function requiredEnv(): {
     // dotenv leaves `\n` literal; PEM parsing needs real newlines. Idempotent,
     // so a value that already contains real newlines passes through fine.
     .replace(/\\n/g, '\n');
-  const databaseURL = process.env.FIREBASE_ADMIN_DATABASE_URL ?? '';
+  // The database URL is not a secret (the browser bundle already has it),
+  // so accept the public variable as a fallback. Hosting environments only
+  // need to set the three credential variables if this one is absent.
+  const databaseURL =
+    process.env.FIREBASE_ADMIN_DATABASE_URL ??
+    process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL ??
+    '';
 
   const missing = [
     !projectId && 'FIREBASE_ADMIN_PROJECT_ID',

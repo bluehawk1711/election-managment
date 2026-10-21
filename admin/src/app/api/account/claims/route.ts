@@ -24,26 +24,70 @@
  * publish the same facts onto the token. There is no second place where a
  * claim can disagree with a document.
  *
+ * ## Who may call it
+ *
+ * The route is reachable in production, so it authenticates the caller: the
+ * browser sends the signed-in manager's Firebase ID token, and only a
+ * superAdmin or developer whose own token is not locked may publish claims.
+ * Without that check this would be an unauthenticated write endpoint that
+ * could be used to force a token refresh for any uid.
+ *
  * The credentials never reach a browser bundle (same posture as
  * /api/account/password and /api/roll/seed): the Admin SDK is initialized
  * server-side only from `FIREBASE_ADMIN_*` env vars in `admin/.env.local`
- * (lib/admin-firebase.ts), and the route is local-dev only — `next build`
- * for a shared host exposes no endpoint (that production answer is a Cloud
- * Function on Blaze, as noted throughout this repo).
+ * (lib/admin-firebase.ts). The deployment host must set the same three
+ * credential variables; the database URL may come from the public variable
+ * because it is not a secret.
  */
 // No `export const runtime = 'nodejs'`: `cacheComponents` rejects route
 // segment runtime config, and Node is the default runtime anyway.
 
+import type { DecodedIdToken } from 'firebase-admin/auth';
 import { adminAuth, adminDatabase } from '@/lib/admin-firebase';
 
 interface ClaimsRequest {
   uid?: unknown;
 }
 
+/** The caller's ID token, or null when the Authorization header is absent. */
+function bearerToken(request: Request): string | null {
+  const match = /^Bearer\s+(.+)$/i.exec(request.headers.get('authorization') ?? '');
+  return match?.[1]?.trim() || null;
+}
+
 export async function POST(request: Request): Promise<Response> {
-  if (process.env.NODE_ENV === 'production') {
+  const token = bearerToken(request);
+  if (!token) {
     return Response.json(
-      { ok: false, error: 'Claim writes are local-dev only in this prototype.' },
+      { ok: false, error: 'Sign in again — the claim request carried no ID token.' },
+      { status: 401 }
+    );
+  }
+
+  let caller: DecodedIdToken;
+  try {
+    // `true` asks the Admin SDK to check revocation as well as the signature.
+    caller = await adminAuth().verifyIdToken(token, true);
+  } catch (caught) {
+    const message = caught instanceof Error ? caught.message : '';
+    if (message.includes('Missing Admin SDK credentials')) {
+      return Response.json(
+        { ok: false, error: 'Claim publishing is not configured on this server.' },
+        { status: 500 }
+      );
+    }
+    return Response.json(
+      { ok: false, error: 'Sign in again — the claim request’s token was rejected.' },
+      { status: 401 }
+    );
+  }
+
+  if (
+    caller.locked === true ||
+    (caller.role !== 'superAdmin' && caller.role !== 'developer')
+  ) {
+    return Response.json(
+      { ok: false, error: 'Only a super admin or developer can publish claims.' },
       { status: 403 }
     );
   }
