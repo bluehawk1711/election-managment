@@ -94,29 +94,103 @@ export function buildSlipData(args: {
     },
     footerMessage: 'लोकतंत्र के इस महापर्व में अपने अमूल्य मत का प्रयोग अवश्य करें',
     votingTime: '7:00 am से 06:00 pm',
-    votingDate: 'रविवार 20 अक्टूबर 2026',
+    votingDate: 'शुक्रवार 30 अक्टूबर 2026',
   };
 }
 
+/* ------------------------------------------------------- WhatsApp message -- */
+
 /**
- * The plain-text summary the WhatsApp button sends — the slip in one
- * message, no HTML, so it reads the same in any WhatsApp client. Kept
- * beside the builder because both must stay in step field-for-field: a slip
- * that prints the EPIC but texts a stale one is worse than no button.
+ * One selectable WhatsApp message. `body` is a tiny placeholder template, not
+ * a finished string: the same template is rendered for whichever voter's slip
+ * is open, so a saved message never carries a previous voter's name or EPIC.
+ *
+ * These live in `localStorage` per signed-in account (see
+ * `lib/roll/slip-message-store.ts`): the message belongs to the operator
+ * sharing the slip, not to the campaign record. A different account on the
+ * same browser gets its own list.
  */
-export function slipMessageText(data: VoterSlipData): string {
-  const lines = [
-    `*${data.badgeText ?? 'मतदाता सूचना पर्ची'}*`,
-    data.title,
+export interface SlipMessageTemplate {
+  id: string;
+  label: string;
+  body: string;
+}
+
+export const DEFAULT_SLIP_MESSAGE_ID = 'voter-slip';
+
+/**
+ * The built-in message the user asked for. It is deliberately data-only —
+ * the same fields the paper slip prints, in the same order — and is the one
+ * message that is always available even when no custom message is saved.
+ */
+export const DEFAULT_SLIP_MESSAGE: SlipMessageTemplate = {
+  id: DEFAULT_SLIP_MESSAGE_ID,
+  label: 'मतदाता सूचना पर्ची',
+  body: [
+    '*{badge}*',
+    '{title}',
     '',
-    `नाम: ${data.voter.name}`,
-    `पिता का नाम: ${data.voter.fatherName}`,
-    `वार्ड: ${data.voter.wardSerial} | मतदाता क्रमांक: ${data.voter.voterSerial}`,
-    `EPIC: ${data.voter.epic}`,
-    `मकान नंबर: ${data.voter.houseNo} | आयु/लिंग: ${data.voter.age} वर्ष / ${data.voter.gender}`,
-    `मतदान बूथ: ${data.booth.number} - ${data.booth.name}`,
-  ];
-  if (data.votingDate) lines.push(`मतदान दिनांक: ${data.votingDate}`);
-  if (data.votingTime) lines.push(`मतदान का समय: ${data.votingTime}`);
-  return lines.join('\n');
+    'नाम: {name}',
+    'पिता का नाम: {father}',
+    'वार्ड: {ward} | मतदाता क्रमांक: {serial}',
+    'EPIC: {epic}',
+    'मकान नंबर: {house} | आयु/लिंग: {age} वर्ष / {gender}',
+    'मतदान बूथ: {boothNo} - {booth}',
+    'मतदान दिनांक: {date}',
+    'मतदान का समय: {time}',
+  ].join('\n'),
+};
+
+/** The tokens the message editor offers. Unknown tokens are left visible. */
+export const SLIP_MESSAGE_TOKENS = [
+  { token: 'name', label: 'मतदाता का नाम' },
+  { token: 'father', label: 'पिता / पति का नाम' },
+  { token: 'ward', label: 'वार्ड संख्या' },
+  { token: 'serial', label: 'मतदाता क्रमांक' },
+  { token: 'epic', label: 'EPIC संख्या' },
+  { token: 'house', label: 'मकान नंबर' },
+  { token: 'age', label: 'आयु' },
+  { token: 'gender', label: 'लिंग' },
+  { token: 'boothNo', label: 'बूथ संख्या' },
+  { token: 'booth', label: 'बूथ का नाम / पता' },
+  { token: 'date', label: 'मतदान दिनांक' },
+  { token: 'time', label: 'मतदान का समय' },
+] as const;
+
+/**
+ * Renders a saved message for one voter.
+ *
+ * A single pass over `{token}` keeps this predictable: values cannot inject a
+ * second placeholder that the same pass would expand, and an unknown token is
+ * left as typed so the sender can see and fix it instead of silently sending
+ * an empty line.
+ */
+export function renderSlipMessage(
+  body: string,
+  data: VoterSlipData
+): string {
+  const values: Record<string, string> = {
+    badge: data.badgeText ?? 'मतदाता सूचना पर्ची',
+    title: data.title,
+    name: data.voter.name,
+    nameEn: data.nameEn ?? '',
+    father: data.voter.fatherName,
+    ward: String(data.voter.wardSerial),
+    serial: String(data.voter.voterSerial),
+    epic: data.voter.epic,
+    house: String(data.voter.houseNo),
+    age: String(data.voter.age),
+    gender: data.voter.gender,
+    boothNo: String(data.booth.number),
+    booth: data.booth.name,
+    date: data.votingDate ?? '',
+    time: data.votingTime ?? '',
+    footer: data.footerMessage ?? '',
+  };
+
+  return body
+    .replace(/\{([a-zA-Z][a-zA-Z0-9]*)\}/g, (match, token: string) =>
+      values[token] ?? match
+    )
+    .trim();
 }

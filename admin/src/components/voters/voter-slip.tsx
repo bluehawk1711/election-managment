@@ -10,9 +10,10 @@
  * in the chrome the mock adds around it:
  *
  *   header      orange bar: title + election line, collapse (→) and close (X)
- *   toolbar     WhatsApp number + send, पर्ची निकालें (print), पर्ची / A4
- *               सिस्टम (full-sheet print), copy-slip-text, and the
- *               "ब्राउज़र में पीडीएफ देखना प्रारंभ करें" link
+ *   toolbar     WhatsApp number + send, a per-account message selector /
+ *               manager, पर्ची निकालें (print), पर्ची / A4 सिस्टम (full-sheet
+ *               print), copy-slip-text, and the "ब्राउज़र में पीडीएफ देखना
+ *               प्रारंभ करें" link
  *   paper       the slip itself — the ONLY thing `@media print` lets out
  *   status bar  मतदाता स्थिति chip, रंगदर्शक colour picker (prints as the
  *               slip's top strip, so a paper stack can be colour-sorted),
@@ -50,10 +51,24 @@ import {
   Vote,
   X,
 } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { toast } from "@/stores/toast";
-import { slipMessageText, type VoterSlipData } from "@/lib/roll/slip";
+import {
+  DEFAULT_SLIP_MESSAGE,
+  DEFAULT_SLIP_MESSAGE_ID,
+  renderSlipMessage,
+  type SlipMessageTemplate,
+  type VoterSlipData,
+} from "@/lib/roll/slip";
+import {
+  readSlipMessageSelection,
+  readSlipMessageTemplates,
+  writeSlipMessageSelection,
+  writeSlipMessageTemplates,
+} from "@/lib/roll/slip-message-store";
+import { useSession } from "@/stores/session";
+import { SlipMessageManager } from "./slip-message-manager";
 
 /* ------------------------------------------------------------- persistence */
 
@@ -131,14 +146,74 @@ export function VoterSlipModal({
   );
   const [photoFailed, setPhotoFailed] = useState(false);
 
-  // ESC closes — the shortcut strip promises it, so it must be true.
+  // Message drafts belong to the signed-in operator, not to the voter, so
+  // the list and the last pick are seeded once per mount from that account's
+  // browser storage. Switching accounts on one laptop therefore cannot leak
+  // one operator's drafts into another's selector.
+  const uid = useSession((state) => state.uid);
+  const [customMessages, setCustomMessages] = useState<SlipMessageTemplate[]>(
+    () => readSlipMessageTemplates(uid),
+  );
+  const [selectedMessageId, setSelectedMessageId] = useState(() =>
+    readSlipMessageSelection(uid),
+  );
+  const [messagesOpen, setMessagesOpen] = useState(false);
+
+  const messageTemplates = useMemo(
+    () => [DEFAULT_SLIP_MESSAGE, ...customMessages],
+    [customMessages],
+  );
+  const selectedMessage =
+    messageTemplates.find((template) => template.id === selectedMessageId) ??
+    DEFAULT_SLIP_MESSAGE;
+  const renderedMessage = useMemo(
+    () => renderSlipMessage(selectedMessage.body, data),
+    [selectedMessage, data],
+  );
+
+  // ESC closes the message manager first; only the next ESC closes the slip.
+  // The shortcut strip promises a close, so it must never feel ignored.
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
+      if (event.key !== "Escape") return;
+      if (messagesOpen) {
+        setMessagesOpen(false);
+        return;
+      }
+      onClose();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
+  }, [messagesOpen, onClose]);
+
+  const selectMessage = useCallback(
+    (id: string) => {
+      setSelectedMessageId(id);
+      writeSlipMessageSelection(uid, id);
+    },
+    [uid],
+  );
+
+  const saveMessages = useCallback(
+    (next: SlipMessageTemplate[]) => {
+      setCustomMessages(next);
+      const persisted = writeSlipMessageTemplates(uid, next);
+      if (!persisted) {
+        toast.error(
+          "संदेश सहेजा नहीं गया",
+          "ब्राउज़र ने स्थानीय संग्रहण की अनुमति नहीं दी।",
+        );
+      }
+
+      // Deleting the selected message must not leave the selector pointing at
+      // a ghost option; fall back to the built-in slip message immediately.
+      if (!next.some((template) => template.id === selectedMessageId)) {
+        setSelectedMessageId(DEFAULT_SLIP_MESSAGE_ID);
+        writeSlipMessageSelection(uid, DEFAULT_SLIP_MESSAGE_ID);
+      }
+    },
+    [uid, selectedMessageId],
+  );
 
   const print = useCallback((mode: "slip" | "a4") => {
     setPrintMode(mode);
@@ -157,13 +232,13 @@ export function VoterSlipModal({
       return;
     }
     writeLocal(PHONE_KEY, phone);
-    const url = `https://wa.me/${target}?text=${encodeURIComponent(slipMessageText(data))}`;
+    const url = `https://wa.me/${target}?text=${encodeURIComponent(renderedMessage)}`;
     window.open(url, "_blank", "noopener");
-  }, [phone, data]);
+  }, [phone, renderedMessage]);
 
   const copyText = useCallback(async () => {
     try {
-      await navigator.clipboard.writeText(slipMessageText(data));
+      await navigator.clipboard.writeText(renderedMessage);
       toast.success(
         "पर्ची कॉपी हो गई",
         "टेक्स्ट क्लिपबोर्ड पर है — कहीं भी पेस्ट करें।",
@@ -171,7 +246,7 @@ export function VoterSlipModal({
     } catch {
       toast.error("कॉपी नहीं हुआ", "ब्राउज़र ने क्लिपबोर्ड की अनुमति नहीं दी।");
     }
-  }, [data]);
+  }, [renderedMessage]);
 
   const onRang = useCallback(
     (value: string) => {
@@ -240,6 +315,48 @@ export function VoterSlipModal({
               placeholder="कार्यसमूह मोबाइल नंबर दर्ज करें (क्लिकेबल)"
               aria-label="कार्यसमूह मोबाइल नंबर"
             />
+
+            <div className="slip-messageRow">
+              <label
+                className="slip-messageRowLabel"
+                htmlFor="slip-message-select"
+              >
+                WhatsApp संदेश:
+              </label>
+              <select
+                id="slip-message-select"
+                className="slip-messageSelect"
+                value={selectedMessage.id}
+                onChange={(event) => selectMessage(event.target.value)}
+                aria-label="WhatsApp संदेश चुनें"
+              >
+                {messageTemplates.map((template) => (
+                  <option key={template.id} value={template.id}>
+                    {template.label}
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                className="slip-messageManageBtn"
+                onClick={() => setMessagesOpen((current) => !current)}
+                aria-expanded={messagesOpen}
+              >
+                {messagesOpen ? "संदेश बंद करें" : "संदेश जोड़ें / बदलें"}
+              </button>
+            </div>
+
+            {messagesOpen ? (
+              <SlipMessageManager
+                templates={customMessages}
+                selectedId={selectedMessage.id}
+                selectedTemplate={selectedMessage}
+                onTemplates={saveMessages}
+                onSelect={selectMessage}
+                onClose={() => setMessagesOpen(false)}
+              />
+            ) : null}
+
             <div className="slip-btnRow">
               <button
                 type="button"

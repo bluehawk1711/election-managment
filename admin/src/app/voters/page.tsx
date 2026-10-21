@@ -20,10 +20,15 @@
  *   slip     one tap opens `VoterSlipModal` — the printable मतदाता पर्ची
  *            (mock: `public/clipboard-image.png`).
  *   select   tick rows, Select page, or Select all (the current search/ward
- *            result) to drive the two bulk actions: `VoterSlipsBatchModal`
- *            tiles compact slips 3 × 7 per A4 sheet, and `BulkPhoneModal` is
- *            mobile's one-number-fills-all editor. One more print path
- *            ignores search and prints the active ward in full.
+ *            result) to drive the bulk actions: `VoterSlipsBatchModal` tiles
+ *            compact slips 3 × 7 per A4 sheet, `BulkPhoneModal` is mobile's
+ *            one-number-fills-all editor, and the CSV export copies the same
+ *            rows for a spreadsheet round trip. One more print path ignores
+ *            search and prints the active ward in full.
+ *   csv      Export ward / Export selected write the stable id, EPIC, name and
+ *            the account's effective phone to a UTF-8 CSV; Import CSV parses
+ *            that file, previews only the changed numbers, and saves through
+ *            the same overlay writer as the bulk phone editor.
  *   overlay  the signed-in account's `users/{uid}/voterEdits` is merged over
  *            the bundled rows, so a bulk-saved number and a phone-side
  *            correction appear live without a reload.
@@ -36,18 +41,32 @@
  * Karykarta see only their own ward (`visibleWards`), the same scope the
  * mobile app applies; the ward selector offers exactly the allowed wards.
  */
-import { Check, FileText, Minus, Phone, Printer, Search, Users } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
+import {
+  Check,
+  Download,
+  FileText,
+  Minus,
+  Phone,
+  Printer,
+  Search,
+  Upload,
+  Users,
+} from 'lucide-react';
 import { MotionPage } from '@/components/shell/motion-page';
 import { Button, Chip, EmptyState, Input, Panel, Select, Skeleton } from '@/components/ui/kit';
 import { BulkPhoneModal } from '@/components/voters/bulk-phone-modal';
+import { CsvPhoneModal } from '@/components/voters/csv-phone-modal';
 import { VoterSlipModal } from '@/components/voters/voter-slip';
 import { VoterSlipsBatchModal, type BatchSlipItem } from '@/components/voters/voter-slips-batch';
 import { subscribeCollectionOf, useLiveQuery } from '@/hooks/use-live';
 import { useSession } from '@/stores/session';
 import { useUi } from '@/stores/ui';
+import { toast } from '@/stores/toast';
 import { buildMyEditsQuery } from '@/lib/api';
 import { can, visibleWards } from '@/lib/roles';
 import { getAllVoters, getWards, photoUrlFor } from '@/lib/roll/bundled';
+import { csvFileName, phoneCsv } from '@/lib/roll/csv';
 import {
   buildIndex,
   searchVoters,
@@ -79,10 +98,35 @@ const SCOPE_LABELS: Record<SearchScope, string> = {
 /** How many rows one page of the list renders — the rest wait for "more". */
 const PAGE_SIZE = 60;
 
+/**
+ * Downloads one roll slice as the round-trip CSV. The Blob is built from the
+ * CURRENT view rows, so an overlay-saved number is what the operator edits.
+ */
+function downloadVotersCsv(rows: readonly VoterView[], scope: string) {
+  const blob = new Blob([phoneCsv(rows)], {
+    type: 'text/csv;charset=utf-8',
+  });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = csvFileName(scope);
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  // Give the browser a moment to start the download before releasing the URL.
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+
+  toast.success(
+    'CSV exported',
+    `${rows.length.toLocaleString()} voters saved as ${anchor.download}. Fill the Mobile Number column, then import that file.`
+  );
+}
+
 export default function VotersPage() {
   const role = useSession((s) => s.role);
   const wardNo = useSession((s) => s.wardNo);
   const uid = useSession((s) => s.uid);
+  const queryClient = useQueryClient();
 
   const [bundle, setBundle] = useState<WardsBundle | null>(null);
   const [rows, setRows] = useState<RollVoter[] | null>(null);
@@ -95,13 +139,14 @@ export default function VotersPage() {
   const [slip, setSlip] = useState<VoterView | null>(null);
 
   /**
-   * Ticked voters, shared by the two bulk actions: `Print slips` tiles their
-   * papers on A4, and `Bulk phone` opens mobile's phone-update screen. Ids,
-   * not row objects — a live overlay update replaces the row while the
-   * selection must survive.
+   * Ticked voters, shared by the bulk actions: `Print slips` tiles their
+   * papers on A4, `Bulk phone` opens mobile's phone-update screen, and the CSV
+   * export copies the same rows. Ids, not row objects — a live overlay update
+   * replaces the row while the selection must survive.
    */
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
   const [bulkPhoneOpen, setBulkPhoneOpen] = useState(false);
+  const [csvOpen, setCsvOpen] = useState(false);
   /**
    * The batch sheet's snapshot. Opened from the selection bar or from the
    * full-ward button; mapping to slip payloads happens at click time so the
@@ -309,6 +354,33 @@ export default function VotersPage() {
 
   const clearSelection = () => setSelectedIds(new Set());
 
+  /**
+   * A bulk write goes through the same live `voterEdits` listener, but the
+   * listener's next delivery can lag behind the save. Invalidate the overlay
+   * query as well so the rows on screen reflect the write immediately — the
+   * CSV preview promised these numbers, and the operator should not have to
+   * reload to see them.
+   */
+  const afterVoterWrite = () => {
+    clearSelection();
+    void queryClient.invalidateQueries({
+      queryKey: ['my-voter-edits', uid ?? '-'],
+    });
+  };
+
+  const exportWardCsv = () => {
+    if (!scoped || activeWard === 'all' || scoped.length === 0) return;
+    downloadVotersCsv(
+      scoped,
+      `ward-${String(activeWard).padStart(2, '0')}`
+    );
+  };
+
+  const exportSelectedCsv = () => {
+    if (selectedRows.length === 0) return;
+    downloadVotersCsv(selectedRows, 'selected');
+  };
+
   const openSlip = (row: VoterView) => {
     setSlip(row);
   };
@@ -439,10 +511,32 @@ export default function VotersPage() {
           <span className='text-xs text-mist-600'>
             {selectedRows.length > 0
               ? `${selectedRows.length.toLocaleString()} selected · use the action bar below`
-              : 'Select voters to print slips or update phone numbers in bulk.'}
+              : 'Select voters to print slips, update phone numbers, or export CSV.'}
           </span>
 
           <div className='ml-auto flex flex-wrap items-center gap-2'>
+            <Button
+              variant='ghost'
+              onClick={() => setCsvOpen(true)}
+              disabled={selectableRows.length === 0}
+              title='Bulk-update mobile numbers from an exported CSV. Blank cells and unchanged numbers are skipped.'
+            >
+              <Upload className='size-3.5' />
+              Import CSV
+            </Button>
+            <Button
+              variant='secondary'
+              onClick={exportWardCsv}
+              disabled={activeWard === 'all' || !scoped || scoped.length === 0}
+              title={
+                activeWard === 'all'
+                  ? 'Choose a specific ward first — this exports every voter in that ward.'
+                  : `Export every voter in ward ${activeWard} as CSV, ignoring the search box.`
+              }
+            >
+              <Download className='size-3.5' />
+              Export ward CSV
+            </Button>
             <Button
               variant='secondary'
               onClick={() => {
@@ -525,6 +619,7 @@ export default function VotersPage() {
         <SelectionBar
           count={selectedRows.length}
           onBulkPhone={() => setBulkPhoneOpen(true)}
+          onExport={exportSelectedCsv}
           onPrint={() => openBatch(selectedRows, 'चयनित मतदाता')}
           onClear={clearSelection}
         />
@@ -555,8 +650,17 @@ export default function VotersPage() {
       {bulkPhoneOpen && selectedRows.length > 0 ? (
         <BulkPhoneModal
           voters={selectedRows}
-          onSaved={clearSelection}
+          onSaved={afterVoterWrite}
           onClose={() => setBulkPhoneOpen(false)}
+        />
+      ) : null}
+
+      {/* ── bulk phone numbers from the exported sheet ─────────────── */}
+      {csvOpen ? (
+        <CsvPhoneModal
+          voters={selectableRows}
+          onSaved={afterVoterWrite}
+          onClose={() => setCsvOpen(false)}
         />
       ) : null}
     </MotionPage>
@@ -712,19 +816,21 @@ function Slot({
 }
 
 /**
- * The two bulk actions, pinned to the viewport rather than left at the head of
- * a sixty-row page. Portalled to <body> because the routed page animates with
- * a transform, which would otherwise become the containing block for a
+ * The bulk actions, pinned to the viewport rather than left at the head of a
+ * sixty-row page. Portalled to <body> because the routed page animates with a
+ * transform, which would otherwise become the containing block for a
  * `position: fixed` child and make the bar scroll with the list.
  */
 function SelectionBar({
   count,
   onBulkPhone,
+  onExport,
   onPrint,
   onClear,
 }: {
   count: number;
   onBulkPhone: () => void;
+  onExport: () => void;
   onPrint: () => void;
   onClear: () => void;
 }) {
@@ -746,7 +852,11 @@ function SelectionBar({
         <span className='hidden text-xs text-mist-600 sm:inline'>
           · one A4 sheet holds 21 slips
         </span>
-        <Button variant='secondary' className='ml-auto' onClick={onBulkPhone}>
+        <Button variant='secondary' className='ml-auto' onClick={onExport}>
+          <Download className='size-3.5' />
+          Export selected CSV
+        </Button>
+        <Button variant='secondary' onClick={onBulkPhone}>
           <Phone className='size-3.5' />
           Bulk phone
         </Button>
