@@ -5,11 +5,8 @@
     "rules": "firestore.rules",
     "indexes": "firestore.indexes.json"
   },
-  "realtime": {
-    "database": {
-      "rules": "database.rules",
-      "emulator": { "port": 9000 }
-    }
+  "database": {
+    "rules": "database.rules.json"
   },
   "storage": {
     "rules": "storage.rules"
@@ -29,7 +26,7 @@
     "auth": { "port": 9099 },
     "firestore": { "port": 8080 },
     "storage": { "port": 9199 },
-    "realtime": { "port": 9000 },
+    "database": { "port": 9000 },
     "ui": { "enabled": true, "port": 4000 },
     "singleProjectMode": true
   }

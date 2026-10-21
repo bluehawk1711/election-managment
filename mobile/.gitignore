@@ -56,3 +56,8 @@ storage-debug.log*
 # bypassing every rule in firestore.rules. It must never be committed.
 service-account*.json
 *-firebase-adminsdk-*.json
+
+# Written by the RTDB emulator on every emulators:exec run.
+*-debug.log
+.firebase/
+emulator-hub.pid

@@ -183,7 +183,7 @@ export async function pullEdits(): Promise<number> {
     // `unknown` first: a `Record<string, unknown>` coming off the wire has no
     // structural overlap with `VoterOverlay`'s optional fields, so the direct
     // cast is refused — and rightly so, as a compile-time reminder that what
-    // actually validates these keys and types is `database.rules`, not TS.
+    // actually validates these keys and types is `database.rules.json`, not TS.
     group[row.id] = overlay as unknown as VoterOverlay;
     byWard.set(wardNo, group);
     pulled += 1;
@@ -212,6 +212,23 @@ export async function pullEdits(): Promise<number> {
  * no profile exposure, and the roster is a HINT, not truth — actual reads of
  * each member's `voterEdits` are still gated per-document by `sameTeam`, so a
  * stale roster entry costs a denied query at worst, never a leaked document.
+ *
+ * ## Known limitation of the CURRENT rules — read before wiring up a team
+ *
+ * The read below is `getDocs('users/{memberUid}/voterEdits')`, which asks for
+ * the **container** node. RTDB authorises a read at the node you request, not
+ * per document the way Firestore evaluates a query, so the per-document
+ * `sameTeam` clause above never gets a chance to run — and the container's own
+ * rule is owner-or-`canViewAccounts`, which denies a teammate.
+ *
+ * So this returns 0 for exactly the karykarta it was written for. That is a
+ * safe failure rather than a leak: `.catch(() => 0)` at the call site leaves
+ * the previous team overlay untouched. The fix, when a team is actually
+ * assigned, is a `teamId` field **on the container**, written by the owner and
+ * validated against that owner's claim — that is the only place an RTDB rule
+ * at this path can read it from. Per-document `teamId` (what
+ * `remotePayload` stamps) can gate individual reads but cannot gate a list.
+ * No account carries a `teamId` today, so nothing is broken yet.
  *
  * Every step is best-effort and returns 0 on any failure: a member with no
  * team, a rules rejection, or an offline device all leave the previous team

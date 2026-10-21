@@ -1,0 +1,442 @@
+{
+  "rules": {
+    // =====================================================================
+    //
+    //  Realtime Database rules — the port of `firestore.rules`.
+    //
+    //  ## Two hard platform differences, not style choices
+    //
+    //  1. **No `function` declarations.** RTDB's grammar is strict JSON
+    //     member syntax — a `function` keyword token or a quoted key without
+    //     `:` both fail to parse. Every capability predicate below is therefore
+    //     inlined at each site. It is repetitive and deliberately boring; the
+    //     alternative is a "helper" that the emulator refuses.
+    //
+    //  2. **No cross-node reads.** Firestore rules can `get()` another
+    //     document, which is how `firestore.rules` answered "is this caller an
+    //     admin?" (read `users/{uid}.role`) and "are these two on the same
+    //     team?" (read BOTH profiles). RTDB rules can only see `data` /
+    //     `newData` at the path being evaluated. Two consequences:
+    //
+    //       - **Roles come from Auth custom claims**, set only by the Admin SDK
+    //         (`scripts/grant-claims.mjs`), never from a document a client can
+    //         write. `firestore.rules` picked documents over claims for
+    //         revocability (see its §callerProfile note); here there is no
+    //         choice, and the cost is real: a claim is not revoked until the
+    //         token refreshes, up to an hour later. `grant-claims.mjs`
+    //         deliberately does NOT call `revokeRefreshTokens` on a backfill —
+    //         that invalidates the target's refresh token and signs them out
+    //         of the app, the wrong trade for handing someone a role. Revoke
+    //         by hand when REMOVING authority, which is when it bites.
+    //
+    //       - **Team membership is denormalised onto each shared document.**
+    //         A rule at `users/$owner/voterEdits/$voterId` can read `$owner`
+    //         as a path variable but cannot look up `$owner`'s team, so each
+    //         edit carries the author's `teamId`, validated below to equal
+    //         that author's own claim — unforgeable, because the only claim it
+    //         can carry is the writer's real one. A reader then compares its
+    //         own claim to the field in front of it, which is exactly what
+    //         `sameTeam` meant.
+    //
+    //  ## The known gap: the lock cannot gate other paths
+    //
+    //  `firestore.rules` made `locked` a hard gate — a locked account read
+    //  zero voters and could write nothing, because every helper read the lock
+    //  from the caller's profile. Unrepresentable here: a rule at `/tasks`
+    //  cannot read `/users/$uid`.
+    //
+    //  So `auth.token.locked` is what gates everything, i.e. the SERVER-side
+    //  lock set by an account manager. The app's self-lock (a device that is
+    //  not the bound one) still writes `/users/$uid/locked = true` for display
+    //  and signs the session out, but does not by itself stop a modified
+    //  client. What still holds from the path-local rules below: a device
+    //  cannot re-bind itself, an owner cannot raise their own role/team/ward,
+    //  and every write still needs a valid role claim. Raise a self-lock to a
+    //  real control by also setting the claim — `grant-claims.mjs --locked`.
+    //
+    //  3. **A read is authorised at the node you ask for, not per document.**
+    //     Firestore evaluates a list against each document, so rules written at
+    //     `{docId}` cover a query. RTDB evaluates `GET /tasks` at `/tasks` and
+    //     never descends: a rule that exists only at `tasks/$docId` grants
+    //     NOTHING for the collection read, and it fails 401 while the identical
+    //     rule happily serves `GET /tasks/one-id`. This bit, and it is why
+    //     `.read` below sits on the COLLECTION node and `$docId` carries only
+    //     `.write` / `.validate`.
+    //
+    //     `voters` is the one deliberate exception: its rule is ward-scoped per
+    //     document, and no collection-level rule can express that, so bulk reads
+    //     of the roll are denied. That is also the right answer for bandwidth —
+    //     the roll ships in the APK and nothing here should be pulling 6 855
+    //     nodes over the wire.
+    //
+    //  ## Expressions that repeat on purpose
+    //
+    //  R4 = signed in AND not locked
+    //  R3 = R4 AND role is superAdmin or developer        (accountManage)
+    //  R2 = R4 AND role is admin, superAdmin or developer (accountView)
+    //  R1 = R4 AND role is karykarta, admin, superAdmin or developer (voter)
+    //
+    //  =====================================================================
+
+    // Deny by default. A path nobody wrote a rule for reads nothing and
+    // writes nothing.
+    ".read": false,
+    ".write": false,
+
+    // ---------------------------------------------------------- app config --
+
+    // `appConfig/general` — the release gate. Readable UNAUTHENTICATED on
+    // purpose: a stale build has to be able to learn why it is locked before
+    // anyone signs in, and failing closed here would lock everybody out in the
+    // one moment it matters.
+    "appConfig": {
+      "general": {
+        ".read": true,
+        ".write": "auth != null && auth.token.locked !== true && (auth.token.role === 'superAdmin' || auth.token.role === 'developer')",
+        "latestVersion":   { ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 24" },
+        "requiredVersion": { ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 24" },
+        "supportPhone":    { ".validate": "newData.isString() && newData.val().length <= 24" },
+        "updatedAt":       { ".validate": "newData.isNumber() || !newData.exists()" },
+        "updatedBy":       { ".validate": "newData.isString() && newData.val().length >= 1" }
+      }
+    },
+
+    // ------------------------------------------------------------- campaign --
+
+    // `newData.child('support').exists()` rather than
+    // `newData.hasChildren([...])`: hasChildren(array) demands ALL of them,
+    // and the guard has to trip on ANY of them.
+    "campaigns": {
+      ".read": "auth != null && auth.token.locked !== true",
+      "$campaignId": {
+        ".read": "auth != null && auth.token.locked !== true",
+        ".write": "auth != null && auth.token.locked !== true && (auth.token.role === 'karykarta' || auth.token.role === 'admin' || auth.token.role === 'superAdmin' || auth.token.role === 'developer') && !newData.child('party').exists() && !newData.child('partyAffiliation').exists() && !newData.child('preference').exists() && !newData.child('votedFor').exists() && !newData.child('support').exists() && !newData.child('voteChoice').exists()",
+        "name":         { ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 120" },
+        "candidateName":   { ".validate": "newData.isString() && newData.val().length <= 120 || !newData.exists()" },
+        "constituencyName": { ".validate": "newData.isString() && newData.val().length <= 120 || !newData.exists()" },
+        "electionDate": { ".validate": "newData.isNumber() || !newData.exists()" },
+        "updatedAt":    { ".validate": "newData.isNumber() || !newData.exists()" }
+      }
+    },
+
+    // ----------------------------------------------------------- geography --
+
+    "constituencies": {
+      ".read": "auth != null && auth.token.locked !== true",
+      "$docId": {
+        ".read": "auth != null && auth.token.locked !== true",
+        ".write": "auth != null && auth.token.locked !== true && (auth.token.role === 'karykarta' || auth.token.role === 'admin' || auth.token.role === 'superAdmin' || auth.token.role === 'developer') && !newData.child('party').exists() && !newData.child('partyAffiliation').exists() && !newData.child('preference').exists() && !newData.child('votedFor').exists() && !newData.child('support').exists() && !newData.child('voteChoice').exists()"
+      }
+    },
+
+    // `wards` is imported roll metadata and is never client-writable. The base
+    // roll ships inside the APK, so there is nothing here to write anyway.
+    "wards": {
+      ".read": "auth != null && auth.token.locked !== true && (auth.token.role === 'karykarta' || auth.token.role === 'admin' || auth.token.role === 'superAdmin' || auth.token.role === 'developer')",
+      "$docId": {
+        ".read": "auth != null && auth.token.locked !== true && (auth.token.role === 'karykarta' || auth.token.role === 'admin' || auth.token.role === 'superAdmin' || auth.token.role === 'developer')",
+        ".write": false
+      }
+    },
+
+    "areas": {
+      ".read": "auth != null && auth.token.locked !== true && (auth.token.role === 'karykarta' || auth.token.role === 'admin' || auth.token.role === 'superAdmin' || auth.token.role === 'developer')",
+      "$docId": {
+        ".read": "auth != null && auth.token.locked !== true && (auth.token.role === 'karykarta' || auth.token.role === 'admin' || auth.token.role === 'superAdmin' || auth.token.role === 'developer')",
+        ".write": "auth != null && auth.token.locked !== true && (auth.token.role === 'karykarta' || auth.token.role === 'admin' || auth.token.role === 'superAdmin' || auth.token.role === 'developer') && !newData.child('party').exists() && !newData.child('partyAffiliation').exists() && !newData.child('preference').exists() && !newData.child('votedFor').exists() && !newData.child('support').exists() && !newData.child('voteChoice').exists()"
+      }
+    },
+
+    "booths": {
+      ".read": "auth != null && auth.token.locked !== true && (auth.token.role === 'karykarta' || auth.token.role === 'admin' || auth.token.role === 'superAdmin' || auth.token.role === 'developer')",
+      "$docId": {
+        ".read": "auth != null && auth.token.locked !== true && (auth.token.role === 'karykarta' || auth.token.role === 'admin' || auth.token.role === 'superAdmin' || auth.token.role === 'developer')",
+        ".write": "auth != null && auth.token.locked !== true && (auth.token.role === 'karykarta' || auth.token.role === 'admin' || auth.token.role === 'superAdmin' || auth.token.role === 'developer') && !newData.child('party').exists() && !newData.child('partyAffiliation').exists() && !newData.child('preference').exists() && !newData.child('votedFor').exists() && !newData.child('support').exists() && !newData.child('voteChoice').exists()"
+      }
+    },
+
+    "teamMembers": {
+      ".read": "auth != null && auth.token.locked !== true && (auth.token.role === 'karykarta' || auth.token.role === 'admin' || auth.token.role === 'superAdmin' || auth.token.role === 'developer')",
+      "$docId": {
+        ".read": "auth != null && auth.token.locked !== true && (auth.token.role === 'karykarta' || auth.token.role === 'admin' || auth.token.role === 'superAdmin' || auth.token.role === 'developer')",
+        ".write": "auth != null && auth.token.locked !== true && (auth.token.role === 'karykarta' || auth.token.role === 'admin' || auth.token.role === 'superAdmin' || auth.token.role === 'developer') && !newData.child('party').exists() && !newData.child('partyAffiliation').exists() && !newData.child('preference').exists() && !newData.child('votedFor').exists() && !newData.child('support').exists() && !newData.child('voteChoice').exists()"
+      }
+    },
+
+    // The roll itself. Unconditionally read-only: it is the reference copy of
+    // an official document, and that guarantee should not rest on convention.
+    // Ward-scoped — `auth.token.wardNo` is a claim, so it cannot be widened by
+    // the client, and an admin sees every ward.
+    "voters": {
+      "$docId": {
+        ".read": "auth != null && auth.token.locked !== true && (auth.token.role === 'karykarta' || auth.token.role === 'admin' || auth.token.role === 'superAdmin' || auth.token.role === 'developer') && (auth.token.role === 'admin' || auth.token.role === 'superAdmin' || auth.token.role === 'developer' || auth.token.wardNo === data.child('wardNo').val())",
+        ".write": false
+      }
+    },
+
+    // -------------------------------------------------- campaign activity --
+
+    "tasks": {
+      ".read": "auth != null && auth.token.locked !== true && (auth.token.role === 'karykarta' || auth.token.role === 'admin' || auth.token.role === 'superAdmin' || auth.token.role === 'developer')",
+      "$docId": {
+        ".read": "auth != null && auth.token.locked !== true && (auth.token.role === 'karykarta' || auth.token.role === 'admin' || auth.token.role === 'superAdmin' || auth.token.role === 'developer')",
+        ".write": "auth != null && auth.token.locked !== true && (auth.token.role === 'karykarta' || auth.token.role === 'admin' || auth.token.role === 'superAdmin' || auth.token.role === 'developer') && !newData.child('party').exists() && !newData.child('partyAffiliation').exists() && !newData.child('preference').exists() && !newData.child('votedFor').exists() && !newData.child('support').exists() && !newData.child('voteChoice').exists()",
+        "title":     { ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 200" },
+        "status":    { ".validate": "newData.val() === 'todo' || newData.val() === 'doing' || newData.val() === 'done' || newData.val() === 'blocked'" },
+        "createdBy": { ".validate": "newData.isString() && newData.val().length >= 1" },
+        "createdAt": { ".validate": "newData.isNumber()" },
+        "updatedAt": { ".validate": "newData.isNumber()" }
+      }
+    },
+
+    "issues": {
+      ".read": "auth != null && auth.token.locked !== true && (auth.token.role === 'karykarta' || auth.token.role === 'admin' || auth.token.role === 'superAdmin' || auth.token.role === 'developer')",
+      "$docId": {
+        ".read": "auth != null && auth.token.locked !== true && (auth.token.role === 'karykarta' || auth.token.role === 'admin' || auth.token.role === 'superAdmin' || auth.token.role === 'developer')",
+        ".write": "auth != null && auth.token.locked !== true && (auth.token.role === 'karykarta' || auth.token.role === 'admin' || auth.token.role === 'superAdmin' || auth.token.role === 'developer') && !newData.child('party').exists() && !newData.child('partyAffiliation').exists() && !newData.child('preference').exists() && !newData.child('votedFor').exists() && !newData.child('support').exists() && !newData.child('voteChoice').exists()",
+        "category":   { ".validate": "newData.isString() && newData.val().length >= 1" },
+        "status":     { ".validate": "newData.isString() && newData.val().length >= 1" },
+        "reportedAt": { ".validate": "newData.isNumber()" },
+        "updatedAt":  { ".validate": "newData.isNumber()" }
+      }
+    },
+
+    "events": {
+      ".read": "auth != null && auth.token.locked !== true && (auth.token.role === 'karykarta' || auth.token.role === 'admin' || auth.token.role === 'superAdmin' || auth.token.role === 'developer')",
+      "$docId": {
+        ".read": "auth != null && auth.token.locked !== true && (auth.token.role === 'karykarta' || auth.token.role === 'admin' || auth.token.role === 'superAdmin' || auth.token.role === 'developer')",
+        ".write": "auth != null && auth.token.locked !== true && (auth.token.role === 'karykarta' || auth.token.role === 'admin' || auth.token.role === 'superAdmin' || auth.token.role === 'developer') && !newData.child('party').exists() && !newData.child('partyAffiliation').exists() && !newData.child('preference').exists() && !newData.child('votedFor').exists() && !newData.child('support').exists() && !newData.child('voteChoice').exists()",
+        "type":      { ".validate": "newData.val() === 'rally' || newData.val() === 'doorToDoor' || newData.val() === 'meeting' || newData.val() === 'party' || newData.val() === 'other'" },
+        "startsAt":  { ".validate": "newData.isNumber()" },
+        "createdAt": { ".validate": "newData.isNumber()" }
+      }
+    },
+
+    "expenses": {
+      ".read": "auth != null && auth.token.locked !== true && (auth.token.role === 'karykarta' || auth.token.role === 'admin' || auth.token.role === 'superAdmin' || auth.token.role === 'developer')",
+      "$docId": {
+        ".read": "auth != null && auth.token.locked !== true && (auth.token.role === 'karykarta' || auth.token.role === 'admin' || auth.token.role === 'superAdmin' || auth.token.role === 'developer')",
+        ".write": "auth != null && auth.token.locked !== true && (auth.token.role === 'karykarta' || auth.token.role === 'admin' || auth.token.role === 'superAdmin' || auth.token.role === 'developer') && !newData.child('party').exists() && !newData.child('partyAffiliation').exists() && !newData.child('preference').exists() && !newData.child('votedFor').exists() && !newData.child('support').exists() && !newData.child('voteChoice').exists()",
+        "amount":    { ".validate": "newData.isNumber() && newData.val() >= 0" },
+        "status":    { ".validate": "newData.val() === 'pending' || newData.val() === 'approved' || newData.val() === 'rejected'" },
+        "createdAt": { ".validate": "newData.isNumber()" }
+      }
+    },
+
+    "compliance": {
+      ".read": "auth != null && auth.token.locked !== true && (auth.token.role === 'karykarta' || auth.token.role === 'admin' || auth.token.role === 'superAdmin' || auth.token.role === 'developer')",
+      "$docId": {
+        ".read": "auth != null && auth.token.locked !== true && (auth.token.role === 'karykarta' || auth.token.role === 'admin' || auth.token.role === 'superAdmin' || auth.token.role === 'developer')",
+        ".write": "auth != null && auth.token.locked !== true && (auth.token.role === 'karykarta' || auth.token.role === 'admin' || auth.token.role === 'superAdmin' || auth.token.role === 'developer') && !newData.child('party').exists() && !newData.child('partyAffiliation').exists() && !newData.child('preference').exists() && !newData.child('votedFor').exists() && !newData.child('support').exists() && !newData.child('voteChoice').exists()",
+        "title":     { ".validate": "newData.isString() && newData.val().length >= 1" },
+        "updatedAt": { ".validate": "newData.isNumber()" }
+      }
+    },
+
+    // ------------------------------------------------------ shared phones --
+
+    "voterPhones": {
+      // Collection-level so `useVoterContacts` can list the numbers, and it
+      // also covers `proposals` below by ancestor inheritance.
+      ".read": "auth != null && auth.token.locked !== true && (auth.token.role === 'karykarta' || auth.token.role === 'admin' || auth.token.role === 'superAdmin' || auth.token.role === 'developer')",
+      "$voterId": {
+        // The finalized number is readable by anyone who may read voters —
+        // the whole point is that the team dials it — while CHOOSING which
+        // number that is stays with `contactFinalize` (superAdmin+).
+        ".read": "auth != null && auth.token.locked !== true && (auth.token.role === 'karykarta' || auth.token.role === 'admin' || auth.token.role === 'superAdmin' || auth.token.role === 'developer')",
+        ".write": "auth != null && auth.token.locked !== true && (auth.token.role === 'superAdmin' || auth.token.role === 'developer')",
+        "wardNo":         { ".validate": "newData.isNumber() && newData.val() > 0" },
+        "finalPhone":     { ".validate": "newData.isString() && newData.val().length <= 24" },
+        "finalizedBy":    { ".validate": "newData.isString() && newData.val().length >= 1 || !newData.exists()" },
+        "finalizedName":  { ".validate": "newData.isString() && newData.val().length >= 1 || !newData.exists()" },
+        "finalizedAt":    { ".validate": "newData.isNumber() || !newData.exists()" },
+
+        // One proposal per account, keyed BY that account's uid — so "only
+        // your own" is a path check rather than a diff.
+        "proposals": {
+          "$propId": {
+            ".read": "auth != null && auth.token.locked !== true && (auth.token.role === 'karykarta' || auth.token.role === 'admin' || auth.token.role === 'superAdmin' || auth.token.role === 'developer')",
+            ".write": "auth != null && auth.token.locked !== true && (auth.token.role === 'karykarta' || auth.token.role === 'admin' || auth.token.role === 'superAdmin' || auth.token.role === 'developer') && auth.uid === $propId",
+            ".validate": "newData.hasChildren(['phone', 'authorName', 'wardNo', 'updatedAt'])",
+            "phone":      { ".validate": "newData.isString() && newData.val().length >= 6 && newData.val().length <= 24" },
+            "authorName": { ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 160" },
+            "wardNo":     { ".validate": "newData.isNumber() && newData.val() > 0" },
+            "updatedAt":  { ".validate": "newData.isNumber()" }
+          }
+        }
+      }
+    },
+
+    // --------------------------------------------------------------- teams --
+
+    // The uid → displayName roster. A member reads their OWN team's roster by
+    // matching the id against their own claim — no collection scan, no profile
+    // exposure. The roster is a discovery hint, never membership truth: the
+    // read of a teammate's edits below is gated on the document's own
+    // `teamId`, not on being able to see a roster entry.
+    "teams": {
+      // Only a member of SOME team (or a manager) may enumerate rosters. The
+      // `$teamId` rule below still narrows which one a member may open, but a
+      // plain `GET /teams` stops at this line.
+      ".read": "(auth != null && auth.token.teamId != null && auth.token.teamId !== '') || (auth != null && auth.token.locked !== true && (auth.token.role === 'superAdmin' || auth.token.role === 'developer'))",
+      "$teamId": {
+        ".read": "(auth != null && auth.token.teamId != null && auth.token.teamId !== '' && auth.token.teamId === $teamId) || (auth != null && auth.token.locked !== true && (auth.token.role === 'superAdmin' || auth.token.role === 'developer'))",
+        ".write": "auth != null && auth.token.locked !== true && (auth.token.role === 'superAdmin' || auth.token.role === 'developer')",
+        "updatedAt": { ".validate": "newData.isNumber() || !newData.exists()" }
+      }
+    },
+
+    // ------------------------------------------------------------- accounts --
+    //
+    //  NO blanket `.write` at `users/$uid` that can see children: in RTDB a
+    //  `.write` at a parent covers every descendant and CANNOT be revoked by a
+    //  child, so granting `auth.uid === $uid` here would let an account hand
+    //  itself `role: 'developer'`. Every editable child therefore carries its
+    //  own rule. Verbose, and the only correct shape.
+    //
+    //  The node-level `.write` below exists for ONE thing: deleting the whole
+    //  profile. `!newData.exists()` is exactly the delete case, which keeps it
+    //  from becoming a back door over the children.
+    //
+    "users": {
+      // The roster read. `accountView` is admin-and-up, so a karykarta asking
+      // for `/users` is refused while opening their OWN `/users/{uid}` still
+      // works — that one is granted by the `$uid` rule below, and RTDB ORs
+      // down the path rather than letting this line veto it.
+      ".read": "auth != null && auth.token.locked !== true && (auth.token.role === 'admin' || auth.token.role === 'superAdmin' || auth.token.role === 'developer')",
+      "$uid": {
+        // Owner reads their own profile — the app needs it to explain WHY the
+        // account is locked — and account viewers read the roster. Same
+        // one-way split as firestore.rules: viewing never implies writing.
+        ".read": "(auth != null && auth.uid === $uid) || (auth != null && auth.token.locked !== true && (auth.token.role === 'admin' || auth.token.role === 'superAdmin' || auth.token.role === 'developer'))",
+
+        // Delete only, and still refuses self-deletion — preserved verbatim
+        // from firestore.rules rather than "fixed" here, because a port is the
+        // wrong time to silently widen a capability.
+        ".write": "auth != null && auth.token.locked !== true && (auth.token.role === 'superAdmin' || auth.token.role === 'developer') && auth.uid !== $uid && !newData.exists()",
+
+        // ---------------------------------------------- self-service ------
+        "email":       { ".write": "auth != null && (auth.uid === $uid || (auth.token.locked !== true && (auth.token.role === 'superAdmin' || auth.token.role === 'developer')))" },
+        "displayName": { ".write": "auth != null && (auth.uid === $uid || (auth.token.locked !== true && (auth.token.role === 'superAdmin' || auth.token.role === 'developer')))" },
+        "photoURL":    { ".write": "auth != null && (auth.uid === $uid || (auth.token.locked !== true && (auth.token.role === 'superAdmin' || auth.token.role === 'developer')))" },
+        "onboarded":   { ".write": "auth != null && (auth.uid === $uid || (auth.token.locked !== true && (auth.token.role === 'superAdmin' || auth.token.role === 'developer')))", ".validate": "newData.isBoolean() || !newData.exists()" },
+        "createdAt":   { ".write": "auth != null && (auth.uid === $uid || (auth.token.locked !== true && (auth.token.role === 'superAdmin' || auth.token.role === 'developer')))", ".validate": "newData.isNumber()" },
+        "updatedAt":   { ".write": "auth != null && (auth.uid === $uid || (auth.token.locked !== true && (auth.token.role === 'superAdmin' || auth.token.role === 'developer')))", ".validate": "newData.isNumber() || !newData.exists()" },
+
+        // A device is bound ONCE by its owner. Only an account manager may
+        // re-bind or clear it — the point of the lock is that a phone found in
+        // the wrong hands cannot declare itself the new owner.
+        "device": {
+          ".write": "auth != null && ((auth.uid === $uid && !data.child('device').exists()) || (auth.token.locked !== true && (auth.token.role === 'superAdmin' || auth.token.role === 'developer') && auth.uid !== $uid))",
+          ".validate": "!newData.exists() || (newData.hasChildren(['id', 'name', 'platform']) && newData.child('id').isString() && newData.child('id').val().length >= 8 && newData.child('id').val().length <= 128 && newData.child('name').isString() && newData.child('name').val().length >= 1 && newData.child('name').val().length <= 120 && (newData.child('lastActiveAt').isNumber() || !newData.child('lastActiveAt').exists()))"
+        },
+
+        // The owner may set the lock ON and never off — clearing it is an
+        // account manager's call, so a stolen phone cannot unlock itself.
+        "locked": {
+          ".write": "auth != null && ((auth.uid === $uid && data.child('locked').val() !== true) || (auth.token.locked !== true && (auth.token.role === 'superAdmin' || auth.token.role === 'developer') && auth.uid !== $uid))",
+          ".validate": "newData.isBoolean() || !newData.exists()"
+        },
+        "lockedReason": {
+          ".write": "auth != null && ((auth.uid === $uid && data.child('locked').val() !== true) || (auth.token.locked !== true && (auth.token.role === 'superAdmin' || auth.token.role === 'developer') && auth.uid !== $uid))",
+          ".validate": "newData.val() === '' || newData.val() === 'device_change' || newData.val() === 'admin' || !newData.exists()"
+        },
+        "lockedAt": {
+          ".write": "auth != null && ((auth.uid === $uid && data.child('locked').val() !== true) || (auth.token.locked !== true && (auth.token.role === 'superAdmin' || auth.token.role === 'developer') && auth.uid !== $uid))",
+          ".validate": "newData.isNumber() || !newData.exists()"
+        },
+        "lockedBy": {
+          ".write": "auth != null && ((auth.uid === $uid && data.child('locked').val() !== true) || (auth.token.locked !== true && (auth.token.role === 'superAdmin' || auth.token.role === 'developer') && auth.uid !== $uid))",
+          ".validate": "newData.isString() && newData.val().length <= 128 || !newData.exists()"
+        },
+
+        // ------------------------------------------------ account admin ----
+        // These read a CLAIM, not this document, so a caller cannot reach them
+        // by writing their own profile: the owner simply is not on the write
+        // list, whatever role they might claim to hold.
+        "role": {
+          ".write": "auth != null && auth.token.locked !== true && (auth.token.role === 'superAdmin' || auth.token.role === 'developer') && auth.uid !== $uid",
+          ".validate": "newData.val() === 'karykarta' || newData.val() === 'admin' || newData.val() === 'superAdmin' || newData.val() === 'developer' || !newData.exists()"
+        },
+        "wardNo": {
+          ".write": "auth != null && auth.token.locked !== true && (auth.token.role === 'superAdmin' || auth.token.role === 'developer') && auth.uid !== $uid",
+          ".validate": "(newData.isNumber() && newData.val() > 0) || !newData.exists()"
+        },
+        "teamId": {
+          ".write": "auth != null && auth.token.locked !== true && (auth.token.role === 'superAdmin' || auth.token.role === 'developer') && auth.uid !== $uid",
+          ".validate": "newData.isString() && newData.val().length <= 64 || !newData.exists()"
+        },
+        "multiDevice":   { ".write": "auth != null && auth.token.locked !== true && (auth.token.role === 'superAdmin' || auth.token.role === 'developer') && auth.uid !== $uid", ".validate": "newData.isBoolean() || !newData.exists()" },
+        "multiDeviceBy": { ".write": "auth != null && auth.token.locked !== true && (auth.token.role === 'superAdmin' || auth.token.role === 'developer') && auth.uid !== $uid", ".validate": "newData.isString() && newData.val().length <= 128 || !newData.exists()" },
+        "multiDeviceAt": { ".write": "auth != null && auth.token.locked !== true && (auth.token.role === 'superAdmin' || auth.token.role === 'developer') && auth.uid !== $uid", ".validate": "newData.isNumber() || !newData.exists()" },
+
+        // Anything not named above cannot be written at all — the RTDB
+        // equivalent of `affectedKeys().hasOnly(...)`, and the reason a stray
+        // field never reaches a profile. `$other` is a wildcard, but `.write`
+        // ORs along the path instead of ANDing: a false here cannot revoke a
+        // grant the literal rule above gave, it only closes segments that have
+        // no literal rule of their own. `voterEdits` has one, so it is
+        // unaffected.
+        "$other": { ".write": false },
+
+        // ---------------------------------------------- the edit overlay --
+        // `voterEdits/{voterId}` — "my fieldwork follows my account".
+        //
+        // Reads: the owner; account viewers; and a TEAMMATE, resolved with NO
+        // cross-node read by comparing the reader's `teamId` claim against the
+        // `teamId` stamped on the document itself. That stamp is validated
+        // below to equal the author's own claim, so it can never name a team
+        // the writer is not on — which is what stops a forged `teamId` from
+        // being a hole.
+        "voterEdits": {
+          // The CONTAINER needs its own `.read` because both sync paths read
+          // `users/{uid}/voterEdits` as a NODE, not as documents: `pullEdits`
+          // (own, allowed by the `auth.uid === $uid` clause) and
+          // `pullTeamEdits` (a teammate's, deliberately not).
+          //
+          // Owner and account viewers only — deliberately NOT a teammate.
+          // `teamId` lives on each `$voterId` below, so at this level there is
+          // nothing to compare the reader's claim against, and "any member of
+          // any team may list anyone's edits" would be a cross-team leak. The
+          // per-document rule underneath still grants a teammate a read of an
+          // individual edit; what does not work is LISTING another member's
+          // edits — which is `pullTeamEdits`'s only read. It catches the
+          // rejection and returns 0, so the feature fails closed and silent
+          // rather than half-applied; `lib/roll/sync.ts` documents this under
+          // "Known limitation". No account currently carries a `teamId`, so
+          // nothing is broken today — but adopting team sharing means stamping
+          // `teamId` on this container and validating it against the owner's
+          // claim, which is the only place an RTDB rule can see it.
+          ".read": "(auth != null && auth.uid === $uid) || (auth != null && auth.token.locked !== true && (auth.token.role === 'admin' || auth.token.role === 'superAdmin' || auth.token.role === 'developer'))",
+          "$voterId": {
+            ".read": "(auth != null && auth.uid === $uid) || (auth != null && auth.token.locked !== true && (auth.token.role === 'admin' || auth.token.role === 'superAdmin' || auth.token.role === 'developer')) || (auth != null && auth.token.teamId != null && auth.token.teamId !== '' && auth.token.teamId === data.child('teamId').val())",
+
+            // Write stays OWNER-only. Sharing is read-only by design: field
+            // notes and political leaning are sensitive, and a shared write
+            // path would be a silent-corruption surface.
+            ".write": "auth != null && auth.uid === $uid && auth.token.locked !== true && !newData.child('party').exists() && !newData.child('partyAffiliation').exists() && !newData.child('preference').exists() && !newData.child('votedFor').exists() && !newData.child('voteChoice').exists()",
+            ".validate": "newData.hasChildren(['wardNo', 'updatedAt', 'updatedBy'])",
+
+            "wardNo":    { ".validate": "newData.isNumber() && newData.val() > 0" },
+            "updatedAt": { ".validate": "newData.isNumber()" },
+            "updatedBy": { ".validate": "newData.isString() && newData.val().length >= 1" },
+
+            // The denormalised team — see the header. Set only from the
+            // writer's own claim, so it cannot be forged. Absent means "no
+            // team", which shares nothing: the same default as a profile that
+            // never had one.
+            "teamId": { ".validate": "newData.val() === auth.token.teamId || !newData.exists()" },
+
+            "gender": { ".validate": "newData.val() === '' || newData.val() === 'male' || newData.val() === 'female' || newData.val() === 'other' || !newData.exists()" },
+            "voted":  { ".validate": "newData.val() === '' || newData.val() === 'unknown' || newData.val() === 'voted' || newData.val() === 'notVoted' || !newData.exists()" },
+            "leaning": {
+              ".validate": "newData.val() === '' || newData.val() === 'unknown' || newData.val() === 'right' || newData.val() === 'centerRight' || newData.val() === 'center' || newData.val() === 'centerLeft' || newData.val() === 'left' || !newData.exists()"
+            },
+            "age":   { ".validate": "newData.isNumber() || !newData.exists()" },
+            "phone": { ".validate": "newData.isString() && newData.val().length <= 24 || !newData.exists()" }
+          }
+        }
+      }
+    }
+  }
+}

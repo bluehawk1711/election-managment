@@ -16,6 +16,14 @@
 # in-app copies too; these patterns are the root-level safety net).
 **/.env
 **/.env.*
+# The template is the opposite of a secret, and `**/.env.*` above swallows it
+# as collateral. It is the only place a fresh clone can learn that
+# `EXPO_PUBLIC_FIREBASE_DATABASE_URL` exists at all, and that its value is a
+# REGIONAL HOST — `https://<db>.<region>.firebasedatabase.app` — rather than
+# the `<project>-default-rtdb.firebaseio.com` that still looks authoritative
+# and answers 404 with an empty body. Keeping it ignored left that only in a
+# local file nobody else had.
+!.env.example
 **/service-account*.json
 
 # Dependencies & build output

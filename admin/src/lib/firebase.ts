@@ -39,6 +39,24 @@ const firebaseConfig = {
   storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
   messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+  /**
+   * The Realtime Database's URL, NOT an id — this is the one entry in
+   * `FirebaseOptions` that names a *host*, and it is why RTDB cannot reuse
+   * `FIRESTORE_DATABASE_ID` below.
+   *
+   * `getDatabase(app, 'default')` does not mean "the database called default".
+   * The second argument is parsed as a URL, `'default'` has no host, and
+   * `parseRepoInfo` calls `fatal('Cannot parse Firebase url. Please use
+   * https://<YOUR FIREBASE>.firebaseio.com')` — at module import time, before
+   * a single screen renders. `getDatabase(app)` with this key absent is no
+   * better: the SDK cannot guess the host and throws "Unable to determine the
+   * default Firebase database URL".
+   *
+   * The id `default` that Firestore needs is the id of the Firestore
+   * *database resource* in `firebase.json`; the RTDB host is a separate
+   * instance with its own name, normally `<project>-default-rtdb.firebaseio.com`.
+   */
+  databaseURL: process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL,
 };
 
 if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
@@ -77,17 +95,38 @@ export const db: Firestore = existing
     );
 
 /**
- * Realtime Database instance for the panel.
- * Shares the same app as Firestore but uses the databaseURL from env.
- * The database id is `default`, NOT `(default)`.
+ * The Realtime Database handle, created on first use.
+ *
+ * **Lazy on purpose.** `getDatabase` throws when the URL is missing or
+ * unparseable, and this module is imported by every page. Eagerly building
+ * the instance would turn one unset env var into "the panel crashes at boot
+ * and shows nothing", which is exactly the failure mode the Firestore block
+ * above goes out of its way to avoid. Deferring it means the pages still
+ * reading Firestore keep working, and the first RTDB operation reports the
+ * actual problem instead of taking the whole panel down.
+ *
+ * `getDatabase` is itself memoised per app instance, so calling this once per
+ * operation is free — and it is what makes Fast Refresh safe here, matching
+ * the `existing` guard at the top of the file.
  */
-export const database: Database | null = existing
-  ? getDatabase(app, FIRESTORE_DATABASE_ID)
-  : initializeDatabase(
-      app,
-      { databaseURL: process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL },
-      FIRESTORE_DATABASE_ID
+let database: Database | null = null;
+
+export function realtime(): Database {
+  if (database) return database;
+
+  const url = firebaseConfig.databaseURL;
+  if (!url) {
+    throw new Error(
+      'NEXT_PUBLIC_FIREBASE_DATABASE_URL is not set. The Realtime Database is ' +
+        'reached by host, not by id — copy the mobile app\'s .env into ' +
+        'admin/.env.local and set it to ' +
+        'https://<project>-default-rtdb.<region>.firebasedatabase.app.'
     );
+  }
+
+  database = getDatabase(app, url);
+  return database;
+}
 
 /**
  * Point at the local emulators when NEXT_PUBLIC_FIREBASE_USE_EMULATOR=1
@@ -101,6 +140,7 @@ if (
   process.env.NEXT_PUBLIC_FIREBASE_USE_EMULATOR === '1'
 ) {
   connectAuthEmulator(auth, 'http://localhost:9099', { disableWarnings: true });
-  connectDatabaseEmulator(database, 'localhost', 9000);
+  connectDatabaseEmulator(realtime(), 'localhost', 9000);
+  connectFirestoreEmulator(db, 'localhost', 8080);
   console.log('[firebase] using emulators at localhost');
 }

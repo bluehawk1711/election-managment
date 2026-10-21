@@ -45,6 +45,7 @@ import {
   type DatabaseReference,
 } from 'firebase/database';
 import { realtime } from '@/lib/firebase';
+import { childrenOf, dataOf } from '@/lib/db/decode';
 import type { DbData, DbMetadata, DbSnapshot, QuerySpec } from '@/lib/db/types';
 
 export type { DbData, DbMetadata, DbSnapshot, QuerySpec } from '@/lib/db/types';
@@ -118,9 +119,6 @@ export function isConnected(): boolean {
 const lastSegment = (path: string): string =>
   path.slice(path.lastIndexOf('/') + 1);
 
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null && !Array.isArray(value);
-
 function metadataFor(path: string): DbMetadata {
   return {
     fromCache: !connected,
@@ -136,7 +134,7 @@ function snapshotOf(path: string, key: string, value: unknown): DbSnapshot {
     // A primitive at a node the app expects to be an object still "exists" —
     // it is malformed data, not absent data, and hiding that would be worse.
     exists: () => value !== null && value !== undefined,
-    data: () => (isRecord(value) ? value : {}),
+    data: () => dataOf(value),
     metadata: metadataFor(path),
   };
 }
@@ -218,10 +216,9 @@ const keyOrder = (a: DbSnapshot, b: DbSnapshot): number =>
  * Firestore's.
  */
 function selectRows(path: string, snapshot: RtdbSnapshot, spec?: QuerySpec): DbSnapshot[] {
-  const raw = snapshot.val();
-  if (!isRecord(raw)) return [];
-
-  let rows = Object.entries(raw).map(([key, value]) =>
+  // `childrenOf` and not `isRecord`: see it for the `/wards` case, where the
+  // node is an array on arrival and a `!isRecord` guard reads as "empty list".
+  let rows = childrenOf(snapshot.val()).map(([key, value]) =>
     snapshotOf(`${path}/${key}`, key, value)
   );
 
@@ -383,7 +380,10 @@ export async function writeIfUnchanged(
   beginWrite(path);
   try {
     const result = await runTransaction(node, (current) => {
-      const next = build(isRecord(current) ? current : null);
+      // `dataOf`, not `isRecord`: an integer-keyed node transacts as an array
+      // (see `childrenOf`), and handing `build` `null` for it would make a
+      // conditional write believe the node was absent.
+      const next = build(current == null ? null : dataOf(current));
       return next === null ? undefined : next;
     });
     return result.committed;

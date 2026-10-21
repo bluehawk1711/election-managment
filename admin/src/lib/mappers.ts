@@ -1,13 +1,21 @@
 /**
- * Snapshot → plain object for every document the panel reads.
+ * Snapshot → plain object for every node the panel reads.
  *
- * Mirrors `mobile/lib/mappers.ts`'s defensive style — untrusted Firestore
- * data with closed-vocabulary enums funnelled through `enumOf` so a typo'd
- * field degrades to a legal fallback instead of poisoning a render. The
- * legal fallbacks are the SAME lists `firestore.rules` validates, so what
- * the panel shows is always something the rules already agreed to.
+ * Mirrors `mobile/lib/mappers.ts`'s defensive style — untrusted data with
+ * closed-vocabulary enums funnelled through `enumOf` so a typo'd field
+ * degrades to a legal fallback instead of poisoning a render. The legal
+ * fallbacks are the SAME lists `mobile/database.rules` validates, so what the
+ * panel shows is always something the rules already agreed to.
+ *
+ * ## The input type is structural on purpose
+ *
+ * `AnyDoc` is `{ id, data() }` — NOT Firestore's `QueryDocumentSnapshot`.
+ * The Realtime Database has no snapshot type of its own that looks like
+ * Firestore's, so `lib/db/index.ts` defines the one the panel wants and
+ * every read is adapted into it. Because the mapper only ever calls `id`
+ * and `data()`, it does not care which SDK produced them — and the port to
+ * RTDB changed no mapper body at all.
  */
-import type { DocumentData, QueryDocumentSnapshot } from 'firebase/firestore';
 import {
   TASK_STATUSES,
   type Task,
@@ -22,7 +30,11 @@ import type {
   PhoneProposal,
 } from '@/lib/contacts';
 
-type AnyDoc = Pick<QueryDocumentSnapshot<DocumentData>, 'id' | 'data'>;
+/** The shape `lib/db` hands the mappers — see the file header. */
+type AnyDoc = {
+  readonly id: string;
+  data(): Record<string, unknown>;
+};
 
 const str = (value: unknown, fallback = ''): string =>
   typeof value === 'string' ? value : fallback;
