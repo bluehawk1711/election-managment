@@ -18,10 +18,11 @@ import { useWhatsappMessage } from '@/hooks/useWhatsappMessage';
 import { messageFor } from '@/lib/errors';
 import { auth } from '@/lib/firebase';
 import { APP_VERSION } from '@/lib/app-config';
-import { roleLabelKey } from '@/lib/roles';
+import { can, roleLabelKey } from '@/lib/roles';
 import { useAuth } from '@/providers/auth-provider';
+import { router } from 'expo-router';
 import { sendEmailVerification } from 'firebase/auth';
-import { User } from 'lucide-react-native';
+import { User, UserPlus, Users } from 'lucide-react-native';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet } from 'react-native';
@@ -91,6 +92,11 @@ export default function SettingsScreen() {
   const [confirmingDelete, setConfirmingDelete] = useState(false);
 
   const providerId = user?.providerData[0]?.providerId;
+  // Team-account management lives in Settings as well as the More hub: the
+  // former is where a super admin looks for "account" actions, and the latter
+  // is the module grid. Both routes are the same screen, so there is one
+  // implementation and two ways in.
+  const canManageAccounts = can(profile?.role ?? null, 'accountManage');
 
   const saveName = async () => {
     if (await update({ displayName: displayName.trim() || null })) {
@@ -192,6 +198,40 @@ export default function SettingsScreen() {
           </Button>
         </Card>
       )}
+
+      {/* ── Team accounts ───────────────────────────────────────────────
+          Super admins and developers can create accounts from Settings (the
+          same screen as More → Accounts). The card is hidden for every other
+          role rather than shown-and-refused: `database.rules.json` requires
+          `accountManage` for the profile write, so a visible button could only
+          ever fail. */}
+      {canManageAccounts ? (
+        <>
+          <Text variant='caption' style={styles.sectionHeading}>
+            {t('settings.team')}
+          </Text>
+
+          <Card style={{ gap: 12 }}>
+            <View style={{ gap: 2 }}>
+              <Text variant='subtitle'>{t('accounts.title')}</Text>
+              <Text variant='caption'>{t('accounts.settingsHint')}</Text>
+            </View>
+            <Button
+              icon={UserPlus}
+              onPress={() => router.push('/(tabs)/more/users/new')}
+            >
+              {t('accounts.create')}
+            </Button>
+            <Button
+              variant='outline'
+              icon={Users}
+              onPress={() => router.push('/(tabs)/more/users')}
+            >
+              {t('accounts.manage')}
+            </Button>
+          </Card>
+        </>
+      ) : null}
 
       {/* ── Preferences ────────────────────────────────────────────────
           Grouped under one heading so the screen reads as "who you are" and

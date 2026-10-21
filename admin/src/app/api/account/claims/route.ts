@@ -54,6 +54,7 @@
 // segment runtime config, and Node is the default runtime anyway.
 
 import type { DecodedIdToken } from 'firebase-admin/auth';
+import { CORS_HEADERS, corsPreflight } from '@/lib/cors';
 
 const ROUTE = 'api/account/claims';
 const ROLES = new Set(['karykarta', 'admin', 'superAdmin', 'developer']);
@@ -127,6 +128,7 @@ function reply(
     {
       status,
       headers: {
+        ...CORS_HEADERS,
         'cache-control': 'no-store',
         'x-request-id': requestId,
       },
@@ -138,6 +140,15 @@ function reply(
 function bearerToken(request: Request): string | null {
   const match = /^Bearer\s+(.+)$/i.exec(request.headers.get('authorization') ?? '');
   return match?.[1]?.trim() || null;
+}
+
+/**
+ * Browser preflight for the mobile app's cross-origin POST. Expo web cannot
+ * send the Authorization header until this succeeds; native fetch does not
+ * preflight, but answers the same request either way.
+ */
+export function OPTIONS(): Response {
+  return corsPreflight();
 }
 
 /**

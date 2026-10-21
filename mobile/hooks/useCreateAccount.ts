@@ -3,13 +3,16 @@ import {
   createUserWithEmailAndPassword,
   deleteUser,
   getAuth,
+  signOut as firebaseSignOut,
   type Auth,
   type User,
 } from 'firebase/auth';
 import { useCallback, useState } from 'react';
+import { adminApiBase, publishAccountClaims } from '@/lib/admin-api';
 import { saveAccountCredential } from '@/lib/account-credentials';
-import { serverTimestamp, setDoc } from '@/lib/db';
+import { deleteDoc, serverTimestamp, setDoc } from '@/lib/db';
 import { messageFor } from '@/lib/errors';
+import { auth } from '@/lib/firebase';
 import type { AppRole } from '@/lib/roles';
 
 /**
@@ -35,10 +38,21 @@ import type { AppRole } from '@/lib/roles';
  * write below is denied by the same rules that gate the Accounts list. The
  * `can()` check on the screen is a convenience; the rules are the boundary.
  *
- * The properly-scoped version of this is a Cloud Function using the Admin SDK,
- * which creates users with no client session involved at all. That needs the
- * Blaze plan, which is out of scope for this prototype — noted here because it
- * is the right answer for production, not because it is blocked.
+ * ## Why creation talks to Campaign HQ
+ *
+ * The profile write is not enough. Every rule reads the role from the Auth
+ * custom claim (`auth.token.role`), and only the Admin SDK can write a claim.
+ * So the last step calls the admin panel's `/api/account/claims` route, which
+ * authenticates THIS manager, reads `users/{uid}` server-side, and mirrors the
+ * profile onto the new login's token. The app never sends a role that the
+ * server trusts — it sends only the uid.
+ *
+ * That step is not best-effort. If it fails, the Auth record and profile are
+ * rolled back, because an account that can sign in but has no claim is an
+ * account the database rules treat as having no role — it would look created
+ * and do nothing. `EXPO_PUBLIC_ADMIN_API_URL` is the build-time origin of the
+ * admin panel; without it this form refuses to start rather than leave a
+ * broken login behind.
  */
 let secondaryAuth: Auth | null = null;
 
@@ -57,6 +71,15 @@ function accountsAuth(): Auth {
   return secondaryAuth;
 }
 
+/** Signs the throwaway secondary session out without letting that mask a result. */
+async function clearSecondarySession(): Promise<void> {
+  try {
+    await firebaseSignOut(accountsAuth());
+  } catch {
+    // Nothing to clear, or the secondary app never initialized.
+  }
+}
+
 export interface NewAccount {
   email: string;
   password: string;
@@ -67,21 +90,42 @@ export interface NewAccount {
 }
 
 /**
- * Creates the account and its profile.
+ * Creates the account and its profile, then activates the login.
  *
- * Two writes, and the second can fail — so the first is rolled back when it
- * does. The alternative leaves an Auth record with no `users` document, which
- * the Accounts screen cannot show (it reads `users`) and the app cannot recover
- * from: a retry then fails with `auth/email-already-in-use` and the only way
- * forward is the Firebase console. Rolling back means a retry just works.
+ * Three writes — Auth user, `users/{uid}`, custom claims — and every later step
+ * can fail, so the earlier ones are rolled back. The alternative leaves an
+ * Auth record with no `users` document, which the Accounts screen cannot show
+ * (it reads `users`) and the app cannot recover from: a retry then fails with
+ * `auth/email-already-in-use` and the only way forward is the Firebase console.
+ * Rolling back means a retry just works.
  */
 export function useCreateAccount() {
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const create = useCallback(async (input: NewAccount): Promise<boolean> => {
-    setCreating(true);
     setError(null);
+
+    // Fail before creating anything. An account with no way to publish its
+    // claim would be unusable the moment it is handed over, so "not
+    // configured" is a refusal to start, not a warning after the fact.
+    const base = adminApiBase();
+    if (!base) {
+      setError(
+        'Account activation is not configured in this build. Set EXPO_PUBLIC_ADMIN_API_URL to Campaign HQ’s address, then try again.'
+      );
+      return false;
+    }
+
+    const manager = auth.currentUser;
+    if (!manager) {
+      setError(
+        'Sign in again — creating an account needs your manager session to publish the new login’s role.'
+      );
+      return false;
+    }
+
+    setCreating(true);
 
     // Held so the rollback can delete exactly the account that was just made,
     // rather than relying on `currentUser` (which is null here — nobody is
@@ -89,6 +133,11 @@ export function useCreateAccount() {
     let created: User | null = null;
 
     try {
+      // Force a refresh so Campaign HQ sees this manager's CURRENT role. A
+      // cached token can be an hour old, and the claims route authorises on
+      // the role in the token it receives.
+      const managerToken = await manager.getIdToken(true);
+
       const credential = await createUserWithEmailAndPassword(
         accountsAuth(),
         input.email,
@@ -139,15 +188,49 @@ export function useCreateAccount() {
         { merge: true }
       );
 
+      // Publish the profile's role/ward onto the new login's custom claims.
+      // The route's response tells us what it wrote; the token check below
+      // proves the new session actually received it.
+      const published = await publishAccountClaims({
+        base,
+        token: managerToken,
+        uid: created.uid,
+        operation: 'mobile-create',
+      });
+
+      if (published.role !== input.role) {
+        throw new Error(
+          'The account was saved but Campaign HQ did not publish its role. Nothing was kept — try again.'
+        );
+      }
+
+      // Force-refresh the NEW user's token and inspect it. This is the
+      // "instantly usable" guarantee: by the time this returns true, the very
+      // token the account will sign in with already carries its role, ward and
+      // activation state. A rules check on the first screen will pass.
+      const token = await created.getIdTokenResult(true);
+
+      if (token.claims.role !== input.role) {
+        throw new Error(
+          'The new login did not receive its role. Nothing was kept — try again.'
+        );
+      }
+
+      if (
+        input.role === 'karykarta' &&
+        (input.wardNo == null || token.claims.wardNo !== input.wardNo)
+      ) {
+        throw new Error(
+          'The new login did not receive its ward. Nothing was kept — try again.'
+        );
+      }
+
       // Remember what was just typed so the admin can read it back from the
       // Accounts list later — Firebase Auth keeps only a hash, so this is the
-      // one moment the password exists anywhere. After the profile write and
-      // best-effort: it is a convenience layered on an account that already
-      // exists, so a keystore that is locked must not roll back an Auth user
-      // and a `users` document that are both perfectly good. On failure the
-      // screen's old promise is what holds — `accounts.createdHint` then tells
-      // the admin the password cannot be read back, which is the truth for an
-      // account this device could not file (`lib/account-credentials.ts`).
+      // one moment the password exists anywhere. After activation and
+      // best-effort: it is a convenience layered on an account that is already
+      // usable, so a locked keystore must not roll back an Auth user, a
+      // profile and claims that are all perfectly good.
       await saveAccountCredential({
         uid: created.uid,
         email: input.email,
@@ -156,13 +239,22 @@ export function useCreateAccount() {
 
       return true;
     } catch (caught) {
-      // Undo the Auth record so a retry starts clean. Without this, a second
-      // attempt fails with `auth/email-already-in-use` and the admin has no way
-      // forward from inside the app.
-      if (created) await deleteUser(created).catch(() => undefined);
+      // Undo every write so a retry starts clean. The profile goes first: the
+      // manager's token is the one that can delete it, and deleting the Auth
+      // record first would leave a profile whose login is gone. Both are
+      // best-effort; the Auth record is the thing that makes a retry fail with
+      // `email-already-in-use`, so it is the last to go.
+      if (created) {
+        await deleteDoc(`users/${created.uid}`).catch(() => undefined);
+        await deleteUser(created).catch(() => undefined);
+      }
       setError(messageFor(caught));
       return false;
     } finally {
+      // The secondary app exists only to create the user without disturbing
+      // the manager's session. Do not leave the new account signed in on this
+      // device after the hand-off.
+      await clearSecondarySession();
       setCreating(false);
     }
   }, []);

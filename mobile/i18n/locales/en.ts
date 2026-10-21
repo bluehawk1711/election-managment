@@ -497,6 +497,9 @@ export const en = {
   // Accounts (plan-voters.md §6.5 / §7)
   'accounts.title': 'Accounts',
   'accounts.create': 'Create account',
+  'accounts.manage': 'View all accounts',
+  'accounts.settingsHint':
+    'Create a sign-in for a team member and assign their role and ward. Only super admins and developers can do this.',
   'accounts.displayName': 'Display name',
   'accounts.email': 'Email',
   'accounts.password': 'Password',
@@ -734,6 +737,7 @@ export const en = {
 
   'settings.title': 'Settings',
   'settings.account': 'Account',
+  'settings.team': 'Team',
   'settings.preferences': 'Preferences',
   'settings.appearance': 'Appearance',
   'settings.appearanceHint': 'Follows your phone by default.',

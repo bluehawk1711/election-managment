@@ -159,6 +159,7 @@ jobs:
           EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID=${{ secrets.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID }}
           EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID=${{ secrets.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID }}
           EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID=${{ secrets.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID }}
+          EXPO_PUBLIC_ADMIN_API_URL=${{ secrets.EXPO_PUBLIC_ADMIN_API_URL }}
           ENVEOF
 
       # ── Environment guard ──────────────────────────────────────────────
@@ -172,7 +173,10 @@ jobs:
       # `EXPO_PUBLIC_FIREBASE_LINK_URL` and the Google client ids are NOT
       # checked: they are optional features, and an empty value is a supported
       # configuration (email-link sign-in and federated sign-in go dark).
-      - name: Verify the Firebase env is complete
+      # `EXPO_PUBLIC_ADMIN_API_URL` IS checked: account creation finishes by
+      # calling Campaign HQ's claims route, and without it the form refuses to
+      # create anything rather than leave a roleless login behind.
+      - name: Verify the app env is complete
         run: |
           missing=0
           for name in \
@@ -182,7 +186,8 @@ jobs:
             EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET \
             EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID \
             EXPO_PUBLIC_FIREBASE_APP_ID \
-            EXPO_PUBLIC_FIREBASE_DATABASE_URL
+            EXPO_PUBLIC_FIREBASE_DATABASE_URL \
+            EXPO_PUBLIC_ADMIN_API_URL
           do
             value=$(grep -E "^${name}=" .env | cut -d= -f2-)
             if [ -z "$value" ]; then
@@ -204,8 +209,19 @@ jobs:
               ;;
           esac
 
+          # Account creation finishes by calling Campaign HQ's claims route;
+          # without this origin the mobile form refuses to create anything.
+          ADMIN_URL=$(grep -E '^EXPO_PUBLIC_ADMIN_API_URL=' .env | cut -d= -f2-)
+          case "$ADMIN_URL" in
+            https://*) ;;
+            *)
+              echo "::error::EXPO_PUBLIC_ADMIN_API_URL must be Campaign HQ's https origin (no /api suffix): '$ADMIN_URL'"
+              missing=1
+              ;;
+          esac
+
           [ "$missing" -eq 0 ] || exit 1
-          echo "Firebase env complete. Realtime Database host: ${URL#https://}"
+          echo "App env complete. Realtime Database host: ${URL#https://}; Campaign HQ: ${ADMIN_URL#https://}"
 
       # ── Package guard ──────────────────────────────────────────────────
       # constants/brand.json is the single source of truth (app.config.ts

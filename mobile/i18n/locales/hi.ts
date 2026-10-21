@@ -477,6 +477,9 @@ export const hi: Record<TranslationKey, string> = {
   // Accounts
   'accounts.title': 'खाते',
   'accounts.create': 'खाता बनाएँ',
+  'accounts.manage': 'सभी खाते देखें',
+  'accounts.settingsHint':
+    'टीम सदस्य के लिए लॉगिन बनाएँ और उनकी भूमिका तथा वार्ड तय करें। यह केवल सुपर एडमिन और डेवलपर कर सकते हैं।',
   'accounts.displayName': 'प्रदर्शन नाम',
   'accounts.email': 'ईमेल',
   'accounts.password': 'पासवर्ड',
@@ -709,6 +712,7 @@ export const hi: Record<TranslationKey, string> = {
 
   'settings.title': 'सेटिंग्स',
   'settings.account': 'खाता',
+  'settings.team': 'टीम',
   'settings.preferences': 'पसंद',
   'settings.appearance': 'रूप',
   'settings.appearanceHint': 'डिफ़ॉल्ट रूप से आपके फ़ोन का रूप उपयोग होता है।',
