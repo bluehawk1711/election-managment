@@ -19,8 +19,6 @@
 // `cacheComponents`, which rejects route segment runtime config outright —
 // and Node is the default runtime anyway, which is what the Admin SDK needs.
 
-import { adminAuth } from '@/lib/admin-firebase';
-
 /** ISO timestamps → epoch millis; a missing value stays null. */
 function toMillis(iso: string | undefined): number | null {
   if (!iso) return null;
@@ -42,6 +40,9 @@ export async function GET(request: Request): Promise<Response> {
   }
 
   try {
+    // Import inside the handler so a module-load failure becomes a JSON 404
+    // (this dialog's "unavailable" path) instead of an empty 500.
+    const { adminAuth } = await import('@/lib/admin-firebase');
     const user = await adminAuth().getUser(uid);
     return Response.json({
       ok: true,

@@ -23,8 +23,6 @@
 // No `export const runtime = 'nodejs'`: `cacheComponents` rejects route
 // segment runtime config, and Node is the default runtime anyway.
 
-import { adminAuth } from '@/lib/admin-firebase';
-
 const MIN_LENGTH = 6; // Firebase Auth's floor.
 
 interface PasswordChange {
@@ -55,6 +53,9 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   try {
+    // Import inside the handler so a module-load failure stays a JSON error
+    // with the route's normal status instead of an empty 500.
+    const { adminAuth } = await import('@/lib/admin-firebase');
     await adminAuth().updateUser(uid, { password });
     return Response.json({ ok: true });
   } catch (caught) {

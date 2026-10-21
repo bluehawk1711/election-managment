@@ -27,7 +27,6 @@
 import { spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
-import { adminDatabase } from '@/lib/admin-firebase';
 
 // No `export const runtime = 'nodejs'`: `cacheComponents` rejects route
 // segment runtime config, and Node is the default runtime anyway.
@@ -73,6 +72,9 @@ export async function POST(request: Request): Promise<Response> {
   // Validate the Admin SDK env HERE, before spawning a minutes-long import
   // that would die on the first write otherwise.
   try {
+    // Dynamic import: this route's production guard above must still return
+    // its normal 403 even if the Admin SDK cannot load on the host.
+    const { adminDatabase } = await import('@/lib/admin-firebase');
     adminDatabase();
   } catch (caught) {
     return Response.json(

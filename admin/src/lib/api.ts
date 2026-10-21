@@ -395,7 +395,7 @@ export async function grantRole(args: {
   // Publish the new role onto the account's LOGIN TOKEN, not just its
   // profile: RTDB rules read `auth.token.role`, so a role change that stopped
   // here would keep enforcing the OLD role until the token refreshed.
-  await publishClaims(args.targetUid);
+  await publishClaims(args.targetUid, 'role-change');
 }
 
 /**
@@ -410,32 +410,135 @@ export async function grantRole(args: {
  * that lag is the cost of making roles revocable rather than baked into a
  * document (see `database.rules`'s header, which documents it honestly).
  */
-async function publishClaims(targetUid: string): Promise<void> {
+/**
+ * A browser-side request id, shared with the server through the
+ * `x-request-id` header. The server echoes it and includes it in its log line,
+ * so a user's error message can be matched to the exact Vercel log entry.
+ */
+function newRequestId(): string {
+  return (
+    globalThis.crypto?.randomUUID?.() ??
+    `req-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
+  );
+}
+
+/** Extract loggable fields without ever touching a password/token. */
+function errorFields(caught: unknown): Record<string, unknown> {
+  if (caught instanceof Error) {
+    const code =
+      typeof caught === 'object' && caught !== null && 'code' in caught
+        ? String((caught as { code: unknown }).code)
+        : null;
+    return {
+      errorName: caught.name,
+      errorMessage: caught.message,
+      ...(code ? { errorCode: code } : {}),
+    };
+  }
+  return { errorMessage: String(caught) };
+}
+
+async function publishClaims(
+  targetUid: string,
+  operation = 'claims'
+): Promise<void> {
   const caller = auth.currentUser;
   if (!caller) {
     throw new Error('Sign in again — publishing claims needs the manager’s ID token.');
   }
-  // The route is reachable in production, so it authorises the caller rather
-  // than trusting the request body. A fresh token also carries the caller's
-  // current role, which is what the route checks before writing anything.
-  const token = await caller.getIdToken();
-  const response = await fetch('/api/account/claims', {
-    method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify({ uid: targetUid }),
-  });
-  const payload = (await response.json().catch(() => ({}))) as {
-    ok?: boolean;
-    error?: string;
-  };
-  if (!response.ok || payload.ok !== true) {
+
+  const requestId = newRequestId();
+  const started = Date.now();
+  let token: string;
+  try {
+    // The route is reachable in production, so it authorises the caller rather
+    // than trusting the request body. A fresh token also carries the caller's
+    // current role, which is what the route checks before writing anything.
+    token = await caller.getIdToken();
+  } catch (caught) {
+    console.error('[claims] caller-token-failed', {
+      requestId,
+      targetUid,
+      operation,
+      callerUid: caller.uid,
+      ...errorFields(caught),
+    });
     throw new Error(
-      payload.error ?? 'The change could not be published to the account’s login token.'
+      `Sign in again — the manager’s ID token could not be refreshed. (ref: ${requestId})`
     );
   }
+
+  console.info('[claims] publish-start', {
+    requestId,
+    targetUid,
+    operation,
+    callerUid: caller.uid,
+  });
+
+  let response: Response;
+  try {
+    response = await fetch('/api/account/claims', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        authorization: `Bearer ${token}`,
+        'x-request-id': requestId,
+      },
+      body: JSON.stringify({ uid: targetUid, operation }),
+    });
+  } catch (caught) {
+    console.error('[claims] network-failed', {
+      requestId,
+      targetUid,
+      operation,
+      ...errorFields(caught),
+    });
+    throw new Error(
+      `The login-token update could not reach the server. (ref: ${requestId})`
+    );
+  }
+
+  const raw = await response.text().catch(() => '');
+  let payload: {
+    ok?: boolean;
+    error?: string;
+    requestId?: string;
+    claims?: unknown;
+    stage?: string;
+  } = {};
+  if (raw) {
+    try {
+      payload = JSON.parse(raw) as typeof payload;
+    } catch {
+      // An empty or HTML body is itself diagnostic; keep it for the log.
+    }
+  }
+  const effectiveId =
+    typeof payload.requestId === 'string' ? payload.requestId : requestId;
+
+  if (!response.ok || payload.ok !== true) {
+    console.error('[claims] publish-failed', {
+      requestId: effectiveId,
+      targetUid,
+      operation,
+      status: response.status,
+      stage: payload.stage ?? null,
+      serverError: payload.error ?? null,
+      body: raw.slice(0, 400),
+      durationMs: Date.now() - started,
+    });
+    throw new Error(
+      `${payload.error ?? `The login-token update failed (HTTP ${response.status}).`} (ref: ${effectiveId})`
+    );
+  }
+
+  console.info('[claims] publish-ok', {
+    requestId: effectiveId,
+    targetUid,
+    operation,
+    claims: payload.claims ?? null,
+    durationMs: Date.now() - started,
+  });
 }
 
 export async function deleteAccount(targetUid: string): Promise<void> {
@@ -500,7 +603,7 @@ export async function lockAccount(
   // `/users/{uid}` from a rule anywhere else in the tree. Without this the
   // lock would be decorative — a modified client keeps its old token and
   // every write still passes until the token happens to refresh.
-  await publishClaims(targetUid);
+  await publishClaims(targetUid, 'lock');
 }
 
 /**
@@ -524,7 +627,7 @@ export async function unlockAccount(targetUid: string): Promise<void> {
 
   // Clearing the lock is half of it — the other half is dropping
   // `auth.token.locked`, which is what every rule actually reads.
-  await publishClaims(targetUid);
+  await publishClaims(targetUid, 'unlock');
 }
 
 /**
@@ -546,6 +649,12 @@ export async function setMultiDevice(
     multiDeviceAt: value ? Date.now() : null,
     updatedAt: Date.now(),
   });
+
+  // `database.rules` reads the exemption from `auth.token.multiDevice`, not
+  // from this profile node. Publishing after the write is what makes the
+  // toggle real; without it the roster would say "multi-device" while every
+  // rule still enforced the single-device lock.
+  await publishClaims(targetUid, 'multi-device');
 }
 
 /**
@@ -627,7 +736,7 @@ export async function setTeam(
   // Team sharing is claim-driven for the same reason roles are: a reader
   // compares its own `auth.token.teamId` to the `teamId` stamped on a
   // teammate's edit, because an RTDB rule cannot look the team up.
-  await publishClaims(targetUid);
+  await publishClaims(targetUid, 'team');
 }
 
 /**
@@ -801,6 +910,14 @@ export interface NewAccount {
 
 export async function createAccount(input: NewAccount): Promise<void> {
   let created: User | null = null;
+  let stage: 'auth' | 'profile' | 'vault' | 'claims' = 'auth';
+  const started = Date.now();
+
+  console.info('[account-create] start', {
+    stage,
+    role: input.role,
+    wardNo: input.wardNo,
+  });
 
   try {
     const credential = await createUserWithEmailAndPassword(
@@ -809,6 +926,10 @@ export async function createAccount(input: NewAccount): Promise<void> {
       input.password
     );
     created = credential.user;
+    console.info('[account-create] auth-ready', {
+      uid: created.uid,
+      elapsedMs: Date.now() - started,
+    });
 
     const payload: Record<string, unknown> = {
       email: input.email,
@@ -834,12 +955,18 @@ export async function createAccount(input: NewAccount): Promise<void> {
     // wardNo here, and RTDB stores no `null` children, so the key is simply
     // absent.
 
+    stage = 'profile';
     // `merge` maps to RTDB's update(), which evaluates each child against its
     // own rule. A plain set() would be judged at `users/$uid`, whose only
     // `.write` is delete-only, so it is refused for EVERY caller — the exact
     // reason `mobile/hooks/useCreateAccount.ts` also uses `{ merge: true }`.
     await setDoc(`users/${created.uid}`, payload, { merge: true });
+    console.info('[account-create] profile-saved', {
+      uid: created.uid,
+      elapsedMs: Date.now() - started,
+    });
 
+    stage = 'vault';
     // The password vault — `accountSecrets/{uid}`. Without a Cloud Function
     // this is the ONLY place the credential stays recoverable (Firebase Auth
     // itself stores just a scrypt hash), and it is what lets the Accounts
@@ -861,19 +988,63 @@ export async function createAccount(input: NewAccount): Promise<void> {
       updatedAt: Date.now(),
       updatedBy: manager,
     });
+    console.info('[account-create] vault-saved', {
+      uid: created.uid,
+      elapsedMs: Date.now() - started,
+    });
 
+    stage = 'claims';
     // Put the role on the login token as well as the profile. RTDB rules read
     // `auth.token.role`, not `users/$uid`, so without this the account could
     // authenticate but every rule would treat it as having no role.
-    await publishClaims(created.uid);
+    await publishClaims(created.uid, 'create-account');
+
+    console.info('[account-create] complete', {
+      uid: created.uid,
+      role: input.role,
+      wardNo: input.wardNo,
+      elapsedMs: Date.now() - started,
+    });
   } catch (error) {
+    console.error('[account-create] failed', {
+      stage,
+      uid: created?.uid ?? null,
+      role: input.role,
+      wardNo: input.wardNo,
+      elapsedMs: Date.now() - started,
+      ...errorFields(error),
+    });
+
     // Undo every write so a retry starts clean (see header): the profile and
     // vault nodes first (deleting only the Auth record would strand them),
-    // then the Auth record itself.
+    // then the Auth record itself. The rollback runs in parallel because the
+    // three nodes are independent; every rejection is logged rather than
+    // silently discarded, because a failed rollback is exactly the state that
+    // turns a retry into "email already in use" with no obvious cause.
     if (created) {
-      await deleteDoc(`users/${created.uid}`).catch(() => undefined);
-      await deleteDoc(`accountSecrets/${created.uid}`).catch(() => undefined);
-      await deleteUser(created).catch(() => undefined);
+      console.warn('[account-create] rollback-start', { uid: created.uid });
+      const results = await Promise.allSettled([
+        deleteDoc(`users/${created.uid}`),
+        deleteDoc(`accountSecrets/${created.uid}`),
+        deleteUser(created),
+      ]);
+      const failures = results.flatMap((result, index) => {
+        if (result.status === 'fulfilled') return [];
+        return [
+          {
+            step: ['profile', 'vault', 'auth'][index],
+            ...errorFields(result.reason),
+          },
+        ];
+      });
+      if (failures.length > 0) {
+        console.error('[account-create] rollback-incomplete', {
+          uid: created.uid,
+          failures,
+        });
+      } else {
+        console.warn('[account-create] rollback-complete', { uid: created.uid });
+      }
     }
     throw error;
   }
