@@ -200,6 +200,9 @@ body {
 /* the dialog rendered unstyled at the bottom of the page. Plain      */
 /* global classes with a slip- prefix cannot fail that way, and the   */
 /* prefix keeps .row/.label/.value & co. out of the rest of the app.  */
+/*                                                                    */
+/* Paste this whole block at the END of app/globals.css, replacing    */
+/* the previous slip block.                                           */
 /* ================================================================ */
 /*
  * The voter-slip modal — the pasted `VoterSlip.module.css` kept as the
@@ -212,11 +215,13 @@ body {
  * mock's orange (#ea580c family) so the dialog reads as "the slip app",
  * not as another admin panel surface.
  *
- * PRINT: only `.slip-slip` survives — everything else is `visibility: hidden`,
- * the slip is lifted to the page origin, and `print-color-adjust: exact`
- * keeps the orange/yellow fills (tick "Background graphics" in the dialog).
- * Two modes via `[data-print-mode]`: `slip` keeps the 420pt cut-out slip,
- * `a4` stretches it to the full A4 sheet the reference PDF was printed at.
+ * The modal is rendered in a React portal directly under <body>, so the
+ * print rules below can hide every other body child without depending on
+ * the app shell's layout.
+ *
+ * PRINT: only `.slip-slip` survives, `print-color-adjust: exact` keeps the
+ * orange/yellow fills. Two modes via `[data-print-mode]`: `slip` keeps the
+ * 420px cut-out slip, `a4` stretches it to the full A4 sheet.
  */
 
 .slip-wrapper {
@@ -252,6 +257,11 @@ body {
   border-radius: 18px;
   overflow: hidden;
   background: #f6f7f9;
+  /* The portal lives under <body>, so don't inherit the dark console's
+     light text colour. */
+  color: #1f2937;
+  font-family: var(--font-devanagari, 'Noto Sans Devanagari'), 'Mukta',
+    system-ui, sans-serif;
   box-shadow: 0 40px 90px -30px rgb(0 0 0 / 0.65);
   animation: slip-riseIn 0.2s cubic-bezier(0.22, 1, 0.36, 1);
 }
@@ -460,6 +470,8 @@ body {
   max-width: 420px;
   margin: 0 auto;
   background: #fff;
+  /* Explicit: the paper must never inherit the dark console's light text. */
+  color: #1f2937;
   border: 1.5px dashed #9ca3af;
   border-radius: 14px;
   padding: 16px 18px;
@@ -491,6 +503,7 @@ body {
   line-height: 1.3;
   margin: 8px 0 12px;
   font-weight: 800;
+  color: #1f2937;
 }
 
 .slip-candidate {
@@ -765,17 +778,20 @@ body {
 
 /* ---------- PRINT: only the slip is printed ----------
  *
- * Two things this block has to get right, or printing fails silently:
+ * Why the old rules printed ~6 blank pages:
  *
- *  1. `display: none`, NOT `visibility: hidden`, for everything that is not
- *     the slip. A visibility-hidden element still occupies its layout box,
- *     and the voter list behind the dialog is thousands of pixels tall —
- *     hiding it printed the slip on page 1 followed by eight blank pages.
+ *  1. The dialog lived INSIDE the app shell. The old block hid siblings with
+ *     `:has()` / `:not()` chains and reset padding/min-height/overflow on the
+ *     slip's ancestors, but never `height`, `transform`, grid/flex sizing or
+ *     `display` — so any `h-screen` / `min-h-screen` / motion wrapper kept its
+ *     size and Chrome paginated that empty space.
+ *  2. The paper never set its own `color`, so it inherited the console's
+ *     near-white text and printed white-on-white.
  *
- *  2. Specificity. The "hide everything" selector carries `:has(...)`, which
- *     is a class-level bump; if the "show the slip" selectors are weaker they
- *     LOSE, and the sheet prints completely blank. That is exactly what
- *     happened once the hide rule was scoped with :has().
+ * The fix: the modal is portalled to <body>, so "hide everything except the
+ * overlay" is just `body > *:not(.slip-overlay)`. No dependence on how the
+ * shell is built. The overlay + dialog chrome are then flattened into plain
+ * block flow so the slip owns the sheet.
  */
 @media print {
   @page {
@@ -783,48 +799,67 @@ body {
     margin: 10mm;
   }
 
-  /* Scoped to "the slip dialog is open": Ctrl+P anywhere else in the panel
-     keeps printing that page as it looks on screen. */
-  body:has(.slip-overlay)
-    *:not(:has(.slip-slip)):not(.slip-slip):not(.slip-slip *) {
+  html,
+  body {
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+    background: #fff !important;
+  }
+
+  /* The overlay is a direct child of <body> (portal): hide its siblings —
+     the app shell, toasts, anything else mounted on body. */
+  body > *:not(.slip-overlay) {
     display: none !important;
   }
 
-  /* Everything that DOES contain the slip is a pure container on paper —
-     no padding, no min-height, no shadow — so the slip owns the sheet. */
-  body:has(.slip-overlay) *:has(.slip-slip) {
+  /* Flatten the dialog chrome into plain flow. */
+  .slip-overlay,
+  .slip-modal,
+  .slip-body,
+  .slip-slipWrap {
+    display: block !important;
+    position: static !important;
+    width: auto !important;
+    height: auto !important;
+    max-width: none !important;
+    max-height: none !important;
     margin: 0 !important;
     padding: 0 !important;
-    min-height: 0 !important;
-    max-height: none !important;
-    max-width: none !important;
-    border: 0 !important;
-    background: none !important;
-    box-shadow: none !important;
     overflow: visible !important;
-    position: static !important;
+    background: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    animation: none !important;
+    transform: none !important;
   }
 
-  /* The paper, and only the paper, stays on the sheet. */
-  .slip-slip,
-  .slip-slip * {
-    visibility: visible !important;
+  /* Everything in the dialog that isn't the paper. */
+  .slip-header,
+  .slip-toolbar,
+  .slip-statusBar,
+  .slip-boothPanel,
+  .slip-shortcutBar {
+    display: none !important;
   }
 
   .slip-slip {
-    position: static !important;
     width: 100% !important;
     max-width: 100% !important;
+    margin: 0 !important;
+    color: #1f2937 !important;
     border: 1.5px dashed #000 !important;
+    break-inside: avoid;
     /* Forces the orange badge and the colour strip to print even when
        "Background graphics" is unticked (Chrome's default) — without this
        the white-on-orange badge prints white-on-white. Inherited by every
-       descendant, which is why the slips' fills survive. */
+       descendant. */
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
 
-  /* `slip` mode = the 420pt cut-out; `a4` mode = the full A4 sheet. */
+  /* `slip` mode = the cut-out slip; `a4` mode = the full A4 sheet. */
   [data-print-mode='slip'] .slip-slip {
     max-width: 420px !important;
     margin: 0 auto !important;
