@@ -9,9 +9,9 @@ import { View } from '@/components/ui/view';
 import { useCollection } from '@/hooks/useCollection';
 import { COLLECTIONS } from '@/lib/collections';
 import { profileFromDoc, type Profile } from '@/lib/documents';
+import type { DbSnapshot } from '@/lib/db';
 import { can, roleLabelKey } from '@/lib/roles';
 import { useAuth } from '@/providers/auth-provider';
-import type { DocumentData, QueryDocumentSnapshot } from 'firebase/firestore';
 import { useRouter } from 'expo-router';
 import { ShieldOff, UserCog, Users } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
@@ -19,27 +19,27 @@ import { useTranslation } from 'react-i18next';
 import { FlatList, StyleSheet } from 'react-native';
 
 /**
- * Firestore document → `Profile`, for `useCollection`.
+ * RTDB document → `Profile`, for `useCollection`.
  *
  * A module-level function, not an inline arrow: `useCollection` takes `mapDoc`
  * in its dependency array, so an inline mapper would tear down and resubscribe
- * the `onSnapshot` on every single render.
+ * the listener on every single render.
  */
-const toProfile = (doc: QueryDocumentSnapshot<DocumentData>): Profile | null =>
-  profileFromDoc(doc);
+const toProfile = (doc: DbSnapshot): Profile | null => profileFromDoc(doc);
 
 /**
  * Accounts list (plan-voters.md §6.5).
  *
- * Runs on `useCollection`, which is `onSnapshot` + `includeMetadataChanges` — so
- * a role granted on one device shows up here without a refetch. That matters
- * more than usual here, because the most common reason to open this screen is
- * "did my change to someone's role land?", and a screen that needs a manual
- * reload to answer that invites the reader to reload manually.
+ * Runs on `useCollection`, which is a live listener — so a role granted on one
+ * device shows up here without a refetch. That matters more than usual here,
+ * because the most common reason to open this screen is "did my change to
+ * someone's role land?", and a screen that needs a manual reload to answer
+ * that invites the reader to reload manually.
  *
- * `firestore.rules` denies the `users` list to anyone without `accountView`,
- * so the gate below is a convenience: it stops a karykarta opening a screen
- * that could only ever error, and lets it say why rather than show a red box.
+ * `database.rules.json` denies the `users` list to anyone without
+ * `canViewAccounts`, so the gate below is a convenience: it stops a karykarta
+ * opening a screen that could only ever error, and lets it say why rather than
+ * show a red box.
  *
  * **View vs manage.** The roster is viewable by `accountView` (admin upward) —
  * an admin has to be able to see the team a super admin created — while the
@@ -48,10 +48,10 @@ const toProfile = (doc: QueryDocumentSnapshot<DocumentData>): Profile | null =>
  * create button; nothing hidden-but-broken.
  *
  * Sorted in memory rather than with `orderBy`: `displayName` is optional, and
- * Firestore drops documents missing an ordered field — so `orderBy('displayName')`
- * would silently hide every account created through a provider that does not
- * supply one. That is the exact failure mode `firestore.indexes.json` cannot
- * save you from, and `firestore.rules` §3 warns about in its own comments.
+ * RTDB has no "drop the children missing this field" trap the way Firestore's
+ * `orderBy` does — but sorting in memory keeps the one thing that does matter
+ * here, which is that an account with no display name and no email still sorts
+ * by its id rather than disappearing from the list.
  */
 export default function UsersScreen() {
   const { t } = useTranslation();

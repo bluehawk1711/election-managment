@@ -21,8 +21,10 @@
  * reject whatever the old client cannot understand.
  */
 import Constants from 'expo-constants';
-import { doc, getDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { getDoc } from '@/lib/db';
+
+/** `appConfig/general` — read before anything else works. */
+const GATE_PATH = 'appConfig/general';
 
 export interface VersionGateConfig {
   /** Newest published version (`1.2.0`) — displayed, informational. */
@@ -54,7 +56,7 @@ export function compareVersions(a: string, b: string): number {
 /** Fetches the gate config, or null when there is nothing to gate on. */
 export async function fetchVersionGate(): Promise<VersionGateConfig | null> {
   try {
-    const snapshot = await getDoc(doc(db, 'appConfig', 'general'));
+    const snapshot = await getDoc(GATE_PATH);
     if (!snapshot.exists()) return null;
     const data = snapshot.data();
     const requiredVersion =

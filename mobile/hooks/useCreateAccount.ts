@@ -6,11 +6,10 @@ import {
   type Auth,
   type User,
 } from 'firebase/auth';
-import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { useCallback, useState } from 'react';
 import { saveAccountCredential } from '@/lib/account-credentials';
+import { serverTimestamp, setDoc } from '@/lib/db';
 import { messageFor } from '@/lib/errors';
-import { db } from '@/lib/firebase';
 import type { AppRole } from '@/lib/roles';
 
 /**
@@ -31,7 +30,7 @@ import type { AppRole } from '@/lib/roles';
  *
  * ## Why this is not a security hole
  *
- * It is not a bypass — `firestore.rules` authorises every write, and the client's
+ * It is not a bypass — `database.rules.json` authorises every write, and the client's
  * Firebase config is public by design. Without `accountManage` the `users`
  * write below is denied by the same rules that gate the Accounts list. The
  * `can()` check on the screen is a convenience; the rules are the boundary.
@@ -111,23 +110,34 @@ export function useCreateAccount() {
       // superAdmin/developer, and `rules-tests/firestore.test.ts` asserts both
       // that a super admin can and that a karykarta cannot. The client asking is
       // not the client deciding.
+      // `{ merge: true }` for the same reason as `ensureProfile`: a plain set is
+      // validated at the `users/$uid` NODE, whose only `.write` rule is
+      // delete-only, so it is refused (HTTP 401) whatever the caller's rank.
+      // `update()` is validated per child, and each of these children grants
+      // superAdmin when `auth.uid !== $uid` — which is the case here, because
+      // the write runs on the PRIMARY app (the admin) even though the account
+      // itself was created on the secondary one.
       // eslint-disable-next-line react-doctor/firebase-client-owned-authz-field
-      await setDoc(doc(db, 'users', created.uid), {
-        email: input.email,
-        displayName: input.displayName,
-        photoURL: null,
-        onboarded: true,
-        role: input.role,
-        // Only karykarta are ward-scoped. Storing `wardNo: null` for everyone
-        // else would be harmless but misleading, and `Profile.wardNo` reads an
-        // explicit null as "unrestricted" — so absence and null mean the same
-        // thing here, and absence is what the seeded data looks like.
-        ...(input.role === 'karykarta' && input.wardNo != null
-          ? { wardNo: input.wardNo }
-          : {}),
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-      });
+      await setDoc(
+        `users/${created.uid}`,
+        {
+          email: input.email,
+          displayName: input.displayName,
+          photoURL: null,
+          onboarded: true,
+          role: input.role,
+          // Only karykarta are ward-scoped. Storing `wardNo: null` for everyone
+          // else would be harmless but misleading, and `Profile.wardNo` reads an
+          // explicit null as "unrestricted" — so absence and null mean the same
+          // thing here, and absence is what the seeded data looks like.
+          ...(input.role === 'karykarta' && input.wardNo != null
+            ? { wardNo: input.wardNo }
+            : {}),
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        },
+        { merge: true }
+      );
 
       // Remember what was just typed so the admin can read it back from the
       // Accounts list later — Firebase Auth keeps only a hash, so this is the

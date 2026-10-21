@@ -1,34 +1,48 @@
 /**
  * "Backup everything" — one JSON file, downloaded from the browser.
  *
- * Every top-level collection the rules define, plus the two subcollections
- * that carry per-account state (`users/{uid}/voterEdits`, the audit surface,
- * and `voterPhones/{id}/proposals`). Reads reuse the SIGNED-IN session's
+ * Every top-level node the rules define, plus the two sub-nodes that carry
+ * per-account state (`users/{uid}/voterEdits`, the audit surface, and
+ * `voterPhones/{id}/proposals`). Reads reuse the SIGNED-IN session's
  * permissions — a developer running a backup holds `dataTools`,
- * `accountView` (the roster + each user's edits) and `voterRead` (the roll),
- * which is exactly the union the panel is allowed to see anyway. Nothing new
- * becomes readable here; this only serializes what the session already can.
+ * `accountView` (the roster + each user's edits) and the roll tier, which is
+ * exactly the union the panel is allowed to see anyway. Nothing new becomes
+ * readable here; this only serializes what the session already can.
+ *
+ * ## Why the roll is NOT in here
+ *
+ * The Firestore version pulled `voters` as a collection. `database.rules`
+ * denies that read in RTDB (and always did in `firestore.rules`): the roll is
+ * ward-scoped per document, and "read every voter" has no client-side path at
+ * all — `votersByWard/{wardNo}` is the only read, one ward at a time, and
+ * `voters/$id` outright refuses a collection read. A backup that silently
+ * omitted 6 855 rows would be worse than one that says so, and one that
+ * fetched them would be exactly the bulk read the panel exists to avoid.
+ * Re-import the roll from `mobile/scripts/seed-rtdb.mjs` instead — it is the
+ * authoritative copy of an official document, not of anybody's work.
  *
  * Why not an Admin-SDK export: that would mean a server holding the service
  * key for a *download* — the same local-dev-only posture as the seed route
- * applies there, and a client-side export needs no key at all. `voters` is
- * 6,855 small documents — one `getDocs`, seconds, fine for a prototype
- * backup.
+ * applies there, and a client-side export needs no key at all.
  *
  * The file is produced as a Blob and handed to an `<a download>` click:
  * no server round-trip, no staging area, nothing to clean up.
  */
-import { collection, getDocs } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { getChildren } from '@/lib/db';
 
-/** Everything with documents worth keeping, in a stable print order. */
-export const BACKUP_COLLECTIONS = [
+/**
+ * Everything with nodes worth keeping, in a stable print order.
+ *
+ * The names are RTDB TOP-LEVEL NODES, not Firestore collections — `appConfig`
+ * and `accountSecrets` hold exactly one child each (`general` / the per-uid
+ * entries), which is why they read back as arrays of one entry below.
+ */
+export const BACKUP_NODES = [
   'campaigns',
   'constituencies',
   'wards',
   'areas',
   'booths',
-  'voters',
   'teamMembers',
   'tasks',
   'issues',
@@ -46,59 +60,64 @@ export interface BackupOutcome {
   name: string;
   /** Blob size in bytes, for the toast. */
   bytes: number;
-  /** Per-collection document counts (including subcollections). */
+  /** Per-node child counts (including sub-nodes). */
   counts: Record<string, number>;
 }
 
-interface FlatDoc {
+interface FlatEntry {
   id: string;
   [key: string]: unknown;
 }
 
-async function flatDocs(...path: string[]): Promise<FlatDoc[]> {
-  // `collection(db, path, …)` in this firebase version takes the FIRST
-  // segment as a plain string, so the array cannot go in as one spread.
-  const [root, ...rest] = path;
-  const snapshot = await getDocs(collection(db, root, ...rest));
-  return snapshot.docs.map((entry) => ({ id: entry.id, ...entry.data() }));
+/**
+ * One node's children as `{ id, …fields }` rows.
+ *
+ * `getChildren` already flattens RTDB's one shape quirk — a node keyed by
+ * integers arrives as an ARRAY (`wards` is keyed `"1".."13"`) — so this never
+ * sees it; it only spreads the fields beside the key.
+ */
+async function flatEntries(path: string): Promise<FlatEntry[]> {
+  return (await getChildren(path)).map((row) => ({ id: row.id, ...row.data() }));
 }
 
 /** Serializes the whole project state and triggers a browser download. */
 export async function exportBackup(): Promise<BackupOutcome> {
   const counts: Record<string, number> = {};
-  const collections: Record<string, FlatDoc[]> = {};
+  const nodes: Record<string, FlatEntry[]> = {};
 
-  for (const name of BACKUP_COLLECTIONS) {
-    const docs = await flatDocs(name);
-    collections[name] = docs;
-    counts[name] = docs.length;
+  for (const name of BACKUP_NODES) {
+    const entries = await flatEntries(name);
+    nodes[name] = entries;
+    counts[name] = entries.length;
   }
 
   // users/{uid}/voterEdits — the per-account change overlays (the audit).
-  const voterEdits: Record<string, FlatDoc[]> = {};
-  for (const user of collections.users ?? []) {
-    const docs = await flatDocs('users', user.id, 'voterEdits');
-    if (docs.length > 0) {
-      voterEdits[user.id] = docs;
-      counts[`users/${user.id}/voterEdits`] = docs.length;
+  const voterEdits: Record<string, FlatEntry[]> = {};
+  for (const user of nodes.users ?? []) {
+    const entries = await flatEntries(`users/${user.id}/voterEdits`);
+    if (entries.length > 0) {
+      voterEdits[user.id] = entries;
+      counts[`users/${user.id}/voterEdits`] = entries.length;
     }
   }
 
   // voterPhones/{id}/proposals — one proposal per proposing account.
-  const proposals: Record<string, FlatDoc[]> = {};
-  for (const board of collections.voterPhones ?? []) {
-    const docs = await flatDocs('voterPhones', board.id, 'proposals');
-    if (docs.length > 0) {
-      proposals[board.id] = docs;
-      counts[`voterPhones/${board.id}/proposals`] = docs.length;
+  const proposals: Record<string, FlatEntry[]> = {};
+  for (const board of nodes.voterPhones ?? []) {
+    const entries = await flatEntries(`voterPhones/${board.id}/proposals`);
+    if (entries.length > 0) {
+      proposals[board.id] = entries;
+      counts[`voterPhones/${board.id}/proposals`] = entries.length;
     }
   }
 
   const payload = {
-    format: 'campaign-hq-backup/1',
+    format: 'campaign-hq-backup/2',
     exportedAt: new Date().toISOString(),
-    collections,
-    subcollections: { voterEdits, proposals },
+    // The roll is absent by design — see the header.
+    note: 'The voter roll is not part of this backup: it is imported reference data (seed-rtdb.mjs), not work product.',
+    nodes,
+    subnodes: { voterEdits, proposals },
   };
 
   const json = JSON.stringify(payload, null, 2);

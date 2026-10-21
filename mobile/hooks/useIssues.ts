@@ -1,17 +1,9 @@
 import { useCollection } from '@/hooks/useCollection';
 import { COLLECTIONS } from '@/lib/collections';
-import { db } from '@/lib/firebase';
 import { issueFromDoc } from '@/lib/mappers';
 import type { CivicIssue, IssueStatus } from '@/lib/models';
 import { useAuth } from '@/providers/auth-provider';
-import {
-  addDoc,
-  collection,
-  deleteDoc,
-  doc,
-  serverTimestamp,
-  updateDoc,
-} from 'firebase/firestore';
+import { addDoc, deleteDoc, serverTimestamp, updateDoc } from '@/lib/db';
 import { useCallback } from 'react';
 
 export type IssueCreateInput = Omit<
@@ -32,7 +24,7 @@ export function useIssues() {
 
   const create = useCallback(
     async (input: IssueCreateInput) => {
-      await addDoc(collection(db, COLLECTIONS.issues), {
+      await addDoc(COLLECTIONS.issues, {
         ...input,
         reportedBy: user?.displayName || user?.email || user?.uid || 'field',
         reportedAt: serverTimestamp(),
@@ -43,7 +35,7 @@ export function useIssues() {
   );
 
   const update = useCallback(async (id: string, patch: IssuePatch) => {
-    await updateDoc(doc(db, COLLECTIONS.issues, id), {
+    await updateDoc(`${COLLECTIONS.issues}/${id}`, {
       ...patch,
       updatedAt: serverTimestamp(),
     });
@@ -51,7 +43,7 @@ export function useIssues() {
 
   const setStatus = useCallback(
     (id: string, status: IssueStatus) =>
-      updateDoc(doc(db, COLLECTIONS.issues, id), {
+      updateDoc(`${COLLECTIONS.issues}/${id}`, {
         status,
         updatedAt: serverTimestamp(),
       }),
@@ -59,7 +51,7 @@ export function useIssues() {
   );
 
   const remove = useCallback(async (id: string) => {
-    await deleteDoc(doc(db, COLLECTIONS.issues, id));
+    await deleteDoc(`${COLLECTIONS.issues}/${id}`);
   }, []);
 
   return { issues: docs, loading, error, connected, retry, create, update, setStatus, remove };

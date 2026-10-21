@@ -1,13 +1,6 @@
 import { COLLECTIONS } from '@/lib/collections';
-import { db } from '@/lib/firebase';
+import { addDoc, deleteDoc, updateDoc } from '@/lib/db';
 import type { TeamMember } from '@/lib/models';
-import {
-  addDoc,
-  collection,
-  deleteDoc,
-  doc,
-  updateDoc,
-} from 'firebase/firestore';
 import { useCallback } from 'react';
 
 export type TeamCreateInput = Omit<TeamMember, 'id'>;
@@ -21,15 +14,15 @@ export type TeamPatch = Partial<Omit<TeamMember, 'id'>>;
  */
 export function useTeam() {
   const create = useCallback(async (input: TeamCreateInput) => {
-    await addDoc(collection(db, COLLECTIONS.teamMembers), input);
+    await addDoc(COLLECTIONS.teamMembers, input);
   }, []);
 
   const update = useCallback(async (id: string, patch: TeamPatch) => {
-    await updateDoc(doc(db, COLLECTIONS.teamMembers, id), patch);
+    await updateDoc(`${COLLECTIONS.teamMembers}/${id}`, patch);
   }, []);
 
   const remove = useCallback(async (id: string) => {
-    await deleteDoc(doc(db, COLLECTIONS.teamMembers, id));
+    await deleteDoc(`${COLLECTIONS.teamMembers}/${id}`);
   }, []);
 
   return { create, update, remove };

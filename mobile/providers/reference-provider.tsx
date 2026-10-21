@@ -5,8 +5,8 @@ import {
   snapshotFrom,
 } from '@/lib/cache/query-cache';
 import { CAMPAIGN_ID, COLLECTIONS } from '@/lib/collections';
+import { onDoc, serverTimestamp, setDoc } from '@/lib/db';
 import { messageFor } from '@/lib/errors';
-import { db } from '@/lib/firebase';
 import {
   areaFromDoc,
   boothFromDoc,
@@ -16,7 +16,6 @@ import {
   wardFromDoc,
 } from '@/lib/mappers';
 import type { Area, Booth, Campaign, Constituency, TeamMember, Ward } from '@/lib/models';
-import { doc, onSnapshot, serverTimestamp, setDoc } from 'firebase/firestore';
 import {
   createContext,
   useCallback,
@@ -26,6 +25,9 @@ import {
   useState,
   type ReactNode,
 } from 'react';
+
+/** `campaigns/active` — the one document this prototype talks about. */
+const CAMPAIGN_PATH = `${COLLECTIONS.campaigns}/${CAMPAIGN_ID}`;
 
 interface ReferenceContextType {
   campaign: Campaign | null;
@@ -90,15 +92,17 @@ export function ReferenceProvider({ children }: { children: ReactNode }) {
 
   useEffect(
     () =>
-      onSnapshot(
-        doc(db, COLLECTIONS.campaigns, CAMPAIGN_ID),
+      onDoc(
+        CAMPAIGN_PATH,
         (snapshot) => {
           setCampaign(campaignFromDoc(snapshot));
           setCampaignError(null);
           setCampaignLoaded(true);
+          // `metadata.fromCache` is `.info/connected` at delivery time — see
+          // `lib/db`. Cached rows must not re-stamp `savedAt`.
           if (snapshot.exists() && !snapshot.metadata.fromCache) {
             saveCache(CAMPAIGN_CACHE_KEY, [
-              { id: snapshot.id, data: snapshot.data() as Record<string, unknown> },
+              { id: snapshot.id, data: snapshot.data() },
             ]);
           }
         },
@@ -185,15 +189,15 @@ export function ReferenceProvider({ children }: { children: ReactNode }) {
 
   const updateCampaign = useCallback(
     async (patch: Partial<Omit<Campaign, 'id'>>) => {
-      // `setDoc` with `{ merge: true }`, NOT `updateDoc`: on a project where
-      // `campaigns/active` has never been written — which is the live state
-      // of this one — `updateDoc` fails outright ("no document to update")
+      // A merge write, NOT a full overwrite: on a project where
+      // `campaigns/active` has never been written — which was the live state
+      // of this one — a non-merge update fails outright ("no node to update")
       // and the election-day picker could never save the date it was created
-      // to set. Merge writes the patch when the doc exists and CREATES it
-      // when it does not, and either way only these keys are affected, which
-      // is what the rules' delta check validates.
+      // to set. Merge writes the patch when the node exists and CREATES it when
+      // it does not, and either way only these keys are affected, which is what
+      // the rules' delta check validates.
       await setDoc(
-        doc(db, COLLECTIONS.campaigns, CAMPAIGN_ID),
+        CAMPAIGN_PATH,
         { ...patch, updatedAt: serverTimestamp() },
         { merge: true }
       );

@@ -1,4 +1,4 @@
-import type { DocumentData, DocumentSnapshot, QueryDocumentSnapshot, QuerySnapshot } from 'firebase/firestore';
+import type { DbDoc } from '@/lib/db/types';
 
 import { millisOf } from './documents';
 import type {
@@ -19,13 +19,14 @@ import type {
 /**
  * Snapshot → plain object for every campaign entity.
  *
- * Pure: structural `{ id, data() }` inputs only, no `firebase/*` runtime
- * import beyond `import type`, so these are unit-testable without mocks.
+ * Pure: structural `DbDoc` inputs only (`{ id, exists(), data() }`), so no
+ * SDK runtime import — which is what keeps these unit-testable without mocks,
+ * and what lets the same mapper serve a live read and a cache replay.
  * All timestamps go through `millisOf`, which tolerates the local `null`
  * echo of `serverTimestamp()` — see lib/documents.ts.
  */
 
-type AnyDoc = Pick<QueryDocumentSnapshot<DocumentData>, 'id' | 'data'>;
+type AnyDoc = DbDoc;
 
 const str = (value: unknown, fallback = ''): string =>
   typeof value === 'string' ? value : fallback;
@@ -46,9 +47,7 @@ function enumOf<T extends string>(
     : fallback;
 }
 
-export function campaignFromDoc(
-  snapshot: DocumentSnapshot<DocumentData>
-): Campaign | null {
+export function campaignFromDoc(snapshot: DbDoc): Campaign | null {
   if (!snapshot.exists()) return null;
   const data = snapshot.data();
   return {
@@ -224,9 +223,8 @@ export const complianceFromDoc = (doc: AnyDoc): ComplianceItem => {
   };
 };
 
-export function listFromSnapshot<T>(
-  snapshot: Pick<QuerySnapshot<DocumentData>, 'docs'>,
-  mapper: (doc: AnyDoc) => T
-): T[] {
-  return snapshot.docs.map(mapper);
-}
+// `listFromSnapshot` used to live here: it unwrapped a Firestore
+// `QuerySnapshot.docs` for a caller that no longer exists anywhere in the app
+// (search: nothing). With `lib/db` returning an already-mapped, ordered array,
+// there is no `.docs` to unwrap, so porting it would have meant inventing a
+// caller for it.

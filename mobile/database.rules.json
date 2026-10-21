@@ -247,8 +247,14 @@
         ".write": "auth != null && auth.token.locked !== true && (auth.token.role === 'superAdmin' || auth.token.role === 'developer')",
         "wardNo":         { ".validate": "newData.isNumber() && newData.val() > 0" },
         "finalPhone":     { ".validate": "newData.isString() && newData.val().length <= 24" },
-        "finalizedBy":    { ".validate": "newData.isString() && newData.val().length >= 1 || !newData.exists()" },
-        "finalizedName":  { ".validate": "newData.isString() && newData.val().length >= 1 || !newData.exists()" },
+        // `''` is the CLEARED state, not an error. `clearFinalize()` writes an
+        // empty string for both of these, and `firestore.rules` accepted it
+        // (`text(request.resource.data.finalizedBy, 0, 128)` — a minimum of
+        // zero). Requiring length >= 1 here rejected the clear while accepting
+        // the set, which is the one asymmetry a user would experience as "I can
+        // choose a number but I cannot undo it".
+        "finalizedBy":    { ".validate": "(newData.isString() && newData.val().length <= 128) || !newData.exists()" },
+        "finalizedName":  { ".validate": "(newData.isString() && newData.val().length <= 160) || !newData.exists()" },
         "finalizedAt":    { ".validate": "newData.isNumber() || !newData.exists()" },
 
         // One proposal per account, keyed BY that account's uid — so "only

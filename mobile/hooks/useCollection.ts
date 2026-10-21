@@ -4,19 +4,8 @@ import {
   save as saveCache,
   snapshotFrom,
 } from '@/lib/cache/query-cache';
+import { onDocs, type DbSnapshot, type QuerySpec } from '@/lib/db';
 import { messageFor } from '@/lib/errors';
-import { db } from '@/lib/firebase';
-import {
-  collection,
-  limit as fsLimit,
-  onSnapshot,
-  orderBy,
-  query,
-  where,
-  type DocumentData,
-  type QueryConstraint,
-  type QueryDocumentSnapshot,
-} from 'firebase/firestore';
 import { useCallback, useEffect, useState } from 'react';
 
 export interface EqualityFilter {
@@ -53,16 +42,18 @@ interface Snapshot<T> {
 }
 
 /**
- * A live Firestore listener over one collection, mapped to plain objects, with
- * a durable cache underneath it.
+ * A live listener over one node's children, mapped to plain objects, with a
+ * durable cache underneath it.
  *
  * Contract:
- * - one `onSnapshot`, no refetch, no optimistic bookkeeping (the SDK's local
- *   echo already does that and rolls back on rejection);
+ * - one subscription, no refetch, no optimistic bookkeeping (RTDB echoes a
+ *   write locally before the server acknowledges it, and rolls back on
+ *   rejection, so the first delivery already includes it);
  * - listener errors are terminal, so `retry()` resubscribes;
- * - `connected` is `!snapshot.metadata.fromCache` — it reads "serving from the
- *   server" rather than "a socket is open". Rows replayed from our cache report
- *   `false`, which is what makes the dashboard's live/cached pill honest;
+ * - `connected` is `.info/connected` at delivery time — it reads "serving from
+ *   the server" rather than "a socket is open". Rows replayed from our cache
+ *   report `false`, which is what makes the dashboard's live/cached pill
+ *   honest;
  * - the returned view is *derived*, never cleared inside the effect: state is
  *   only ever written from the subscription callbacks, which is both the
  *   React-recommended shape and what keeps a query change from flashing the
@@ -84,7 +75,7 @@ interface Snapshot<T> {
  */
 export function useCollection<T>(
   name: string,
-  mapDoc: (doc: QueryDocumentSnapshot<DocumentData>) => T,
+  mapDoc: (doc: DbSnapshot) => T,
   options: UseCollectionOptions = {}
 ): CollectionState<T> {
   const {
@@ -128,37 +119,36 @@ export function useCollection<T>(
   useEffect(() => {
     if (!enabled) return;
 
-    const constraints: QueryConstraint[] = [];
-    if (whereFilter) {
-      constraints.push(where(whereFilter.field, '==', whereFilter.value));
-    }
-    if (order) {
-      constraints.push(orderBy(order.field, order.direction ?? 'asc'));
-    }
-    constraints.push(fsLimit(cap));
+    // `lib/db` applies where/orderBy/limit itself, in memory. RTDB can order by
+    // one named child and cap the result, but cannot express "sort by an
+    // arbitrary field, then take the first N" — which is what every caller here
+    // asks for (`orderBy('startsAt')`, `orderBy('createdAt', 'desc')`,
+    // `orderBy('dueDate')` on collections with no index). See `selectRows`.
+    const spec: QuerySpec = {
+      where: whereFilter ? { field: whereFilter.field, value: whereFilter.value } : null,
+      orderBy: order ? { field: order.field, direction: order.direction ?? 'asc' } : null,
+      limit: cap,
+    };
 
     const key = queryKey;
-    return onSnapshot(
-      query(collection(db, name), ...constraints),
-      { includeMetadataChanges: true },
-      (snapshot) => {
+    return onDocs(
+      name,
+      spec,
+      (rows, serverConnected) => {
         setSnapshot({
           key,
-          docs: snapshot.docs.map(mapDoc),
-          connected: !snapshot.metadata.fromCache,
+          docs: rows.map(mapDoc),
+          connected: serverConnected,
         });
         setError(null);
-        // Persist only once the server has actually answered.
-        // `fromCache` here is the SDK's own per-session echo, which is empty on
-        // a cold start; writing it would persist nothing useful and, worse,
-        // would stamp a fresh `savedAt` onto data we have not confirmed.
-        if (!snapshot.metadata.fromCache) {
+        // Persist only once the server has actually answered. React Native has
+        // no persistent cache for either backend, so a delivery here means the
+        // socket was up; writing it before that would persist nothing useful
+        // and, worse, would stamp a fresh `savedAt` onto unconfirmed data.
+        if (serverConnected) {
           saveCache(
             cacheName,
-            snapshot.docs.map((doc) => ({
-              id: doc.id,
-              data: doc.data() as Record<string, unknown>,
-            }))
+            rows.map((doc) => ({ id: doc.id, data: doc.data() }))
           );
         }
       },

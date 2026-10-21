@@ -17,12 +17,7 @@
  * Firebase, no React — so the no-mock property of the tests here is kept.
  */
 import { toAppRole, type AppRole } from '@/lib/roles';
-import type {
-  DocumentData,
-  DocumentSnapshot,
-  QueryDocumentSnapshot,
-  QuerySnapshot,
-} from 'firebase/firestore';
+import type { DbDoc, DbSnapshot } from '@/lib/db/types';
 
 export interface Task {
   id: string;
@@ -136,7 +131,7 @@ export function millisOf(value: unknown): number | null {
   return null;
 }
 
-export function taskFromDoc(doc: QueryDocumentSnapshot<DocumentData>): Task {
+export function taskFromDoc(doc: DbSnapshot): Task {
   const data = doc.data();
 
   return {
@@ -159,10 +154,15 @@ export function taskFromDoc(doc: QueryDocumentSnapshot<DocumentData>): Task {
  * order, and the SDK already deduplicated your own writes against the server's
  * echo via latency compensation. There is nothing left to reconcile.
  */
-export function tasksFromSnapshot(
-  snapshot: QuerySnapshot<DocumentData>
-): Task[] {
-  return snapshot.docs.map(taskFromDoc);
+/**
+ * A list of tasks, in the order it arrived.
+ *
+ * Takes the rows rather than a query snapshot: `lib/db`'s `getDocs`/`onDocs`
+ * already return a mapped, ordered array, so there is no `.docs` to unwrap and
+ * nothing to reconcile — see the note below.
+ */
+export function tasksFromSnapshot(docs: readonly DbSnapshot[]): Task[] {
+  return docs.map(taskFromDoc);
 }
 
 /**
@@ -174,9 +174,7 @@ export function tasksFromSnapshot(
  * user has no profile. Treating that as `onboarded: false` would flash the
  * onboarding flow at a returning user on a slow connection.
  */
-export function profileFromDoc(
-  snapshot: DocumentSnapshot<DocumentData>
-): Profile | null {
+export function profileFromDoc(snapshot: DbDoc): Profile | null {
   if (!snapshot.exists()) return null;
 
   const data = snapshot.data();

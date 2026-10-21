@@ -1,7 +1,6 @@
-import { doc, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { useCallback, useState } from 'react';
 import { messageFor } from '@/lib/errors';
-import { db } from '@/lib/firebase';
+import { serverTimestamp, updateDoc } from '@/lib/db';
 import { useAuth } from '@/providers/auth-provider';
 
 /** The fields firestore.rules lets a user change on their own document. */
@@ -36,7 +35,7 @@ export function useProfile() {
       setError(null);
 
       try {
-        await updateDoc(doc(db, 'users', user.uid), {
+        await updateDoc(`users/${user.uid}`, {
           ...patch,
           updatedAt: serverTimestamp(),
         });

@@ -1,13 +1,6 @@
 import { COLLECTIONS } from '@/lib/collections';
-import { db } from '@/lib/firebase';
 import type { Booth } from '@/lib/models';
-import {
-  addDoc,
-  collection,
-  deleteDoc,
-  doc,
-  updateDoc,
-} from 'firebase/firestore';
+import { addDoc, deleteDoc, updateDoc } from '@/lib/db';
 import { useCallback } from 'react';
 
 export type BoothCreateInput = Omit<Booth, 'id'>;
@@ -20,22 +13,22 @@ export type BoothPatch = Partial<Omit<Booth, 'id'>>;
  */
 export function useBooths() {
   const create = useCallback(async (input: BoothCreateInput) => {
-    await addDoc(collection(db, COLLECTIONS.booths), input);
+    await addDoc(COLLECTIONS.booths, input);
   }, []);
 
   const update = useCallback(async (id: string, patch: BoothPatch) => {
-    await updateDoc(doc(db, COLLECTIONS.booths, id), patch);
+    await updateDoc(`${COLLECTIONS.booths}/${id}`, patch);
   }, []);
 
   /** Put the booth's coordinator assignment in one place. */
   const assignCoordinator = useCallback(
     (boothId: string, memberId: string) =>
-      updateDoc(doc(db, COLLECTIONS.booths, boothId), { coordinatorId: memberId }),
+      updateDoc(`${COLLECTIONS.booths}/${boothId}`, { coordinatorId: memberId }),
     []
   );
 
   const remove = useCallback(async (id: string) => {
-    await deleteDoc(doc(db, COLLECTIONS.booths, id));
+    await deleteDoc(`${COLLECTIONS.booths}/${id}`);
   }, []);
 
   return { create, update, assignCoordinator, remove };

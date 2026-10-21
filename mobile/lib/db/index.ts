@@ -48,7 +48,7 @@ import { realtime } from '@/lib/firebase';
 import { childrenOf, dataOf } from '@/lib/db/decode';
 import type { DbData, DbMetadata, DbSnapshot, QuerySpec } from '@/lib/db/types';
 
-export type { DbData, DbMetadata, DbSnapshot, QuerySpec } from '@/lib/db/types';
+export type { DbData, DbDoc, DbMetadata, DbSnapshot, QuerySpec } from '@/lib/db/types';
 
 /** Re-exported so callers import every RTDB primitive from this module. */
 export { serverTimestamp };
@@ -72,40 +72,77 @@ let connected = false;
 let watchStarted = false;
 let detachWatch: (() => void) | null = null;
 const connectionListeners = new Set<(connected: boolean) => void>();
+/**
+ * Reads currently subscribed. The watch must outlive every one of them:
+ * `onDoc`/`onDocs` need `connected` to be honest, so an explicit
+ * `onConnection` caller unsubscribing cannot be allowed to tear it down.
+ */
+let activeReads = 0;
+
+function startWatch(): void {
+  if (watchStarted) return;
+  watchStarted = true;
+  // Started behind a guard rather than assumed: `realtime()` throws when the
+  // database URL is unset, and an eager call at import would put that failure
+  // back at app launch — which is exactly what `lib/firebase.ts` avoids by
+  // making `realtime()` lazy. A missing URL here degrades to "never connected"
+  // and surfaces as the real error on the first actual read.
+  try {
+    detachWatch = onValue(ref(realtime(), '.info/connected'), (snapshot) => {
+      connected = snapshot.val() === true;
+      for (const listener of connectionListeners) listener(connected);
+    });
+  } catch {
+    watchStarted = false;
+  }
+}
+
+function stopWatchIfIdle(): void {
+  if (!watchStarted || activeReads > 0 || connectionListeners.size > 0) return;
+  detachWatch?.();
+  detachWatch = null;
+  watchStarted = false;
+  connected = false;
+}
+
+/** Keeps the watch alive for the life of one read subscription. */
+function retainRead(): () => void {
+  activeReads += 1;
+  startWatch();
+  let released = false;
+  return () => {
+    if (released) return;
+    released = true;
+    activeReads -= 1;
+    stopWatchIfIdle();
+  };
+}
+
+// Established at import rather than on first read. `.info/connected` is a
+// separate server event from the data listeners, and if it starts *after* them
+// the first delivery reports `connected: false` for genuinely live data — which
+// would both mislabel the dashboard's pill and skip the `saveCache` in
+// `useCollection`, quietly ending warm starts. Starting here means the flag has
+// answered by the time React mounts a screen and subscribes.
+startWatch();
 
 /**
  * Subscribes to `.info/connected`, the RTDB connection indicator.
  *
  * Shared rather than per-subscriber: it is a single server-side fact about the
- * device, and one listener is cheaper than one per open read. Reference
- * counted so a screen that mounts and unmounts does not leak the socket.
+ * device, and one listener is cheaper than one per open read.
  */
 export function onConnection(next: (connected: boolean) => void): () => void {
   connectionListeners.add(next);
-
-  if (!watchStarted) {
-    watchStarted = true;
-    // Started lazily rather than at import: `realtime()` throws when the
-    // database URL is unset, and a module-level call would put that failure
-    // back at app launch, which is exactly what `lib/firebase.ts` avoids.
-    detachWatch = onValue(ref(realtime(), '.info/connected'), (snapshot) => {
-      connected = snapshot.val() === true;
-      for (const listener of connectionListeners) listener(connected);
-    });
-  } else {
-    // Late subscribers get the value already known, or `false` if the socket
-    // has not answered yet — the same "cached until proven live" starting
-    // point `useCollection` had before the port.
-    next(connected);
-  }
+  startWatch();
+  // Late subscribers get the value already known, or `false` if the socket has
+  // not answered yet — the same "cached until proven live" starting point
+  // `useCollection` had before the port.
+  next(connected);
 
   return () => {
     connectionListeners.delete(next);
-    if (connectionListeners.size === 0) {
-      detachWatch?.();
-      detachWatch = null;
-      watchStarted = false;
-    }
+    stopWatchIfIdle();
   };
 }
 
@@ -247,11 +284,18 @@ export function onDoc(
   next: (snapshot: DbSnapshot) => void,
   error?: (caught: unknown) => void
 ): () => void {
-  return onValue(
+  // Retains the connection watch, so `metadata.fromCache` means "the socket
+  // was not up" rather than "nobody was watching the socket".
+  const release = retainRead();
+  const detach = onValue(
     ref(realtime(), path),
     (snapshot) => next(nodeOf(path, snapshot)),
     error
   );
+  return () => {
+    detach();
+    release();
+  };
 }
 
 /** Reads one node once. Never rejects for "absent" — that is `exists()`. */
@@ -273,11 +317,16 @@ export function onDocs(
   next: (rows: DbSnapshot[], connected: boolean) => void,
   error?: (caught: unknown) => void
 ): () => void {
-  return onValue(
+  const release = retainRead();
+  const detach = onValue(
     ref(realtime(), path),
     (snapshot) => next(selectRows(path, snapshot, spec), connected),
     error
   );
+  return () => {
+    detach();
+    release();
+  };
 }
 
 /** Reads every child of a node once, filtered and ordered in memory. */

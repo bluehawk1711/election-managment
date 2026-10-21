@@ -6,14 +6,6 @@ import {
   signOut as firebaseSignOut,
   type User,
 } from 'firebase/auth';
-import {
-  doc,
-  getDoc,
-  onSnapshot,
-  serverTimestamp,
-  setDoc,
-  updateDoc,
-} from 'firebase/firestore';
 import * as Linking from 'expo-linking';
 import { router } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
@@ -32,10 +24,14 @@ import {
   noteLock,
 } from '@/lib/device';
 import { profileFromDoc, type Profile } from '@/lib/documents';
-import { auth, db } from '@/lib/firebase';
+import { getDoc, onDoc, serverTimestamp, setDoc, updateDoc } from '@/lib/db';
+import { auth } from '@/lib/firebase';
 
 /** Where `email-link.tsx` stashes the address it sent the link to. */
 export const PENDING_EMAIL_KEY = 'firebase.emailLink.pendingEmail';
+
+/** `users/{uid}` — the only owner-scoped node in the app. */
+const profilePath = (uid: string): string => `users/${uid}`;
 
 interface AuthContextType {
   /**
@@ -107,19 +103,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!userId) return;
 
-    const reference = doc(db, 'users', userId);
+    const reference = profilePath(userId);
 
     /**
      * The direct analogue of the `profiles:{id}` postgres_changes channel in
      * the Supabase starter, and it earns its place for the same reason: the
-     * onboarding screen writes to this document from elsewhere, and the guard
+     * onboarding screen writes to this node from elsewhere, and the guard
      * in app/_layout.tsx has to see that without polling.
      */
-    return onSnapshot(
+    return onDoc(
       reference,
       async (snapshot) => {
         if (!snapshot.exists()) {
-          // There is no Cloud Function creating this document — those need the
+          // There is no Cloud Function creating this node — those need the
           // Blaze plan, which a starter should not require. The client writes
           // it instead, and doing it from the *listener* rather than once after
           // sign-up means it self-heals: if the first attempt never landed, the
@@ -269,7 +265,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // not just the first.
         if (profile.role === 'superAdmin' || profile.multiDevice) {
           if (bound !== info.id) {
-            await updateDoc(doc(db, 'users', userId), {
+            await updateDoc(profilePath(userId), {
               device: info,
               updatedAt: serverTimestamp(),
             });
@@ -280,7 +276,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         if (bound && bound !== info.id) {
           try {
-            await updateDoc(doc(db, 'users', userId), {
+            await updateDoc(profilePath(userId), {
               locked: true,
               lockedReason: 'device_change',
               lockedAt: Date.now(),
@@ -301,7 +297,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
 
         if (!bound) {
-          await updateDoc(doc(db, 'users', userId), {
+          await updateDoc(profilePath(userId), {
             device: info,
             updatedAt: serverTimestamp(),
           });
@@ -323,7 +319,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const refreshProfile = useCallback(async () => {
     if (!userId) return;
-    const snapshot = await getDoc(doc(db, 'users', userId));
+    const snapshot = await getDoc(profilePath(userId));
     if (!snapshot.exists()) {
       setResolvedProfileUid(userId);
       return;
@@ -354,21 +350,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 /**
  * Creates `users/{uid}` the first time it is missing.
  *
- * `onboarded: false` is required by firestore.rules on create — a client cannot
- * sign up already onboarded and skip the flow.
+ * `onboarded: false` is required by `database.rules.json` on create — a client
+ * cannot sign up already onboarded and skip the flow.
+ *
+ * **Merge, not a plain set — and this is load-bearing, not style.** A plain
+ * `setDoc` becomes an RTDB `set()`, which is validated at the NODE
+ * (`users/$uid`), where the only `.write` rule is deliberately delete-only
+ * (`!newData.exists()`). A node-level grant cascades down and cannot be revoked
+ * by a child, so that rule could not also be "yes" for creation without handing
+ * every owner the right to overwrite their own `role`. The per-child rules
+ * (`email`, `displayName`, `onboarded`, …) therefore only ever authorise an
+ * RTDB `update()`, which is evaluated child by child — and `update()` creates
+ * the node when it is absent. A plain set here is refused with HTTP 401 and the
+ * profile is never created. `scripts/probe-owner-write.mjs` asserts both halves
+ * against the live database.
  */
 async function ensureProfile(current: User | null): Promise<void> {
   if (!current) return;
 
   try {
-    await setDoc(doc(db, 'users', current.uid), {
-      email: current.email,
-      displayName: current.displayName,
-      photoURL: current.photoURL,
-      onboarded: false,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-    });
+    await setDoc(
+      profilePath(current.uid),
+      {
+        email: current.email,
+        displayName: current.displayName,
+        photoURL: current.photoURL,
+        onboarded: false,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      },
+      { merge: true }
+    );
   } catch {
     // Two listeners racing, or a rules rejection. The snapshot listener stays
     // subscribed either way, so the next event tries again.

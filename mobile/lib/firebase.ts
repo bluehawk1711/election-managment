@@ -21,11 +21,6 @@ import {
   getDatabase,
   type Database,
 } from 'firebase/database';
-import {
-  connectFirestoreEmulator,
-  getFirestore,
-  initializeFirestore,
-} from 'firebase/firestore';
 import { connectStorageEmulator, getStorage } from 'firebase/storage';
 import { Platform } from 'react-native';
 import { LargeSecureStore } from '@/lib/large-secure-store';
@@ -34,8 +29,9 @@ import { LargeSecureStore } from '@/lib/large-secure-store';
  * The Firebase client.
  *
  * Everything imports through a subpath (`firebase/app`, `firebase/auth`,
- * `firebase/firestore`, `firebase/storage`) rather than the `firebase` root,
- * which re-exports every product Firebase ships.
+ * `firebase/database`, `firebase/storage`) rather than the `firebase` root,
+ * which re-exports every product Firebase ships. `firebase/firestore` is
+ * deliberately absent — see the note where `db` used to be.
  *
  * There is no `metro.config.js` in this project and it does not need one. The
  * `sourceExts.push('cjs')` and `unstable_enablePackageExports = true` advice
@@ -45,32 +41,31 @@ import { LargeSecureStore } from '@/lib/large-secure-store';
  * There is also no `AppState` listener refreshing tokens. A Supabase project
  * needs one because supabase-js refreshes on a JS timer that iOS suspends in
  * the background; Firebase refreshes proactively and again lazily inside
- * `getIdToken()`, and Firestore and Storage both pull their token through this
- * same `Auth` instance. Nothing to wire up.
+ * `getIdToken()`, and the Realtime Database and Storage both pull their token
+ * through this same `Auth` instance. Nothing to wire up.
  */
 
 /**
- * The database id is `default`, NOT `(default)`.
+ * The Firestore database id is `default`, NOT `(default)` — kept here only as
+ * the reference the seeding scripts point at.
  *
- * `getFirestore(app)` with no second argument resolves to the literal string
- * `'(default)'`, which is right for the Firebase console's own projects and
- * wrong for this one. This project was provisioned as ENTERPRISE with an
- * explicitly named database — `firebase.json` records it as
- * `{"database": "default", "edition": "ENTERPRISE"}` — and every read against
- * `(default)` comes back `5 NOT_FOUND: no such database` while the console
- * shows empty collections.
+ * The app no longer opens Firestore (see the note where `db` used to be), but
+ * `scripts/seed.mjs`, `seed-roll.mjs`, `verify-roll.mjs` and `create-user.mjs`
+ * still write with the Admin SDK, and each carries its own copy of this string
+ * with a comment saying it must match this one.
  *
- * Passing the id explicitly is the only thing that works here:
+ * Why it matters, because it is easy to "fix" in the wrong direction later.
+ * This project was provisioned as ENTERPRISE with an explicitly named database
+ * — `firebase.json` records it as `{"database": "default", "edition":
+ * "ENTERPRISE"}` — and every read against `(default)` comes back
+ * `5 NOT_FOUND: no such database` while the console shows empty collections:
  *
  *     admin.getFirestore(app, 'default')          → 200
  *     admin.getFirestore(app, '(default)')        → 404 NOT_FOUND
  *     GET /v1/projects/P/databases/default/documents/voters          → 200
  *     GET /v1/projects/P/databases/(default)/documents/voters        → 404
  *
- * Kept as a named constant rather than an inline literal because the same id
- * appears in `scripts/seed.mjs`, `scripts/seed-roll.mjs` and the REST calls in
- * `verification.md`, and the parentheses are exactly the detail that is easy to
- * "fix" in the wrong direction later.
+ * The parentheses are the detail that is easy to get wrong.
  */
 export const FIRESTORE_DATABASE_ID = 'default';
 
@@ -185,21 +180,13 @@ function createAuth(instance: FirebaseApp): Auth {
 // rather than creating a memory-persisted one.
 export const auth = existing ? getAuth(app) : createAuth(app);
 
-export const db = existing
-  ? getFirestore(app, FIRESTORE_DATABASE_ID)
-  : initializeFirestore(app, {
-      // The default since v9.22.0, written out so the knob is discoverable. If
-      // you see "Could not reach Cloud Firestore backend" behind a corporate
-      // proxy or a stubborn emulator, swap this for
-      // `experimentalForceLongPolling: true` — the two are mutually exclusive
-      // and Firestore throws if you set both.
-      experimentalAutoDetectLongPolling: true,
-      // Deliberately not set: `localCache: persistentLocalCache()` is backed by
-      // IndexedDB, which React Native does not have. The offline cache here is
-      // per-session memory only. That is the main thing you give up by using
-      // the JS SDK rather than @react-native-firebase. The durable offline
-      // copy of the roll lives in AsyncStorage instead — see lib/roll/cache.ts.
-    }, FIRESTORE_DATABASE_ID);
+// There is deliberately no `db` export any more. Firestore is not part of the
+// app: `lib/db` is the data layer, and it talks to the Realtime Database. Any
+// screen still importing `db` from here is a port that was missed, and it
+// should fail to compile rather than quietly keep reading the old backend —
+// that is exactly how the "we migrated but the quota still ran out" state
+// happened once. `firebase/firestore` is therefore absent from
+// `package.json`'s runtime imports, so it is not in the bundle.
 
 // Idempotent per bucket, so unlike the two above it needs no guard.
 export const storage = getStorage(app);
@@ -210,10 +197,11 @@ export const storage = getStorage(app);
  * **Lazy on purpose.** `getDatabase` throws when the URL is missing or
  * unparseable, and this module is imported by every screen. Eagerly building
  * the instance would turn one unset env var into "the app crashes at launch
- * and shows nothing", which is exactly the failure mode the Firestore block
- * above goes out of its way to avoid. Deferring it means the 22 screens still
- * reading Firestore keep working during the migration, and the first RTDB
- * operation reports the actual problem instead of taking the whole app down.
+ * and shows nothing". That is not hypothetical: the release workflows used to
+ * write `.env` without `EXPO_PUBLIC_FIREBASE_DATABASE_URL`, so the first
+ * database operation threw while the rest of the app looked fine — which reads
+ * exactly like "logged in, then broken". Deferring it means the failure names
+ * itself instead of taking the whole app down.
  *
  * `getDatabase` is itself memoised per app instance, so calling this once per
  * operation is free — and it is what makes Fast Refresh safe here, matching
@@ -241,7 +229,7 @@ export function realtime(): Database {
 /**
  * Point everything at `npm run emulators` when EXPO_PUBLIC_FIREBASE_USE_EMULATOR=1.
  *
- * Gated on `!existing` because `connectFirestoreEmulator` throws once the
+ * Gated on `!existing` because the `connect*Emulator` helpers throw once the
  * instance has issued its first request, which a Fast Refresh re-run would hit.
  */
 if (!existing && process.env.EXPO_PUBLIC_FIREBASE_USE_EMULATOR === '1') {
@@ -251,7 +239,6 @@ if (!existing && process.env.EXPO_PUBLIC_FIREBASE_USE_EMULATOR === '1') {
 
   connectAuthEmulator(auth, `http://${host}:9099`, { disableWarnings: true });
   connectDatabaseEmulator(realtime(), host, 9000);
-  connectFirestoreEmulator(db, host, 8080);
   connectStorageEmulator(storage, host, 9199);
 
   console.log(`[firebase] using emulators at ${host}`);

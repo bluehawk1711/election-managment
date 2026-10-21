@@ -5,7 +5,7 @@
  *
  *  1. `QueryClientProvider` — the live-query cache (hooks/use-live.ts).
  *  2. `SessionEffect` — mounts ONCE: `onAuthStateChanged` switches identities
- *     and attaches an `onSnapshot` to `users/{uid}`; results land in the
+ *     and attaches an RTDB listener to `users/{uid}`; results land in the
  *     Zustand session store. A role granted by another super admin therefore
  *     re-renders the control that just became (un)available — privilege
  *     changes are snapshotted, never refetched-and-hoped.
@@ -23,11 +23,11 @@
  */
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { onAuthStateChanged } from 'firebase/auth';
-import { doc, onSnapshot } from 'firebase/firestore';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useMemo, type ReactNode } from 'react';
-import { auth, db } from '@/lib/firebase';
+import { onDoc } from '@/lib/db';
+import { auth } from '@/lib/firebase';
 import { enforceDeviceLock } from '@/lib/device-lock';
 import { AppShell } from '@/components/shell/app-shell';
 import { Toaster } from '@/components/ui/toaster';
@@ -52,8 +52,8 @@ function SessionEffect() {
         displayName: user.displayName ?? '',
       });
 
-      detachProfile = onSnapshot(
-        doc(db, 'users', user.uid),
+      detachProfile = onDoc(
+        `users/${user.uid}`,
         (snapshot) => {
           const data = snapshot.exists()
             ? (snapshot.data() as Record<string, unknown>)

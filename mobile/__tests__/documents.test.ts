@@ -8,12 +8,12 @@ import {
 } from '@/lib/documents';
 
 /**
- * `lib/documents.ts` uses `import type` only, so nothing here touches the
- * Firebase SDK, the network or the emulator. These are the mappers a Firestore
- * app actually gets wrong, tested as plain functions.
+ * `lib/documents.ts` imports only TYPES, so nothing here touches the Firebase
+ * SDK, the network or the emulator. These are the mappers an app actually gets
+ * wrong, tested as plain functions.
  */
 
-/** A minimal stand-in for a QueryDocumentSnapshot. Cast at the boundary. */
+/** A minimal stand-in for `DbSnapshot`. Cast at the boundary. */
 const snap = (
   id: string,
   data: Record<string, unknown>,
@@ -187,25 +187,25 @@ describe('profileFromDoc', () => {
 });
 
 describe('tasksFromSnapshot', () => {
-  it('preserves the order the query returned', () => {
-    const snapshot = {
-      docs: [
-        snap('b', {
-          text: 'newer',
-          isComplete: false,
-          createdAt: timestamp(2),
-        }),
-        snap('a', {
-          text: 'older',
-          isComplete: false,
-          createdAt: timestamp(1),
-        }),
-      ],
-    } as never;
+  it('preserves the order the database returned', () => {
+    // `lib/db`'s `getDocs`/`onDocs` already apply the spec and hand back rows
+    // in order, so this takes the rows themselves rather than a
+    // `QuerySnapshot` with a `.docs` to unwrap — there is no second ordering
+    // decision to make here, which is the point of the test.
+    const rows = [
+      snap('b', {
+        text: 'newer',
+        isComplete: false,
+        createdAt: timestamp(2),
+      }),
+      snap('a', {
+        text: 'older',
+        isComplete: false,
+        createdAt: timestamp(1),
+      }),
+    ];
 
-    // The query's orderBy already sorted these. Re-sorting here would be a
-    // second, disagreeing source of truth.
-    expect(tasksFromSnapshot(snapshot).map((t) => t.id)).toEqual(['b', 'a']);
+    expect(tasksFromSnapshot(rows).map((t) => t.id)).toEqual(['b', 'a']);
   });
 });
 

@@ -6,7 +6,7 @@
  *   account and ends its session; only a super admin unlocks, and the
  *   unlock drops the binding so the rightful device re-binds.
  *
- * One deliberate asymmetry, mirrored in `firestore.rules §users`: a
+ * One deliberate asymmetry, mirrored in `mobile/database.rules` §users: a
  * SUPER ADMIN is not device-bound. They rebind this browser instead of
  * locking themselves out — the account that unlocks everyone else must
  * never end up hostage to a single laptop. A deliberate admin lock still
@@ -21,13 +21,20 @@
  * page can say why the previous session died instead of silently accepting
  * credentials the rules will keep refusing.
  *
+ * Every write below goes through `lib/db`'s `updateDoc`, which is RTDB's
+ * `update()` — a multi-location write, so the rules evaluate `device` and
+ * `updatedAt` at their OWN paths under `users/{uid}` rather than asking the
+ * node-level rule (which only ever authorises a delete). That is exactly
+ * what `database.rules` §users expects, and why each patch carries the
+ * `updatedAt` bookkeeping key beside the child it is really changing.
+ *
  * Enforcement itself runs from `providers.tsx` on every profile snapshot,
  * right after `applyProfile` — same three states, same order as the app:
  * already locked → foreign device → first bind.
  */
-import { doc, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { signOut as firebaseSignOut } from 'firebase/auth';
-import { auth, db } from '@/lib/firebase';
+import { serverTimestamp, updateDoc } from '@/lib/db';
+import { auth } from '@/lib/firebase';
 
 const DEVICE_KEY = 'campaignhq.deviceId';
 const NOTICE_KEY = 'campaignhq.lockNotice';
@@ -40,7 +47,7 @@ export interface LockNotice {
   at: number;
 }
 
-/** The four keys `firestore.rules::validDevice` accepts — byte for byte. */
+/** The four keys `database.rules::validDevice` accepts — byte for byte. */
 export interface DeviceFingerprint {
   id: string;
   name: string;
@@ -150,10 +157,8 @@ export async function enforceDeviceLock(
   uid: string,
   data: Record<string, unknown> | null
 ): Promise<void> {
-  if (!data) return;
-
-  // 1. Locked (by an admin, or by this account's own earlier foreign
-  //    sign-in): end the session and explain it on the login screen.
+  if (!data) return;    // 1. Locked (by an admin, or by this account's own earlier foreign
+    //    sign-in): end the session and explain it on the login screen.
   if (data.locked === true) {
     const reason: LockReason =
       data.lockedReason === 'device_change' ? 'device_change' : 'admin';
@@ -165,14 +170,14 @@ export async function enforceDeviceLock(
   const mine = panelDevice();
   const bound = bindingOf(data);
 
-  // 2a. Super admins are not device-bound (see the file header and
-  //     firestore.rules §users): rebind this browser — first bind or a
+  // 2a. Super admins (and multi-device exemptions) are not device-bound (see
+  //     the file header and database.rules §users): rebind this browser — first bind or a
   //     swap — and stay signed in. The rules allow a device write from a
   //     `superAdmin` profile on any write, not just the first.
-  if (data.role === 'superAdmin') {
+  if (data.role === 'superAdmin' || data.multiDevice === true) {
     if (!bound || bound.id !== mine.id) {
       try {
-        await updateDoc(doc(db, 'users', uid), {
+        await updateDoc(`users/${uid}`, {
           device: mine,
           updatedAt: serverTimestamp(),
         });
@@ -189,7 +194,7 @@ export async function enforceDeviceLock(
   if (bound && bound.id !== mine.id) {
     noteLock('device_change');
     try {
-      await updateDoc(doc(db, 'users', uid), {
+      await updateDoc(`users/${uid}`, {
         locked: true,
         lockedReason: 'device_change',
         lockedAt: Date.now(),
@@ -209,7 +214,7 @@ export async function enforceDeviceLock(
   //    server-side even by a modified client.
   if (!bound) {
     try {
-      await updateDoc(doc(db, 'users', uid), {
+      await updateDoc(`users/${uid}`, {
         device: mine,
         updatedAt: serverTimestamp(),
       });

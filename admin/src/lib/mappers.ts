@@ -92,26 +92,6 @@ export const voterFromDoc = (doc: AnyDoc): VoterRow => {
   };
 };
 
-/** Read a voter from RTDB `votersByWard/$wardNo/$voterId` node. */
-export const voterFromDocRTDB = (val: Record<string, unknown>, voterId: string): VoterRow => {
-  const data = val[voterId] || {};
-  return {
-    id: voterId,
-    wardNo: num(data.wardNo, 1),
-    serialNo: num(data.serialNo),
-    epicId: str(data.epicId),
-    name: str(data.name),
-    relation: enumOf<Relation>(data.relation, RELATIONS, 'other'),
-    relationLabel: str(data.relationLabel),
-    fatherOrHusbandName: str(data.fatherOrHusbandName),
-    houseNo: str(data.houseNo),
-    age: num(data.age),
-    gender: enumOf<Gender>(data.gender, GENDERS, 'other'),
-    locality: str(data.locality),
-    pdfPage: num(data.pdfPage),
-  };
-};
-
 export const wardFromDoc = (doc: AnyDoc): WardMeta => {
   const data = doc.data();
   return {
@@ -232,33 +212,5 @@ export const proposalFromDoc = (doc: AnyDoc): PhoneProposal => {
     authorName: str(data.authorName, 'Unknown'),
     wardNo: num(data.wardNo),
     updatedAt: num(data.updatedAt),
-  };
-};
-/** Read wards from RTDB `wards` node. */export const wardFromDocRTDB = (val: Record<string, unknown>): WardMeta => {
-  // wards is a flat list stored as an object keyed by wardNo
-  const entries = Object.entries(val || {});
-  if (entries.length === 0) {
-    return {
-      wardNo: 0,
-      voterCount: 0,
-      male: 0,
-      female: 0,
-      thirdGender: 0,
-      delimitation: '',
-      boothNo: 0,
-      roomNo: 0,
-      boothAddress: '',
-      pdfPages: '',
-    };
-  }  // Sort by wardNo and return the first entry  entries.sort(([a], [b]) => Number(a) - Number(b));  const [wardNoStr, wardData] = entries[0];  const wn = Number(wardNoStr);  return {    wardNo: wn,
-    voterCount: num(wardData.voterCount),
-    male: num(wardData.male),
-    female: num(wardData.female),
-    thirdGender: num(wardData.thirdGender),
-    delimitation: str(wardData.delimitation),
-    boothNo: num(wardData.boothNo),
-    roomNo: num(wardData.roomNo),
-    boothAddress: str(wardData.boothAddress),
-    pdfPages: str(wardData.pdfPages),
   };
 };

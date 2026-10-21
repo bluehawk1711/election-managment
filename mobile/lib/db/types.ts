@@ -1,8 +1,8 @@
 /**
  * The snapshot shape every mapper in this app consumes.
  *
- * `lib/mappers.ts` and `lib/documents.ts` take `Pick<QueryDocumentSnapshot,
- * 'id' | 'data'>` — structural, never an `instanceof Timestamp` — precisely so
+ * `lib/mappers.ts` and `lib/documents.ts` take `DbDoc` — structural, never an
+ * `instanceof Timestamp` and never a `firebase/firestore` type — precisely so
  * they can be handed a stand-in. `lib/cache/query-cache.ts` already builds one
  * (`snapshotFrom`), and this is the same stand-in, arrived at from the other
  * direction: the Realtime Database has no snapshot type of its own that looks
@@ -23,17 +23,6 @@
  *
  * Pure data, no SDK imports, so mappers stay unit-testable without mocks.
  */
-export interface DbSnapshot {
-  /** The last path segment — the RTDB key, which for `push()` keys is time-sortable. */
-  readonly id: string;
-  /** The full path this snapshot describes, e.g. `tasks/abc123`. */
-  readonly path: string;
-  exists(): boolean;
-  /** `{}` when the node is absent, so mappers never see `null`. */
-  data(): Record<string, unknown>;
-  readonly metadata: DbMetadata;
-}
-
 export interface DbMetadata {
   /**
    * True when the value was served without a live server round trip.
@@ -52,6 +41,33 @@ export interface DbMetadata {
    * `lib/db` counts the outstanding writes per path itself.
    */
   readonly hasPendingWrites: boolean;
+}
+
+/**
+ * The structural subset every mapper in the app reads: an id, a `data()`, an
+ * `exists()`.
+ *
+ * This replaces `Pick<QueryDocumentSnapshot<DocumentData>, 'id' | 'data'>`,
+ * which is the same contract spelled in `firebase/firestore`'s names. The
+ * swap matters for one reason: leaving that type in `lib/mappers.ts` and
+ * `lib/documents.ts` keeps `firebase/firestore` as a dependency of the app's
+ * pure logic, which is how a port that is "done" still pulls the Firestore SDK
+ * into the bundle — and still looks, to the next reader, like Firestore is in
+ * use. Mappers were already written structurally, so nothing else changes.
+ */
+export interface DbDoc {
+  /** The key — `push()` keys are time-sortable. */
+  readonly id: string;
+  exists(): boolean;
+  /** `{}` when the node is absent, so mappers never see `null`. */
+  data(): Record<string, unknown>;
+}
+
+/** A document plus the sync facts `taskFromDoc` folds into `Task.pending`. */
+export interface DbSnapshot extends DbDoc {
+  /** The full path this snapshot describes, e.g. `tasks/abc123`. */
+  readonly path: string;
+  readonly metadata: DbMetadata;
 }
 
 /** A node's fields. `null` children are treated as absent — see `setDoc`. */

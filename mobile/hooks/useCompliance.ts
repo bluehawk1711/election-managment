@@ -1,16 +1,8 @@
 import { useCollection } from '@/hooks/useCollection';
 import { COLLECTIONS } from '@/lib/collections';
-import { db } from '@/lib/firebase';
 import { complianceFromDoc } from '@/lib/mappers';
 import type { ComplianceItem, ComplianceStatus } from '@/lib/models';
-import {
-  addDoc,
-  collection,
-  deleteDoc,
-  doc,
-  serverTimestamp,
-  updateDoc,
-} from 'firebase/firestore';
+import { addDoc, deleteDoc, serverTimestamp, updateDoc } from '@/lib/db';
 import { useCallback } from 'react';
 
 export type ComplianceCreateInput = Omit<ComplianceItem, 'id' | 'updatedAt'>;
@@ -25,14 +17,14 @@ export function useCompliance() {
   );
 
   const create = useCallback(async (input: ComplianceCreateInput) => {
-    await addDoc(collection(db, COLLECTIONS.compliance), {
+    await addDoc(COLLECTIONS.compliance, {
       ...input,
       updatedAt: serverTimestamp(),
     });
   }, []);
 
   const update = useCallback(async (id: string, patch: CompliancePatch) => {
-    await updateDoc(doc(db, COLLECTIONS.compliance, id), {
+    await updateDoc(`${COLLECTIONS.compliance}/${id}`, {
       ...patch,
       updatedAt: serverTimestamp(),
     });
@@ -40,7 +32,7 @@ export function useCompliance() {
 
   const setStatus = useCallback(
     (id: string, status: ComplianceStatus) =>
-      updateDoc(doc(db, COLLECTIONS.compliance, id), {
+      updateDoc(`${COLLECTIONS.compliance}/${id}`, {
         status,
         updatedAt: serverTimestamp(),
       }),
@@ -48,7 +40,7 @@ export function useCompliance() {
   );
 
   const remove = useCallback(async (id: string) => {
-    await deleteDoc(doc(db, COLLECTIONS.compliance, id));
+    await deleteDoc(`${COLLECTIONS.compliance}/${id}`);
   }, []);
 
   return {

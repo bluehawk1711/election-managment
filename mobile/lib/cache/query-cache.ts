@@ -1,18 +1,22 @@
 /**
- * A durable cache for Firestore *query* results — everything `useCollection`
+ * A durable cache for every *query* result — everything `useCollection`
  * reads: the campaign profile, the geography, the booths, the roster, and the
  * task/issue/event/expense lists.
  *
- * ## Why not just let Firestore do it
+ * ## Why the app needs this at all
  *
- * `initializeFirestore` is configured with `persistentLocalCache()`, but on
- * React Native that cache is IndexedDB-backed and React Native has no
- * IndexedDB. The JS SDK therefore degrades to a *per-session memory* cache:
- * kill the app on the platform and every one of those collections has to be
- * re-downloaded. In practice that is six `Listen` streams — campaign, wards,
- * areas, booths, constituencies, team — plus the per-screen lists, all of
- * which report `loading: true` until they land. So the app opens on skeletons
+ * Neither backend gives React Native a durable read cache. Firestore's
+ * `persistentLocalCache()` is IndexedDB-backed and React Native has no
+ * IndexedDB, so the JS SDK degrades to a per-session memory cache; the
+ * Realtime Database SDK has no offline disk cache in this version at all. So
+ * in both worlds, killing the app on the platform means every one of those
+ * collections has to be re-downloaded — six `Listen` streams for campaign,
+ * wards, areas, booths, constituencies and team, plus the per-screen lists,
+ * all reporting `loading: true` until they land. The app opens on skeletons
  * every single time, on whatever connection the karykarta happens to have.
+ *
+ * That is the problem this module solves, and it is why the port away from
+ * Firestore did not take it with it.
  *
  * ## Why a memory mirror, not just AsyncStorage
  *
@@ -39,10 +43,7 @@
  * and anything that fails is dropped rather than served.
  */
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import type {
-  DocumentData,
-  QueryDocumentSnapshot,
-} from 'firebase/firestore';
+import type { DbSnapshot } from '@/lib/db/types';
 
 /**
  * Bumped when the stored document shape changes. Old keys are then never read,
@@ -192,14 +193,18 @@ export function savedAt(name: string): number | null {
  * changing a mapper does not require a cache version bump: the new mapper
  * simply runs over the same stored bytes.
  */
-export function snapshotFrom(
-  doc: CachedDoc
-): QueryDocumentSnapshot<DocumentData> {
+export function snapshotFrom(doc: CachedDoc): DbSnapshot {
   return {
     id: doc.id,
+    path: doc.id,
     exists: () => true,
     data: () => doc.data,
-  } as unknown as QueryDocumentSnapshot<DocumentData>;
+    // `fromCache: true` is the honest reading — this IS the cached copy, and
+    // `useCollection` reports `connected: false` over it for the same reason.
+    // `hasPendingWrites` is false because the cache only ever stores rows the
+    // server confirmed, so nothing replayed here is an unacknowledged write.
+    metadata: { fromCache: true, hasPendingWrites: false },
+  };
 }
 
 /** Drops every cached query. Settings → "clear cached data".

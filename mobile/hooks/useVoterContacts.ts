@@ -24,8 +24,7 @@
  * rejected proposal write leaves the screen working, it just does not share.
  */
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { collection, doc, onSnapshot, setDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { onDoc, onDocs, setDoc } from '@/lib/db';
 import { can } from '@/lib/roles';
 import { phoneKey, type FinalizedContact, type PhoneGroup, type PhoneProposal, groupProposals } from '@/lib/roll/contacts';
 import { writeProposal } from '@/lib/roll/contacts-store';
@@ -84,11 +83,14 @@ export function useVoterContacts(
       if (parentSettled && proposalsSettled) setLoading(false);
     };
 
-    const parent = doc(db, 'voterPhones', voterId);
-    const stopParent = onSnapshot(
-      parent,
+    const stopParent = onDoc(
+      `voterPhones/${voterId}`,
       (snapshot) => {
-        setFinalized(snapshot.exists() ? (snapshot.data() as FinalizedContact) : null);
+        setFinalized(
+          snapshot.exists()
+            ? (snapshot.data() as unknown as FinalizedContact)
+            : null
+        );
         settle('parent');
       },
       () => {
@@ -99,14 +101,15 @@ export function useVoterContacts(
       }
     );
 
-    const stopProposals = onSnapshot(
-      // No orderBy: rules scope the list per returned document, and sorting
-      // happens in `groupProposals` — an ordered query would additionally
-      // need the order field on every doc AND a composite index later.
-      collection(db, 'voterPhones', voterId, 'proposals'),
-      (snapshot) => {
+    const stopProposals = onDocs(
+      // No ordering: the rules scope the list per returned document, and the
+      // sort happens in `groupProposals` — asking the database to order would
+      // need the field present on every child for no gain.
+      `voterPhones/${voterId}/proposals`,
+      undefined,
+      (rows) => {
         const next: PhoneProposal[] = [];
-        for (const item of snapshot.docs) {
+        for (const item of rows) {
           const data = item.data() as Omit<PhoneProposal, 'uid'>;
           if (typeof data.phone !== 'string' || typeof data.updatedAt !== 'number') continue;
           next.push({ ...data, uid: item.id });
@@ -160,7 +163,7 @@ export function useVoterContacts(
       if (!user || !can(role, 'contactFinalize')) return false;
       if (!group.phone) return false;
       await setDoc(
-        doc(db, 'voterPhones', voterId),
+        `voterPhones/${voterId}`,
         {
           wardNo: targetWard,
           finalPhone: group.phone,
@@ -168,10 +171,14 @@ export function useVoterContacts(
           finalizedName: authorName,
           finalizedAt: Date.now(),
         },
-        // Whole-document write (not merge): rules demand the exact five-key
-        // set on the RESULT, so a partial merge of only what changed would be
-        // rejected the first time the document is created.
-        { merge: false }
+        // MERGE — and this is not the Firestore behaviour carried over by
+        // habit. On Firestore `proposals` was a SUBCOLLECTION, which replacing
+        // the parent document left untouched. Here it is a CHILD NODE, so a
+        // non-merge `set()` would delete every proposal filed for this voter:
+        // "choose this number" would silently erase the alternatives. A merge
+        // also creates the node when absent and validates each child on its
+        // own, which is exactly the shape `voterPhones`' rules have.
+        { merge: true }
       );
       return true;
     },
@@ -182,7 +189,7 @@ export function useVoterContacts(
     async (targetWard: number): Promise<boolean> => {
       if (!user || !can(role, 'contactFinalize')) return false;
       await setDoc(
-        doc(db, 'voterPhones', voterId),
+        `voterPhones/${voterId}`,
         {
           wardNo: targetWard,
           finalPhone: '',
@@ -190,7 +197,11 @@ export function useVoterContacts(
           finalizedName: '',
           finalizedAt: null,
         },
-        { merge: false }
+        // Merge for the same reason as `finalize`: `proposals` hangs off this
+        // node, and a replacing write would take it with it. `finalizedAt:
+        // null` is RTDB's delete-a-child, so the timestamp goes away — which is
+        // the cleared state, and the rule accepts its absence.
+        { merge: true }
       );
       return true;
     },

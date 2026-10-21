@@ -15,8 +15,12 @@
  *    where `updateDoc` threw. Both differences lose data if they are
  *    rediscovered per call site.
  *  - **queries are shape-constrained.** RTDB can order by one child and cap
- *    the result, but not "order by an arbitrary field, then limit" — which is
- *    what every list in this panel asks for.
+ *    the result, but not "order by an arbitrary field, then limit" — which
+ *    is what every list in this panel asks for.
+ *  - **a node whose keys are integers arrives as an ARRAY.** `/wards` is
+ *    keyed `"1".."13"`, so the encoder hands the client `[null, ward1, …]`.
+ *    Reading that as a plain object is what makes a ward picker render
+ *    empty with no error anywhere — see `childrenOf` below.
  *
  * Centralising those facts here means each ported file changes its import
  * line and nothing about its shape, and the next reader finds the divergence
@@ -33,13 +37,12 @@
  * ## The snapshot shape
  *
  * `DbSnapshot` is deliberately the shape the mappers ALREADY accept:
- * `{ id, data() }`. `lib/mappers.ts` types its input as
- * `Pick<QueryDocumentSnapshot<DocumentData>, 'id' | 'data'>` — structural, never
- * an `instanceof` check — precisely so it can be handed a stand-in. This
- * module is that stand-in, arrived at from the other direction: the
- * Realtime Database has no snapshot type of its own that looks like
- * Firestore's, so the panel defines the one it wants and every read is
- * adapted into it. The mappers themselves do not change.
+ * `{ id, data() }`. `lib/mappers.ts` types its input as `{ id, data() }` —
+ * structural, never an `instanceof` check — precisely so it can be handed a
+ * stand-in. This module is that stand-in, arrived at from the other
+ * direction: the Realtime Database has no snapshot type of its own that
+ * looks like Firestore's, so the panel defines the one it wants and every
+ * read is adapted into it. The mappers themselves do not change.
  */
 import {
   get,
@@ -47,6 +50,7 @@ import {
   push,
   ref,
   remove,
+  runTransaction,
   serverTimestamp,
   set,
   update,
@@ -55,7 +59,12 @@ import {
 } from 'firebase/database';
 import { realtime } from '@/lib/firebase';
 
-/** Re-exported so callers import every RTDB primitive from this module. */
+/**
+ * Server-assigned millis, re-exported so callers import every RTDB primitive
+ * from this module (same surface as the mobile adapter, `mobile/lib/db`).
+ * The server resolves the sentinel before rules validate, so a
+ * `isNumber()` rule sees the resolved epoch millis.
+ */
 export { serverTimestamp };
 
 /** A node's fields. `null` children are treated as absent — see `setDoc`. */
@@ -142,6 +151,42 @@ const lastSegment = (path: string): string =>
 const isRecord = (value: unknown): value is DbData =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
 
+/**
+ * A node's children as `[key, value]` pairs, whatever shape it arrived in.
+ *
+ * For an array, **the index is the key** — that is how the encoder built it
+ * — so reading the index back off a hole-free pass restores exactly the keys
+ * that went in, including `"3"` in a node holding `"1"` and `"3"` with nothing
+ * between. The `null` entries are padding for an index nobody wrote; they
+ * cannot be stored data, because RTDB drops `null` children on write.
+ *
+ * A node that is absent (`null`), or a primitive standing where the panel
+ * expects an object, yields no children — the same "empty" reading the code
+ * had before, and for a `null` the only correct one.
+ */
+export function childrenOf(raw: unknown): Array<[string, unknown]> {
+  if (Array.isArray(raw)) {
+    return raw.flatMap((value, index) =>
+      value === null ? [] : [[String(index), value]]
+    );
+  }
+  return isRecord(raw) ? Object.entries(raw) : [];
+}
+
+/**
+ * A node as fields, for `DbSnapshot.data()`.
+ *
+ * Only arrays pay the conversion cost: `data()` runs inside sort comparators
+ * (`byField` calls it twice per comparison), so copying a plain object here
+ * would turn an O(n log n) sort into an O(n²) one. Returning the same object
+ * each call also keeps identity stable for the mappers.
+ */
+export function dataOf(value: unknown): DbData {
+  if (isRecord(value)) return value;
+  if (Array.isArray(value)) return Object.fromEntries(childrenOf(value));
+  return {};
+}
+
 function snapshotOf(path: string, key: string, value: unknown): DbSnapshot {
   return {
     id: key,
@@ -150,7 +195,7 @@ function snapshotOf(path: string, key: string, value: unknown): DbSnapshot {
     // "exists" — it is malformed data, not absent data, and hiding that
     // would be worse.
     exists: () => value !== null && value !== undefined,
-    data: () => (isRecord(value) ? value : {}),
+    data: () => dataOf(value),
   };
 }
 
@@ -234,10 +279,7 @@ function selectRows(
   snapshot: RtdbSnapshot,
   spec?: QuerySpec
 ): DbSnapshot[] {
-  const raw = snapshot.val();
-  if (!isRecord(raw)) return [];
-
-  let rows = Object.entries(raw).map(([key, value]) =>
+  let rows = childrenOf(snapshot.val()).map(([key, value]) =>
     snapshotOf(`${path}/${key}`, key, value)
   );
 
@@ -322,11 +364,13 @@ export async function getChildren(path: string): Promise<DbSnapshot[]> {
  *
  * `{ merge: true }` maps to RTDB's `update()`, which merges **one level
  * deep** — the same as Firestore's merge for the single panel call site that
- * uses it. Callers merging a nested map should write the whole map.
+ * uses it. Callers merging a nested map should write the whole map, or
+ * write the leaf path directly (`teams/x/members/uid`).
  *
  * `null` children are dropped rather than stored: that is RTDB's model, not a
  * filter, and it is why "clear a field" works but "store an explicit null"
- * does not reach the server.
+ * does not reach the server. A `null` child of a `set()` REMOVES that key —
+ * the same effect `deleteField()` had in Firestore.
  */
 export async function setDoc(
   path: string,
@@ -391,12 +435,9 @@ export async function writeIfUnchanged(
   build: (current: DbData | null) => DbData | null
 ): Promise<boolean> {
   const node: DatabaseReference = ref(realtime(), path);
-  const result = await (await import('firebase/database')).runTransaction(
-    node,
-    (current) => {
-      const next = build(isRecord(current) ? current : null);
-      return next === null ? undefined : next;
-    }
-  );
+  const result = await runTransaction(node, (current) => {
+    const next = build(isRecord(current) ? current : null);
+    return next === null ? undefined : next;
+  });
   return result.committed;
 }
