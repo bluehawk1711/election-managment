@@ -192,3 +192,641 @@ body {
 .shake {
   animation: shake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
 }
+
+/* ================================================================ */
+/* Voter slip modal chrome + paper (global, slip- prefixed)           */
+/* Moved out of VoterSlip.module.css: the CSS-module export map was   */
+/* coming back empty, so every styles.x resolved to `undefined` and   */
+/* the dialog rendered unstyled at the bottom of the page. Plain      */
+/* global classes with a slip- prefix cannot fail that way, and the   */
+/* prefix keeps .row/.label/.value & co. out of the rest of the app.  */
+/* ================================================================ */
+/*
+ * The voter-slip modal — the pasted `VoterSlip.module.css` kept as the
+ * paper's stylesheet, plus the CHROME the mock (clipboard-image.png) wraps
+ * around it: orange header bar, WhatsApp toolbar, status bar, shortcut strip.
+ *
+ * The paper is light-on-white on purpose even though the panel is a dark
+ * console: this thing gets printed and carried into the field, so what you
+ * see on screen must be what the printer spits out. The chrome borrows the
+ * mock's orange (#ea580c family) so the dialog reads as "the slip app",
+ * not as another admin panel surface.
+ *
+ * PRINT: only `.slip-slip` survives — everything else is `visibility: hidden`,
+ * the slip is lifted to the page origin, and `print-color-adjust: exact`
+ * keeps the orange/yellow fills (tick "Background graphics" in the dialog).
+ * Two modes via `[data-print-mode]`: `slip` keeps the 420pt cut-out slip,
+ * `a4` stretches it to the full A4 sheet the reference PDF was printed at.
+ */
+
+.slip-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  font-family: var(--font-devanagari, 'Noto Sans Devanagari'), 'Mukta',
+    system-ui, sans-serif;
+  color: #1f2937;
+}
+
+/* ------------------------------------------------------------------ chrome */
+
+.slip-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgb(6 8 13 / 0.72);
+  backdrop-filter: blur(6px);
+  animation: slip-fadeIn 0.16s ease-out;
+}
+
+.slip-modal {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 560px;
+  max-height: 92vh;
+  border-radius: 18px;
+  overflow: hidden;
+  background: #f6f7f9;
+  box-shadow: 0 40px 90px -30px rgb(0 0 0 / 0.65);
+  animation: slip-riseIn 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes slip-fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slip-riseIn {
+  from { opacity: 0; transform: translateY(14px) scale(0.985); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .slip-overlay, .slip-modal { animation: none; }
+}
+
+/* Orange header bar — title left, collapse + close right. */
+.slip-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  color: #fff;
+  background: linear-gradient(135deg, #ea580c, #f97316 55%, #fb923c);
+}
+
+.slip-headerIcon {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  border-radius: 10px;
+  background: rgb(255 255 255 / 0.22);
+}
+
+.slip-headerText {
+  flex: 1;
+  min-width: 0;
+}
+
+.slip-headerTitle {
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.slip-headerSub {
+  margin-top: 1px;
+  font-size: 11px;
+  opacity: 0.92;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.slip-headerBtn {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  border: 0;
+  border-radius: 8px;
+  color: #fff;
+  background: rgb(255 255 255 / 0.16);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.slip-headerBtn:hover { background: rgb(255 255 255 / 0.3); }
+
+.slip-collapseBtn svg { transition: transform 0.2s; }
+.slip-collapsed .slip-collapseBtn svg { transform: rotate(180deg); }
+
+/* Collapsed state: only the header bar survives — a peekable tab. */
+.slip-body { display: flex; flex-direction: column; min-height: 0; }
+.slip-collapsed .slip-body { display: none; }
+
+/* ----------------------------------------------------------------- toolbar */
+
+.slip-toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px 0;
+}
+
+.slip-phoneInput {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  padding: 9px 12px;
+  font: inherit;
+  font-size: 13px;
+  color: #1f2937;
+  background: #fff;
+}
+
+.slip-phoneInput:focus {
+  outline: none;
+  border-color: #ea580c;
+  box-shadow: 0 0 0 3px rgb(234 88 12 / 0.15);
+}
+
+.slip-btnRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.slip-btnWhatsapp {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 0;
+  border-radius: 10px;
+  padding: 9px 14px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+  background: #16a34a;
+  cursor: pointer;
+}
+
+.slip-btnWhatsapp:hover { background: #15803d; }
+.slip-btnWhatsapp:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.slip-printBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 0;
+  border-radius: 10px;
+  padding: 9px 14px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+  background: #1f2937;
+  cursor: pointer;
+}
+
+.slip-printBtn:hover { background: #111827; }
+
+.slip-a4Btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 0;
+  border-radius: 10px;
+  padding: 9px 14px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+  background: #ea580c;
+  cursor: pointer;
+}
+
+.slip-a4Btn:hover { background: #c2410c; }
+
+.slip-copyBtn {
+  display: inline-grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  color: #4b5563;
+  background: #fff;
+  cursor: pointer;
+}
+
+.slip-copyBtn:hover { color: #1f2937; border-color: #9ca3af; }
+
+.slip-pdfLink {
+  align-self: flex-end;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  font-size: 11px;
+  color: #1d4ed8;
+  background: none;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.slip-pdfLink:hover { color: #1e40af; }
+
+/* ------------------------------------------------------------ slip (paper) */
+
+.slip-slipWrap {
+  padding: 10px 14px 14px;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.slip-slip {
+  width: 100%;
+  max-width: 420px;
+  margin: 0 auto;
+  background: #fff;
+  border: 1.5px dashed #9ca3af;
+  border-radius: 14px;
+  padding: 16px 18px;
+  box-sizing: border-box;
+}
+
+/* रंगदर्शक — the colour guide strip; prints, so slips can be colour-sorted. */
+.slip-colorStrip {
+  height: 6px;
+  border-radius: 999px;
+  margin: 0 auto 10px;
+}
+
+.slip-badgeRow { text-align: center; }
+
+.slip-badge {
+  display: inline-block;
+  background: #ea580c;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 10px;
+  border-radius: 999px;
+}
+
+.slip-title {
+  text-align: center;
+  font-size: 20px;
+  line-height: 1.3;
+  margin: 8px 0 12px;
+  font-weight: 800;
+}
+
+.slip-candidate {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  background: #fff1e6;
+  border: 1px solid #fdba74;
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+.slip-candidateText { flex: 1; min-width: 0; }
+.slip-candidatePost { font-size: 12px; font-weight: 700; }
+.slip-candidateName { color: #9a3412; font-size: 14px; }
+.slip-candidateMeta { margin-top: 4px; font-size: 11px; color: #374151; }
+.slip-sep { margin: 0 8px; color: #9ca3af; }
+
+.slip-candidatePhoto {
+  width: 52px;
+  height: 62px;
+  object-fit: cover;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: #fff;
+}
+
+.slip-divider {
+  text-align: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: #6b7280;
+  border-top: 1px solid #374151;
+  margin-top: 14px;
+  padding-top: 6px;
+}
+
+.slip-rollRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0;
+}
+
+.slip-rollChip,
+.slip-wardChip {
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  font-size: 10px;
+  padding: 2px 8px;
+}
+
+.slip-voterBlock {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.slip-voterInfo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.slip-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.slip-rowBordered {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+  padding: 7px 0;
+  border-top: 1px solid #e5e7eb;
+}
+
+.slip-label { color: #4b5563; }
+.slip-value { font-weight: 700; }
+
+.slip-nameValue {
+  font-weight: 800;
+  font-size: 16px;
+  margin-left: auto;
+  text-align: right;
+}
+
+.slip-nameEn {
+  display: block;
+  font-size: 10px;
+  font-weight: 500;
+  color: #6b7280;
+  text-align: right;
+}
+
+.slip-wardNo {
+  background: #fef3c7;
+  padding: 1px 8px;
+  border-radius: 4px;
+  font-weight: 700;
+}
+
+.slip-voterNo {
+  color: #dc2626;
+  font-weight: 800;
+  font-size: 16px;
+}
+
+.slip-epic {
+  font-family: ui-monospace, Menlo, monospace;
+  font-weight: 700;
+  color: #1d4ed8;
+}
+
+.slip-photoBox { width: 66px; text-align: center; }
+
+.slip-voterPhoto {
+  width: 66px;
+  height: 78px;
+  object-fit: cover;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+}
+
+.slip-photoPlaceholder {
+  width: 66px;
+  height: 78px;
+  display: grid;
+  place-items: center;
+  border: 1px dashed #9ca3af;
+  border-radius: 6px;
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+.slip-photoCaption {
+  font-size: 9px;
+  color: #6b7280;
+  margin-top: 2px;
+}
+
+.slip-booth {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 8px 10px;
+  margin-top: 6px;
+}
+
+.slip-boothLabel { font-size: 10px; color: #6b7280; }
+.slip-boothValue { font-size: 12px; font-weight: 700; }
+
+.slip-footer {
+  text-align: center;
+  border-top: 1px solid #374151;
+  margin-top: 12px;
+  padding-top: 8px;
+}
+
+.slip-footerMsg {
+  font-size: 11px;
+  font-weight: 700;
+  color: #9a3412;
+}
+
+.slip-footerTime {
+  font-size: 10px;
+  font-weight: 700;
+  margin-top: 4px;
+}
+
+/* ------------------------------------------------- status bar + shortcuts */
+
+.slip-statusBar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-top: 1px solid #e5e7eb;
+  background: #fff;
+  font-size: 12px;
+}
+
+.slip-statusChip {
+  display: inline-block;
+  background: #fef3c7;
+  border: 1px solid #fcd34d;
+  color: #92400e;
+  border-radius: 6px;
+  padding: 2px 8px;
+  font-weight: 700;
+}
+
+.slip-rangSelect {
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 4px 8px;
+  font: inherit;
+  font-size: 12px;
+  background: #fff;
+  color: #1f2937;
+  cursor: pointer;
+}
+
+.slip-boothBtn {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 0;
+  border-radius: 10px;
+  padding: 7px 12px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  color: #fff;
+  background: #16a34a;
+  cursor: pointer;
+}
+
+.slip-boothBtn:hover { background: #15803d; }
+
+.slip-boothPanel {
+  padding: 10px 14px;
+  border-top: 1px solid #e5e7eb;
+  background: #f9fafb;
+  font-size: 12px;
+  color: #374151;
+}
+
+.slip-boothPanelMap {
+  display: inline-block;
+  margin-top: 6px;
+  font-size: 11px;
+  color: #1d4ed8;
+  text-decoration: underline;
+}
+
+.slip-shortcutBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 14px;
+  border-top: 1px solid #e5e7eb;
+  background: #f3f4f6;
+  color: #6b7280;
+  font-size: 11px;
+}
+
+.slip-closeBtn {
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 5px 12px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  color: #374151;
+  background: #fff;
+  cursor: pointer;
+}
+
+.slip-closeBtn:hover { background: #f9fafb; }
+
+/* ---------- PRINT: only the slip is printed ----------
+ *
+ * Two things this block has to get right, or printing fails silently:
+ *
+ *  1. `display: none`, NOT `visibility: hidden`, for everything that is not
+ *     the slip. A visibility-hidden element still occupies its layout box,
+ *     and the voter list behind the dialog is thousands of pixels tall —
+ *     hiding it printed the slip on page 1 followed by eight blank pages.
+ *
+ *  2. Specificity. The "hide everything" selector carries `:has(...)`, which
+ *     is a class-level bump; if the "show the slip" selectors are weaker they
+ *     LOSE, and the sheet prints completely blank. That is exactly what
+ *     happened once the hide rule was scoped with :has().
+ */
+@media print {
+  @page {
+    size: A4;
+    margin: 10mm;
+  }
+
+  /* Scoped to "the slip dialog is open": Ctrl+P anywhere else in the panel
+     keeps printing that page as it looks on screen. */
+  body:has(.slip-overlay)
+    *:not(:has(.slip-slip)):not(.slip-slip):not(.slip-slip *) {
+    display: none !important;
+  }
+
+  /* Everything that DOES contain the slip is a pure container on paper —
+     no padding, no min-height, no shadow — so the slip owns the sheet. */
+  body:has(.slip-overlay) *:has(.slip-slip) {
+    margin: 0 !important;
+    padding: 0 !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    max-width: none !important;
+    border: 0 !important;
+    background: none !important;
+    box-shadow: none !important;
+    overflow: visible !important;
+    position: static !important;
+  }
+
+  /* The paper, and only the paper, stays on the sheet. */
+  .slip-slip,
+  .slip-slip * {
+    visibility: visible !important;
+  }
+
+  .slip-slip {
+    position: static !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    border: 1.5px dashed #000 !important;
+    /* Forces the orange badge and the colour strip to print even when
+       "Background graphics" is unticked (Chrome's default) — without this
+       the white-on-orange badge prints white-on-white. Inherited by every
+       descendant, which is why the slips' fills survive. */
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* `slip` mode = the 420pt cut-out; `a4` mode = the full A4 sheet. */
+  [data-print-mode='slip'] .slip-slip {
+    max-width: 420px !important;
+    margin: 0 auto !important;
+  }
+}

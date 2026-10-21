@@ -10,35 +10,17 @@
  * and the English half of the data (`nameEn` & co.) rides along only where
  * the mock shows it — the `(Name)` gloss beside नाम.
  *
- * The candidate block (party post, name, symbol, ballot number) is NOT in the
- * roll — it is campaign configuration, so it is passed in and defaults to the
- * mock's values. When the admin panel gains a settings surface for it,
- * `CandidateInfo` is the shape to persist; nothing else here changes.
+ * The slip carries VOTER data only — no candidate block. The artefact a
+ * karykarta hands a household is about one voter, and the panel has no
+ * candidate configuration to print from anyway; bringing one back later
+ * means restoring a block, not reshaping this contract.
  */
 import type { VoterView, WardMeta } from './types';
 import { genderLabel } from './types';
 
-/** Who the slip is FOR — the candidate whose symbol the voter votes for. */
-export interface CandidateInfo {
-  /** e.g. "जिला परिषद सदस्य प्रत्याशी (आमजन) - वार्ड संख्या 20, जोधपुर" */
-  post: string;
-  name: string;
-  symbolName: string;
-  ballotNo: number;
-  photoUrl?: string;
-}
-
-/** The default candidate — the mock's own values, ward 20 Jodhpur. */
-export const DEFAULT_CANDIDATE: CandidateInfo = {
-  post: 'जिला परिषद सदस्य प्रत्याशी (आमजन) - वार्ड संख्या 20, जोधपुर',
-  name: 'लक्ष्मणराम चौधरी',
-  symbolName: 'कमल',
-  ballotNo: 1,
-};
-
 /**
- * The slip component's data contract — kept structurally identical to the
- * pasted `VoterSlip.tsx` so that component drops in unchanged.
+ * The slip component's data contract — the pasted `VoterSlip.tsx` minus the
+ * candidate block, so the component renders exactly what the roll knows.
  */
 export interface VoterSlipData {
   title: string;
@@ -46,7 +28,6 @@ export interface VoterSlipData {
   /** The roll's generated English copy of the voter's name — the small
    *  line under the Hindi name on the bilingual slip. */
   nameEn?: string;
-  candidate?: CandidateInfo;
   rollLabel?: string;
   wardLabel?: string;
   voter: {
@@ -81,17 +62,15 @@ export interface VoterSlipData {
 export function buildSlipData(args: {
   voter: VoterView;
   ward: WardMeta | undefined;
-  candidate?: CandidateInfo;
   photoUrl?: string;
 }): VoterSlipData {
-  const { voter, ward, candidate = DEFAULT_CANDIDATE, photoUrl } = args;
+  const { voter, ward, photoUrl } = args;
   const e = voter.effective;
 
   return {
-    // The mock's heading: election body, ward, year — one line, bold.
-    title: `जोधपुर जिला परिषद - वार्ड संख्या ${voter.wardNo} चुनाव - 2026`,
+    // The heading: panchayat election, ward, year — one line, bold.
+    title: `ग्राम पंचायत चुनाव - वार्ड संख्या ${voter.wardNo} - 2026`,
     badgeText: 'मतदाता सूचना पर्ची (VOTER SLIP)',
-    candidate,
     nameEn: voter.nameEn,
     rollLabel: 'निर्वाचक नामावली: मूल नामावली (Mother Roll)',
     wardLabel: `वार्ड ${String(voter.wardNo).padStart(2, '0')}`,

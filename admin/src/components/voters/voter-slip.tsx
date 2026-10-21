@@ -42,7 +42,20 @@ import {
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from '@/stores/toast';
 import { slipMessageText, type VoterSlipData } from '@/lib/roll/slip';
-import styles from './VoterSlip.module.css';
+
+/**
+ * STYLING: this component does NOT use a CSS module. Its classes are plain
+ * globals named `slip-*`, defined in `app/globals.css` (see the block at the
+ * end of that file) — `slip-overlay`, `slip-modal`, `slip-paper` and so on,
+ * one-to-one with the class names in this file.
+ *
+ * Why not a module: `import styles from './VoterSlip.module.css'` resolved to
+ * an EMPTY object here, so every `className={styles.x}` became the literal
+ * string "undefined" and the dialog rendered as unstyled markup at the very
+ * bottom of the voter list — mounted, unclickable-looking, invisible. A plain
+ * string class cannot fail that way. The `slip-` prefix keeps these names
+ * (`.row`, `.label`, `.value`, `.header` …) out of every other screen.
+ */
 
 /* ------------------------------------------------------------- persistence */
 
@@ -97,6 +110,7 @@ export function VoterSlipModal({
   voterId: string;
   onClose: () => void;
 }) {
+  console.log("VoterSlipModal mounted/rendered:", data.title);
   // Lazy seeds — the workgroup number and colour mark are read ONCE per
   // mount (see the header note), which is exactly what a lazy initializer
   // expresses; an effect calling setState here would just cascade a render.
@@ -157,7 +171,7 @@ export function VoterSlipModal({
 
   return (
     <div
-      className={styles.overlay}
+      className='slip-overlay'
       data-print-mode={printMode}
       // Backdrop click cancels — the drawer's own contract.
       onClick={(event) => {
@@ -165,23 +179,23 @@ export function VoterSlipModal({
       }}
     >
       <div
-        className={`${styles.modal}${collapsed ? ` ${styles.collapsed}` : ''}`}
+        className={`slip-modal${collapsed ? ' slip-collapsed' : ''}`}
         role='dialog'
         aria-modal='true'
         aria-label='मतदाता पर्ची'
       >
         {/* ── header ─────────────────────────────────────────────── */}
-        <div className={styles.header}>
-          <span className={styles.headerIcon}>
+        <div className='slip-header'>
+          <span className='slip-headerIcon'>
             <Vote className='size-4.5' />
           </span>
-          <div className={styles.headerText}>
-            <div className={styles.headerTitle}>मतदाता पर्ची (Voter Slip)</div>
-            <div className={styles.headerSub}>{data.title}</div>
+          <div className='slip-headerText'>
+            <div className='slip-headerTitle'>मतदाता पर्ची (Voter Slip)</div>
+            <div className='slip-headerSub'>{data.title}</div>
           </div>
           <button
             type='button'
-            className={`${styles.headerBtn} ${styles.collapseBtn}`}
+            className='slip-headerBtn slip-collapseBtn'
             onClick={() => setCollapsed((current) => !current)}
             aria-label={collapsed ? 'पर्ची बढ़ाएँ' : 'पर्ची समेटें'}
           >
@@ -189,7 +203,7 @@ export function VoterSlipModal({
           </button>
           <button
             type='button'
-            className={styles.headerBtn}
+            className='slip-headerBtn'
             onClick={onClose}
             aria-label='बंद करें'
           >
@@ -197,21 +211,21 @@ export function VoterSlipModal({
           </button>
         </div>
 
-        <div className={styles.body}>
+        <div className='slip-body'>
           {/* ── toolbar ──────────────────────────────────────────── */}
-          <div className={styles.toolbar}>
+          <div className='slip-toolbar'>
             <input
-              className={styles.phoneInput}
+              className='slip-phoneInput'
               value={phone}
               onChange={(event) => setPhone(event.target.value)}
               inputMode='tel'
               placeholder='कार्यसमूह मोबाइल नंबर दर्ज करें (क्लिकेबल)'
               aria-label='कार्यसमूह मोबाइल नंबर'
             />
-            <div className={styles.btnRow}>
+            <div className='slip-btnRow'>
               <button
                 type='button'
-                className={styles.btnWhatsapp}
+                className='slip-btnWhatsapp'
                 onClick={sendWhatsapp}
               >
                 <MessageCircle className='size-4' />
@@ -219,7 +233,7 @@ export function VoterSlipModal({
               </button>
               <button
                 type='button'
-                className={styles.printBtn}
+                className='slip-printBtn'
                 onClick={() => print('slip')}
               >
                 <Printer className='size-4' />
@@ -227,7 +241,7 @@ export function VoterSlipModal({
               </button>
               <button
                 type='button'
-                className={styles.a4Btn}
+                className='slip-a4Btn'
                 onClick={() => print('a4')}
               >
                 <FileText className='size-4' />
@@ -235,7 +249,7 @@ export function VoterSlipModal({
               </button>
               <button
                 type='button'
-                className={styles.copyBtn}
+                className='slip-copyBtn'
                 onClick={() => void copyText()}
                 aria-label='पर्ची टेक्स्ट कॉपी करें'
               >
@@ -244,7 +258,7 @@ export function VoterSlipModal({
             </div>
             <button
               type='button'
-              className={styles.pdfLink}
+              className='slip-pdfLink'
               onClick={() => print('a4')}
             >
               ब्राउज़र में पीडीएफ देखना प्रारंभ करें
@@ -252,19 +266,19 @@ export function VoterSlipModal({
           </div>
 
           {/* ── the slip — the only printed surface ───────────────── */}
-          <div className={styles.slipWrap}>
+          <div className='slip-slipWrap'>
             <SlipPaper data={data} rangColor={rangColor} photoFailed={photoFailed} onPhotoFail={() => setPhotoFailed(true)} />
           </div>
 
           {/* ── status bar ───────────────────────────────────────── */}
-          <div className={styles.statusBar}>
+          <div className='slip-statusBar'>
             <span>
-              मतदाता स्थिति: <span className={styles.statusChip}>बाकी है</span>
+              मतदाता स्थिति: <span className='slip-statusChip'>बाकी है</span>
             </span>
             <label>
               रंगदर्शक:{' '}
               <select
-                className={styles.rangSelect}
+                className='slip-rangSelect'
                 value={rang}
                 onChange={(event) => onRang(event.target.value)}
                 aria-label='रंगदर्शक'
@@ -278,7 +292,7 @@ export function VoterSlipModal({
             </label>
             <button
               type='button'
-              className={styles.boothBtn}
+              className='slip-boothBtn'
               onClick={() => setShowBooth((current) => !current)}
             >
               <Check className='size-4' />
@@ -287,11 +301,11 @@ export function VoterSlipModal({
           </div>
 
           {showBooth ? (
-            <div className={styles.boothPanel}>
+            <div className='slip-boothPanel'>
               <b>बूथ {data.booth.number}</b> — {data.booth.name}
               <br />
               <a
-                className={styles.boothPanelMap}
+                className='slip-boothPanelMap'
                 href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
                   `${data.booth.name} ${data.booth.number}`
                 )}`}
@@ -304,9 +318,9 @@ export function VoterSlipModal({
           ) : null}
 
           {/* ── shortcut strip ───────────────────────────────────── */}
-          <div className={styles.shortcutBar}>
+          <div className='slip-shortcutBar'>
             <span>कीबोर्ड शॉर्टकट: ESC से बंद करें | पर्ची पर प्रिंट निकालें</span>
-            <button type='button' className={styles.closeBtn} onClick={onClose}>
+            <button type='button' className='slip-closeBtn' onClick={onClose}>
               बंद करें
             </button>
           </div>
@@ -335,139 +349,104 @@ function SlipPaper({
   photoFailed: boolean;
   onPhotoFail: () => void;
 }) {
-  const { candidate, voter, booth } = data;
+  const { voter, booth } = data;
 
   return (
-    <div className={styles.slip} id='voter-slip-print-area'>
+    <div className='slip-slip' id='voter-slip-print-area'>
       {rangColor ? (
-        <div className={styles.colorStrip} style={{ background: rangColor }} />
+        <div className='slip-colorStrip' style={{ background: rangColor }} />
       ) : null}
 
-      <div className={styles.badgeRow}>
-        <span className={styles.badge}>
+      <div className='slip-badgeRow'>
+        <span className='slip-badge'>
           {data.badgeText ?? 'मतदाता सूचना पर्ची (VOTER SLIP)'}
         </span>
       </div>
 
-      <h1 className={styles.title}>{data.title}</h1>
+      <h1 className='slip-title'>{data.title}</h1>
 
-      {candidate ? (
-        <div className={styles.candidate}>
-          <div className={styles.candidateText}>
-            <div className={styles.candidatePost}>
-              {candidate.post} :{' '}
-              <span className={styles.candidateName}>{candidate.name}</span>
-            </div>
-            <div className={styles.candidateMeta}>
-              {candidate.symbolName ? (
-                <span>
-                  चुनाव चिन्ह : <b>{candidate.symbolName}</b>
-                </span>
-              ) : null}
-              {candidate.ballotNo !== undefined ? (
-                <>
-                  <span className={styles.sep}>|</span>
-                  <span>
-                    केंद्र नंबर :{' '}
-                    <b>{String(candidate.ballotNo).padStart(2, '0')}</b>
-                  </span>
-                </>
-              ) : null}
-            </div>
-          </div>
-          {candidate.photoUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={candidate.photoUrl}
-              alt={candidate.name}
-              className={styles.candidatePhoto}
-            />
-          ) : null}
-        </div>
-      ) : null}
-
-      <div className={styles.divider}>
+      <div className='slip-divider'>
         <span>------------------ वोटर सूचना ------------------</span>
       </div>
 
-      <div className={styles.rollRow}>
-        <span className={styles.rollChip}>
+      <div className='slip-rollRow'>
+        <span className='slip-rollChip'>
           {data.rollLabel ?? 'निर्वाचक नामावली'}
         </span>
-        {data.wardLabel ? <span className={styles.wardChip}>{data.wardLabel}</span> : null}
+        {data.wardLabel ? <span className='slip-wardChip'>{data.wardLabel}</span> : null}
       </div>
 
-      <div className={styles.voterBlock}>
-        <div className={styles.voterInfo}>
-          <div className={styles.row}>
-            <span className={styles.label}>नाम (Name) :</span>
-            <span className={styles.nameValue}>
+      <div className='slip-voterBlock'>
+        <div className='slip-voterInfo'>
+          <div className='slip-row'>
+            <span className='slip-label'>नाम (Name) :</span>
+            <span className='slip-nameValue'>
               {voter.name}
               {/* The roll carries an English copy of every Hindi name — shown
                   small under it, the way the bilingual slip reads. */}
-              <span className={styles.nameEn}>{data.nameEn ?? ''}</span>
+              <span className='slip-nameEn'>{data.nameEn ?? ''}</span>
             </span>
           </div>
-          <div className={styles.row}>
-            <span className={styles.label}>पिता का नाम :</span>
-            <span className={styles.value}>{voter.fatherName}</span>
+          <div className='slip-row'>
+            <span className='slip-label'>पिता का नाम :</span>
+            <span className='slip-value'>{voter.fatherName}</span>
           </div>
-          <div className={styles.row}>
-            <span className={styles.label}>वार्ड क्रमांक :</span>
-            <span className={styles.wardNo}>
+          <div className='slip-row'>
+            <span className='slip-label'>वार्ड क्रमांक :</span>
+            <span className='slip-wardNo'>
               {String(voter.wardSerial).padStart(2, '0')}
             </span>
-            <span className={styles.label}>मतदाता क्रमांक :</span>
-            <span className={styles.voterNo}>{voter.voterSerial}</span>
+            <span className='slip-label'>मतदाता क्रमांक :</span>
+            <span className='slip-voterNo'>{voter.voterSerial}</span>
           </div>
         </div>
 
-        <div className={styles.photoBox}>
+        <div className='slip-photoBox'>
           {voter.photoUrl && !photoFailed ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={voter.photoUrl}
               alt={voter.name}
-              className={styles.voterPhoto}
+              className='slip-voterPhoto'
               onError={onPhotoFail}
             />
           ) : (
-            <div className={styles.photoPlaceholder}>फोटो</div>
+            <div className='slip-photoPlaceholder'>फोटो</div>
           )}
           {voter.serialNo !== undefined ? (
-            <div className={styles.photoCaption}>क्र. सं. {voter.serialNo}</div>
+            <div className='slip-photoCaption'>क्र. सं. {voter.serialNo}</div>
           ) : null}
         </div>
       </div>
 
-      <div className={styles.rowBordered}>
-        <span className={styles.label}>मतदान कार्ड संख्या (EPIC) :</span>
-        <span className={styles.epic}>{voter.epic}</span>
+      <div className='slip-rowBordered'>
+        <span className='slip-label'>मतदान कार्ड संख्या (EPIC) :</span>
+        <span className='slip-epic'>{voter.epic}</span>
       </div>
-      <div className={styles.rowBordered}>
-        <span className={styles.label}>मकान नंबर :</span>
-        <span className={styles.value}>{voter.houseNo}</span>
-        <span className={styles.label}>आयु / लिंग :</span>
-        <span className={styles.value}>
+      <div className='slip-rowBordered'>
+        <span className='slip-label'>मकान नंबर :</span>
+        <span className='slip-value'>{voter.houseNo}</span>
+        <span className='slip-label'>आयु / लिंग :</span>
+        <span className='slip-value'>
           {voter.age} वर्ष / {voter.gender}
         </span>
       </div>
 
-      <div className={styles.booth}>
-        <div className={styles.boothLabel}>मतदान बूथ संख्या व पता :</div>
-        <div className={styles.boothValue}>
+      <div className='slip-booth'>
+        <div className='slip-boothLabel'>मतदान बूथ संख्या व पता :</div>
+        <div className='slip-boothValue'>
           {booth.number} - {booth.name}
         </div>
       </div>
 
-      <div className={styles.footer}>
-        <div className={styles.footerMsg}>
+      <div className='slip-footer'>
+        <div className='slip-footerMsg'>
           ★ {data.footerMessage ?? 'लोकतंत्र के इस महापर्व में अपने अमूल्य मत का प्रयोग अवश्य करें'} ★
         </div>
         {data.votingDate ? (
-          <div className={styles.footerTime}>मतदान दिनांक: {data.votingDate}</div>
+          <div className='slip-footerTime'>मतदान दिनांक: {data.votingDate}</div>
         ) : null}
-        <div className={styles.footerTime}>
+        <div className='slip-footerTime'>
           मतदान का समय: {data.votingTime ?? '7:00 am से 06:00 pm'}
         </div>
       </div>

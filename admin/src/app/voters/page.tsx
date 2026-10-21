@@ -164,6 +164,13 @@ export default function VotersPage() {
     });
   }, [slip, wardMeta]);
 
+  useEffect(() => {
+    console.log("Voter slip debug:", {
+      selectedVoter: !!slip,
+      payloadAvailable: !!slipPayload,
+    });
+  }, [slip, slipPayload]);
+
   /* ------------------------------------------------------------------ gates */
 
   if (!mayRead) {
