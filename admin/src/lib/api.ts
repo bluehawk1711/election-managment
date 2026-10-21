@@ -62,7 +62,6 @@ import {
 } from 'firebase/auth';
 import { initializeApp as initSecondaryApp } from 'firebase/app';
 import { app, auth } from '@/lib/firebase';
-import { adminAuth } from '@/lib/admin-firebase';
 import { phoneKey, type FinalizedContact } from '@/lib/contacts';
 import {
   addDoc,
@@ -393,14 +392,39 @@ export async function grantRole(args: {
     });
   }
 
-  // Set Firebase Auth custom claims so RTDB rules evaluate immediately.
-  // The token refreshes within minutes; this is the cost of the "cleanest"
-  // role option.
-  const admin = adminAuth();
-  await admin.setCustomUserClaims(args.targetUid, {
-    role: args.role,
-    wardNo: args.wardNo,
+  // Publish the new role onto the account's LOGIN TOKEN, not just its
+  // profile: RTDB rules read `auth.token.role`, so a role change that stopped
+  // here would keep enforcing the OLD role until the token refreshed.
+  await publishClaims(args.targetUid);
+}
+
+/**
+ * Republishes `users/{uid}` onto the account's Auth custom claims.
+ *
+ * The route reads the profile server-side and derives the claims from it, so
+ * this call carries no payload that could forge one — the document the rules
+ * already authorised is the only input. It is the second half of every
+ * account-management mutation below: write the profile, then publish it.
+ *
+ * The refreshed token takes a minute or two to reach the target's device;
+ * that lag is the cost of making roles revocable rather than baked into a
+ * document (see `database.rules`'s header, which documents it honestly).
+ */
+async function publishClaims(targetUid: string): Promise<void> {
+  const response = await fetch('/api/account/claims', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ uid: targetUid }),
   });
+  const payload = (await response.json().catch(() => ({}))) as {
+    ok?: boolean;
+    error?: string;
+  };
+  if (!response.ok || payload.ok !== true) {
+    throw new Error(
+      payload.error ?? 'The change could not be published to the account’s login token.'
+    );
+  }
 }
 
 export async function deleteAccount(targetUid: string): Promise<void> {
@@ -459,6 +483,13 @@ export async function lockAccount(
     lockedBy: managerUid,
     updatedAt: Date.now(),
   });
+
+  // `locked` is a CLAIM, not just a document field: `database.rules` gates
+  // every capability on `auth.token.locked`, and an RTDB rule cannot read
+  // `/users/{uid}` from a rule anywhere else in the tree. Without this the
+  // lock would be decorative — a modified client keeps its old token and
+  // every write still passes until the token happens to refresh.
+  await publishClaims(targetUid);
 }
 
 /**
@@ -479,6 +510,10 @@ export async function unlockAccount(targetUid: string): Promise<void> {
     device: null,
     updatedAt: Date.now(),
   });
+
+  // Clearing the lock is half of it — the other half is dropping
+  // `auth.token.locked`, which is what every rule actually reads.
+  await publishClaims(targetUid);
 }
 
 /**
@@ -577,6 +612,11 @@ export async function setTeam(
       { merge: true }
     );
   }
+
+  // Team sharing is claim-driven for the same reason roles are: a reader
+  // compares its own `auth.token.teamId` to the `teamId` stamped on a
+  // teammate's edit, because an RTDB rule cannot look the team up.
+  await publishClaims(targetUid);
 }
 
 /**

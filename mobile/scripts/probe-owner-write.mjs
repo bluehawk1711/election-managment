@@ -58,6 +58,8 @@ const password = `Probe!${stamp}xY`;
 const problems = [];
 let uid = null;
 let idToken = null;
+let phonePath = null;
+let editPath = null;
 
 /** The exact payload `ensureProfile` writes, with RTDB's timestamp placeholder. */
 const PROFILE = {
@@ -161,6 +163,88 @@ try {
     await send('PATCH', `users/${uid}`, { role: 'karykarta', wardNo: 5 }, admin.token)
   );
 
+  // `clearFinalize()` writes `''` for `finalizedBy`/`finalizedName` and removes
+  // `finalizedAt`. The previous RTDB rule demanded a length of at least 1 for
+  // those two, so it accepted "choose this number" and rejected "undo it" —
+  // the exact asymmetry `firestore.rules` did not have (`text(x, 0, 128)`).
+  // Asserted here because it is a RULES change, and a rules change is not
+  // verified by reading it.
+  phonePath = `voterPhones/__probe-${stamp}`;  report(
+    'superAdmin CLEARS a finalized phone (the undo path)',
+    'allow',
+    await send(
+      'PATCH',
+      phonePath,
+      { wardNo: 1, finalPhone: '', finalizedBy: '', finalizedName: '' },
+      admin.token
+    )
+  );
+  report(
+    'superAdmin SETS a finalized phone',
+    'allow',
+    await send(
+      'PATCH',
+      phonePath,
+      {
+        wardNo: 1,
+        finalPhone: '+919999999999',
+        finalizedBy: admin.uid,
+        finalizedName: 'Rules probe',
+        finalizedAt: Date.now(),
+      },
+      admin.token
+    )
+  );
+  report(
+    'karykarta CANNOT finalize a phone',
+    'deny',
+    await send('PATCH', phonePath, { finalPhone: '+918888888888' })
+  );
+
+  // The overlay push. Every voter edit the app saves is written to exactly this
+  // path, and `pushEdits()` swallows failures by design (the entry stays queued
+  // and retries), so a rules mistake here does not look like an error — it
+  // looks like "my edits never reach my other phone".
+  const karykarta = await loginAs('ganpat@ward5.com');
+  editPath = `users/${karykarta.uid}/voterEdits/__probe_${stamp}`;
+  report(
+    'karykarta pushes an edit overlay',
+    'allow',
+    await send(
+      'PATCH',
+      editPath,
+      {
+        wardNo: 5,
+        updatedAt: Date.now(),
+        updatedBy: karykarta.uid,
+        name: 'Rules probe',
+        phone: '+919999999999',
+        voted: 'voted',
+        leaning: 'center',
+        age: 42,
+        location: { lat: 28.6, lng: 77.2 },
+      },
+      karykarta.token
+    )
+  );
+  report(
+    'karykarta CANNOT push into another account',
+    'deny',
+    await send(
+      'PATCH',
+      `users/${uid}/voterEdits/__probe_${stamp}`,
+      { wardNo: 5, updatedAt: Date.now(), updatedBy: uid },
+      karykarta.token
+    )
+  );
+  // The political-field ban is on the WRITE rule, not a validate, so it has to
+  // be asserted as a write that must fail rather than a shape that must.
+  report(
+    'karykarta CANNOT push a `party` field',
+    'deny',
+    await send('PATCH', editPath, { party: 'probe' }, karykarta.token)
+  );
+
   console.log(
     problems.length
       ? `\n${problems.length} PROBLEM(S):\n  - ${problems.join('\n  - ')}`
@@ -168,6 +252,12 @@ try {
   );
 } finally {
   // Cleanup runs on success and failure alike.
+  if (editPath) {
+    await adminDb.ref(editPath).remove().catch(() => undefined);
+  }
+  if (phonePath) {
+    await adminDb.ref(phonePath).remove().catch(() => undefined);
+  }
   if (uid) {
     await adminDb.ref(`users/${uid}`).remove().catch(() => undefined);
     await auth.deleteUser(uid).catch(() => undefined);

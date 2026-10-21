@@ -222,7 +222,7 @@ export const hi: Record<TranslationKey, string> = {
   'dash.actExpense': 'ने {{amount}} व्यय दर्ज किया',
   'dash.actIssue': 'ने "{{title}}" रिपोर्ट किया',
   'dash.unknownActor': 'अभियान डेस्क',
-  'dash.live': 'Firestore से लाइव',
+  'dash.live': 'लाइव',
   'dash.cached': 'कैश से दिख रहा है…',
 
   // Issue categories

@@ -99,8 +99,10 @@ const firebaseConfig: FirebaseOptions = {
 if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
   throw new Error(
     'Missing Firebase environment variables. Copy .env.example to .env.local ' +
-      'and fill in the six EXPO_PUBLIC_FIREBASE_* values from Project settings ' +
-      '→ General → Your apps → SDK setup and configuration.'
+      'and fill in the seven EXPO_PUBLIC_FIREBASE_* values from Project settings ' +
+      '→ General → Your apps → SDK setup and configuration. ' +
+      'EXPO_PUBLIC_FIREBASE_DATABASE_URL is the Realtime Database host and is ' +
+      'checked lazily by realtime() rather than here — see the note below.'
   );
 }
 

@@ -6,8 +6,10 @@
  * an async signature, so `useRoll`'s "network pass" resolves in a microtask
  * and the list paints from data the APK already contains — first launch,
  * airplane mode, revoked rules, it does not matter. Writes are impossible
- * (a plain object read), which restates server-side what `firestore.rules`
- * already enforces: the base roll is imported data, never client-editable.
+ * (a plain object read), which restates a server-side rule in the client: the
+ * base roll is imported data, never client-editable. `database.rules.json`
+ * grants no bulk read on `voters` at all, so even a compromised client could
+ * not refetch it from the database.
  *
  * Everything a user changes still goes through the overlay, local-first —
  * this source has no opinion on it.

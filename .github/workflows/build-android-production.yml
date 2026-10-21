@@ -107,6 +107,41 @@ jobs:
           EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID=${{ secrets.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID }}
           ENVEOF
 
+      # ── Environment guard ──────────────────────────────────────────────
+      # See `build-android.yml` for the full explanation. An empty secret
+      # inlines `undefined` and the build still succeeds; the app then throws
+      # on its first database read, after sign-in, on the user's device.
+      - name: Verify the Firebase env is complete
+        run: |
+          missing=0
+          for name in \
+            EXPO_PUBLIC_FIREBASE_API_KEY \
+            EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN \
+            EXPO_PUBLIC_FIREBASE_PROJECT_ID \
+            EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET \
+            EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID \
+            EXPO_PUBLIC_FIREBASE_APP_ID \
+            EXPO_PUBLIC_FIREBASE_DATABASE_URL
+          do
+            value=$(grep -E "^${name}=" .env | cut -d= -f2-)
+            if [ -z "$value" ]; then
+              echo "::error::$name is empty. Set it with: gh secret set $name"
+              missing=1
+            fi
+          done
+
+          URL=$(grep -E '^EXPO_PUBLIC_FIREBASE_DATABASE_URL=' .env | cut -d= -f2-)
+          case "$URL" in
+            https://*.firebasedatabase.app|https://*.firebaseio.com) ;;
+            *)
+              echo "::error::EXPO_PUBLIC_FIREBASE_DATABASE_URL is not a Realtime Database URL: '$URL'"
+              missing=1
+              ;;
+          esac
+
+          [ "$missing" -eq 0 ] || exit 1
+          echo "Firebase env complete. Realtime Database host: ${URL#https://}"
+
       - name: Generate native Android project
         run: npx expo prebuild --platform android --clean --no-install
 

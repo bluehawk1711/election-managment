@@ -4,8 +4,9 @@
  * The topbar — a fixed glass strip: mobile nav trigger, the current page's
  * title (derived from the path, so a deep link says where you landed), and on
  * the right the two facts an admin wants at a glance: the data behind this
- * page is a LIVE Firestore snapshot (pulsing dot — truthful, every query is
- * an `onSnapshot`), and who you are signed in as.
+ * page is a LIVE Realtime Database snapshot (pulsing dot — truthful, every
+ * list on the panel is a standing `onValue` subscription), and who you are
+ * signed in as.
  */
 import { Menu } from 'lucide-react';
 import { usePathname } from 'next/navigation';
@@ -15,7 +16,11 @@ import { Initials, RoleBadge } from '@/components/ui/kit';
 
 function titleFor(pathname: string): { title: string; section: string } {
   if (pathname === '/') return { title: 'Overview', section: 'Dashboard' };
-  if (pathname === '/voters') return { title: 'Voter roll', section: 'Field data' };
+  // The roll itself is deliberately not in the panel — `/voters` redirects
+  // here (see its file header), so this is where a "voter roll" link lands.
+  if (pathname === '/voters' || pathname === '/changes') {
+    return { title: 'Voter changes', section: 'Field data' };
+  }
   if (pathname.startsWith('/voters/')) return { title: 'Voter detail', section: 'Field data' };
   if (pathname === '/users') return { title: 'Accounts', section: 'Team' };
   if (pathname === '/users/new') return { title: 'New account', section: 'Team' };

@@ -23,7 +23,6 @@ import {
   PanelLeft,
   Settings,
   UserCog,
-  Users,
   Vote,
   X,
 } from 'lucide-react';
@@ -47,7 +46,11 @@ export interface NavItem {
 
 export const NAV: NavItem[] = [
   { href: '/', label: 'Overview', icon: LayoutDashboard },
-  { href: '/voters', label: 'Voter roll', icon: Users },
+  // NOTE: the "Voter roll" entry is gone on purpose, not by accident. The
+  // panel shows the ~7 000 imported voters nowhere — that is reference data
+  // the phone carries, and a table over it is not a decision surface. What a
+  // manager asks is which voters their team actually touched, which is the
+  // `/changes` entry below (and `/voters` redirects straight to it).
   { href: '/tasks', label: 'Tasks', icon: ClipboardList },
   { href: '/users', label: 'Accounts', icon: UserCog, cap: 'accountView' },
   // "Which voter data changes did each user make" — the per-account

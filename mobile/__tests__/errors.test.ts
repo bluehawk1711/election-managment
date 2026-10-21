@@ -18,19 +18,36 @@ describe('messageFor', () => {
     );
   });
 
-  it('turns a Firestore code into something actionable', () => {
-    expect(messageFor({ code: 'permission-denied' })).toContain(
-      'checked against the query'
+  it('explains a rules rejection in terms of the node that was asked for', () => {
+    // RTDB authorises a read at the requested node, so a list read is
+    // all-or-nothing: it fails rather than returning the rows the caller may
+    // see. The message says that, because "permission denied" on a list that
+    // should have been empty is otherwise baffling.
+    expect(messageFor({ code: 'database/permission-denied' })).toContain(
+      'checked at the node you asked for'
+    );
+  });
+
+  it('gives a dropped RTDB connection a sentence a user can act on', () => {
+    // The Realtime Database spells this `database/network-error`, not
+    // Firestore's `unavailable`. Without the mapping the user saw the raw SDK
+    // text "Connection failed." and reasonably assumed the app was broken.
+    expect(messageFor({ code: 'database/network-error' })).toContain(
+      'Check your connection'
     );
   });
 
   it('strips the product prefix codes carry', () => {
-    // Storage reports `storage/unauthorized` and Auth reports
-    // `auth/invalid-email`, while Firestore reports a bare `permission-denied`.
-    // One lookup table has to cope with all three.
+    // Storage reports `storage/unauthorized`, Auth reports `auth/invalid-email`
+    // and RTDB reports `database/permission-denied` — while older Firestore
+    // errors carry a bare `permission-denied`. One lookup table has to cope
+    // with all four.
     expect(messageFor({ code: 'storage/unauthorized' })).toContain('uid');
     expect(messageFor({ code: 'auth/invalid-email' })).toContain(
       'email address'
+    );
+    expect(messageFor({ code: 'database/permission-denied' })).toContain(
+      'security rules'
     );
   });
 

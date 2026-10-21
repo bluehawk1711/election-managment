@@ -15,22 +15,26 @@ npx bna-ui firebase my-app
 
 <!-- prettier-ignore -->
 1. **Create a project** at [console.firebase.google.com](https://console.firebase.google.com),
-   then add a **Web** app to it (the `</>` icon). Enable Firestore, Storage and
-   Authentication from the console's Build menu.
+   then add a **Web** app to it (the `</>` icon). Enable **Realtime Database**,
+   Storage and Authentication from the console's Build menu. (Firestore is not
+   used by the app any more — see "Where the data lives" below.)
 
 2. **Turn on Email/Password** under Authentication → Sign-in method. That is
    the only provider needed to run the app.
 
-3. **Add your config.** Copy `.env.example` to `.env.local` and fill in the six
-   `EXPO_PUBLIC_FIREBASE_*` values from Project settings → General → Your apps.
+3. **Add your config.** Copy `.env.example` to `.env.local` and fill in the
+   seven `EXPO_PUBLIC_FIREBASE_*` values from Project settings → General → Your
+   apps. One of them is easy to miss: `EXPO_PUBLIC_FIREBASE_DATABASE_URL` is the
+   Realtime Database **URL** (Build → Realtime Database, shown at the top), not
+   a database id. Without it the app builds and signs in, then fails on its
+   first read.
 
 4. **Name your project** in `.firebaserc`, replacing `your-project-id`.
 
-5. **Deploy the rules and indexes.** Nothing loads until you do — the queries
-   need composite indexes and the rules need to exist:
+5. **Deploy the rules.** Nothing loads until you do:
 
    ```bash
-   npx firebase-tools deploy --only firestore,storage
+   npx firebase-tools deploy --only database,storage
    ```
 
 6. **Run it.**
@@ -39,8 +43,18 @@ npx bna-ui firebase my-app
    npm start
    ```
 
-Email and password sign-in, Firestore and Storage all work in Expo Go. Google
-and Apple do not — see below.
+> **Building in CI?** The workflows in `.github/workflows/` write `mobile/.env`
+> from repository secrets, so each required key needs a secret with the same
+> name: `EXPO_PUBLIC_FIREBASE_API_KEY`, `…_AUTH_DOMAIN`, `…_PROJECT_ID`,
+> `…_STORAGE_BUCKET`, `…_MESSAGING_SENDER_ID`, `…_APP_ID` and
+> `EXPO_PUBLIC_FIREBASE_DATABASE_URL`. `…_LINK_URL` and the
+> `EXPO_PUBLIC_GOOGLE_*_CLIENT_ID`s are optional. Every build starts with a
+> guard step that fails if a required value would be bundled empty — a missing
+> database URL otherwise ships an app that installs, signs in, and then cannot
+> read anything.
+
+Email and password sign-in, the Realtime Database and Storage all work in Expo
+Go. Google and Apple do not — see below.
 
 ## What's here
 

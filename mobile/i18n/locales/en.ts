@@ -232,7 +232,7 @@ export const en = {
   'dash.actExpense': 'logged {{amount}} expense',
   'dash.actIssue': 'reported "{{title}}"',
   'dash.unknownActor': 'Campaign desk',
-  'dash.live': 'Live from Firestore',
+  'dash.live': 'Live',
   'dash.cached': 'Serving from cache…',
 
   // Issue categories (shared by dashboard, issues, reports)

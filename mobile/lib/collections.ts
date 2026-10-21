@@ -1,10 +1,12 @@
 /**
- * Firestore collection names — the single place the app, `firestore.rules`,
- * `scripts/seed.mjs` and `rules-tests/` agree on what exists.
+ * Realtime Database node names — the single place the app, `database.rules.json`
+ * and `scripts/seed-rtdb.mjs` agree on what exists.
  *
- * All campaign collections are SHARED: every signed-in user reads and writes
- * the same campaign documents (single-campaign prototype). `users` is the only
- * owner-scoped collection.
+ * All campaign nodes are SHARED: every signed-in user reads and writes the same
+ * campaign data (single-campaign prototype). `users` is the only owner-scoped
+ * node. The `voters` entry is a special case — it names the node the seeding
+ * script fills, but the APP never reads it in bulk; the roll is bundled. See
+ * `lib/roll/source.ts`.
  */
 export const COLLECTIONS = {
   campaigns: 'campaigns',

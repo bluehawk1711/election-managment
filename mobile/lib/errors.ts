@@ -38,20 +38,40 @@ const MESSAGES: Record<string, string> = {
   'unauthorized-domain':
     'This domain is not authorized. Add it under Authentication → Settings → Authorized domains.',
 
-  // ── Firestore ─────────────────────────────────────────────────────────
+  // ── Data ──────────────────────────────────────────────────────────────
+  // Realtime Database codes first, because that is where reads and writes go
+  // now. Firestore's spellings are kept below them: the old database is still
+  // a read-only backup, and error messages are the worst place to lose a case
+  // just because the product moved.
+  //
+  // This matters more than it looks. RTDB reports a dropped connection as
+  // `database/network-error`, not `unavailable`; without the entry below the
+  // user saw the raw SDK text "Connection failed." — which tells them nothing
+  // and looks like a bug in the app rather than in their signal.
   'permission-denied':
-    'Your security rules rejected that. Remember a query is checked against the query itself — an unscoped read fails outright rather than returning fewer rows.',
+    'Your security rules rejected that. Access is checked at the node you asked for, so an unscoped list read fails outright rather than returning fewer rows.',
   unauthenticated: 'You need to be signed in for that.',
-  unavailable:
-    'Could not reach Firestore. Check your connection and try again.',
+  'network-error':
+    'Could not reach Firebase. Check your connection and try again.',
+  timeout: 'That took too long. Check your connection and retry.',
+  'too-many-retries':
+    'The connection kept failing. Check your connection and try again.',
+  'limit-exceeded': 'That request asked for more data than is allowed at once.',
+  'operation-failed': 'The database rejected that. Try again.',
+  'write-canceled': 'That save was cancelled.',
+  'invalid-url':
+    'The database URL is missing or malformed. Check EXPO_PUBLIC_FIREBASE_DATABASE_URL.',
+  'invalid-configuration':
+    'The database is not configured. Check EXPO_PUBLIC_FIREBASE_DATABASE_URL.',
+  unavailable: 'Could not reach Firebase. Check your connection and try again.',
   'deadline-exceeded': 'That took too long. Check your connection and retry.',
-  'not-found': 'That document no longer exists.',
-  'already-exists': 'That document already exists.',
+  'not-found': 'That record no longer exists.',
+  'already-exists': 'That record already exists.',
   'resource-exhausted':
     'You have hit a Firestore quota. Check usage in the Firebase console.',
   cancelled: 'That request was cancelled.',
   'invalid-argument':
-    'Firestore rejected the data. A common cause is an undefined value — write null instead.',
+    'Firebase rejected the data. A common cause is an undefined value — write null instead.',
 
   // ── Storage ───────────────────────────────────────────────────────────
   unauthorized:

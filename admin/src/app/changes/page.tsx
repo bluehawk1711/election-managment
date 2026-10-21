@@ -2,8 +2,8 @@
 
 /**
  * Voter changes — "which voter data did each user change", the audit
- * surface behind the widened `voterEdits` read rule (firestore.rules:
- * `isOwner(userId) || canViewAccounts()`).
+ * surface behind the widened `voterEdits` read rule (`database.rules`:
+ * owner or `accountView`).
  *
  * The overlay IS the change record: `lib/roll/sync.ts::remotePayload`
  * mirrors an account's local edits into `users/{uid}/voterEdits/{voterId}`
@@ -16,10 +16,12 @@
  *   whose          = the selected roster account, by construction
  *
  * Base-roll names are resolved client-side: voter ids are `w{ward}-{serial}`,
- * and the panel may read every ward, so one `documentId() IN (…)` query per
- * 15 ids turns ids into names without per-row round-trips. Unresolved ids
- * render as the id — honest (the row may be from a ward not in the roll) and
- * never a spinner that never ends.
+ * and the roll is sharded per ward (`votersByWard/{wardNo}`), so one read per
+ * involved ward turns ids into names without per-row round-trips — see
+ * `resolveNames` for the two strategies and the cap that keeps a big audit
+ * from quietly pulling the whole roll. Unresolved ids render as the id —
+ * honest (the row may be from a ward not in the roll) and never a spinner
+ * that never ends.
  *
  * Gated by `canViewAccounts` exactly like the roster: admins audits people
  * they work with; karykarta never reach this page (their own edits are
@@ -27,17 +29,10 @@
  */
 import { History, Loader2 } from 'lucide-react';
 import Link from 'next/link';
-import {
-  collection,
-  documentId,
-  getDocs,
-  query,
-  where,
-} from 'firebase/firestore';
 import { useEffect, useMemo, useState } from 'react';
 import { subscribeCollectionOf, useLiveQuery } from '@/hooks/use-live';
-import { buildUsersQuery } from '@/lib/api';
-import { db } from '@/lib/firebase';
+import { buildMyEditsQuery, buildUsersQuery } from '@/lib/api';
+import { getChildren, getDoc } from '@/lib/db';
 import { profileFromDoc } from '@/lib/mappers';
 import { can } from '@/lib/roles';
 import { formatWhen } from '@/lib/util';
@@ -80,11 +75,112 @@ function changedFields(entry: EditEntry): [string, string][] {
     .map((key) => [key, str(entry.data[key])] as [string, string]);
 }
 
-/** Resolves voter ids to roll rows in chunks of 15 (`in` caps at 30). */
+/** Resolves voter ids to roll rows — see `resolveNames` for the strategy. */
 interface VoterName {
   name: string;
   wardNo: number;
   serialNo: number;
+}
+
+/**
+ * Above this many unresolved ids the resolver switches from one read PER
+ * VOTER to one read PER WARD.
+ *
+ * Below it, single-node reads are cheaper (a voter is ~200 bytes) and do not
+ * drag a ward a user never asked about across the wire. Above it, N round
+ * trips would dominate — and the roll is already sharded exactly so a caller
+ * can read a ward at a time. The cap exists because RTDB bills bandwidth and
+ * the panel has no business re-downloading 6 855 rows to label 300 of them:
+ * even the bulk path reads only the wards that actually appear in the audit.
+ */
+const WHOLE_WARD_THRESHOLD = 20;
+
+/** At most this many reads in flight — the SDK is fine with more, latency is not. */
+const READ_CONCURRENCY = 4;
+
+/** `w{wardNo}-{serialNo}` → ward number; anything else reads as `0` (unknown). */
+function wardOfId(id: string, fallback: unknown): number {
+  if (typeof fallback === 'number' && Number.isFinite(fallback)) return fallback;
+  const match = /^w(\d+)-/.exec(id);
+  return match ? Number(match[1]) : 0;
+}
+
+function nameOf(id: string, data: Record<string, unknown>): VoterName {
+  return {
+    name: typeof data.name === 'string' ? data.name : id,
+    wardNo: typeof data.wardNo === 'number' ? data.wardNo : 0,
+    serialNo: typeof data.serialNo === 'number' ? data.serialNo : 0,
+  };
+}
+
+/**
+ * Runs `task` over `items` with a bounded number in flight.
+ *
+ * A plain `Promise.all` over 300 ids would open 300 sockets' worth of REST
+ * calls at once; this keeps the queue moving without the thundering herd.
+ */
+async function pooled<T, R>(
+  items: readonly T[],
+  task: (item: T) => Promise<R>
+): Promise<R[]> {
+  const results = new Array<R>(items.length);
+  let cursor = 0;
+
+  const workers = Array.from(
+    { length: Math.min(READ_CONCURRENCY, items.length) },
+    async () => {
+      while (cursor < items.length) {
+        const index = cursor;
+        cursor += 1;
+        results[index] = await task(items[index]);
+      }
+    }
+  );
+  await Promise.all(workers);
+  return results;
+}
+
+/**
+ * Turns voter ids into names, in whichever of the two shapes is cheaper.
+ *
+ * RTDB has no `where(documentId(), 'in', […])` — a read is one path. So the
+ * resolver either (a) reads each named voter node directly, or (b) reads each
+ * involved ward once and picks the ids it was asked about, chosen by
+ * `WHOLE_WARD_THRESHOLD` above. Ids the roll does not contain are simply
+ * absent from the result, which the caller renders as the raw id.
+ */
+async function resolveNames(
+  ids: readonly { id: string; wardNo: number }[]
+): Promise<Record<string, VoterName>> {
+  const next: Record<string, VoterName> = {};
+
+  if (ids.length <= WHOLE_WARD_THRESHOLD) {
+    await pooled(ids, async ({ id, wardNo }) => {
+      const ward = wardOfId(id, wardNo);
+      if (!ward) return;
+      const snapshot = await getDoc(`votersByWard/${ward}/${id}`);
+      if (snapshot.exists()) next[id] = nameOf(id, snapshot.data());
+    });
+    return next;
+  }
+
+  const byWard = new Map<number, Set<string>>();
+  for (const { id, wardNo } of ids) {
+    const ward = wardOfId(id, wardNo);
+    if (!ward) continue;
+    const set = byWard.get(ward) ?? new Set<string>();
+    set.add(id);
+    byWard.set(ward, set);
+  }
+
+  await pooled([...byWard.entries()], async ([ward, wanted]) => {
+    const rows = await getChildren(`votersByWard/${ward}`);
+    for (const row of rows) {
+      if (wanted.has(row.id)) next[row.id] = nameOf(row.id, row.data());
+    }
+  });
+
+  return next;
 }
 
 export default function VoterChangesPage() {
@@ -112,7 +208,7 @@ export default function VoterChangesPage() {
     enabled: canView && activeUid != null,
     subscribe: ({ emit, fail }) =>
       subscribeCollectionOf(
-        collection(db, 'users', activeUid ?? '-', 'voterEdits'),
+        buildMyEditsQuery(activeUid ?? '-'),
         (entry) => ({ id: entry.id, data: entry.data() }),
         emit,
         fail
@@ -129,7 +225,7 @@ export default function VoterChangesPage() {
     [edits.data]
   );
 
-  /* ---- voter-id → name resolution (chunked `documentId() IN` reads) ---- */
+  /* ---- voter-id → name resolution (ward-sharded reads, see resolveNames) ---- */
   const [names, setNames] = useState<Record<string, VoterName>>({});
   // Derived, not state: true while ANY row's id is unresolved — which covers
   // the in-flight fetch AND a failed one (the id keeps rendering as-is
@@ -137,41 +233,28 @@ export default function VoterChangesPage() {
   const namesPending = rows.some((entry) => !(entry.id in names));
 
   useEffect(() => {
-    const ids = rows
-      .map((entry) => entry.id)
-      .filter((id) => !(id in names));
-    if (ids.length === 0) return;
+    const wanted = rows
+      .filter((entry) => !(entry.id in names))
+      .map((entry) => ({
+        id: entry.id,
+        wardNo: wardOfId(entry.id, entry.data.wardNo),
+      }));
+    if (wanted.length === 0) return;
 
     let cancelled = false;
 
-    (async () => {
-      try {
-        const next: Record<string, VoterName> = {};
-        for (let i = 0; i < ids.length; i += 15) {
-          const chunk = ids.slice(i, i + 15);
-          const snapshot = await getDocs(
-            query(
-              collection(db, 'voters'),
-              where(documentId(), 'in', chunk)
-            )
-          );
-          for (const doc of snapshot.docs) {
-            const data = doc.data();
-            next[doc.id] = {
-              name: typeof data.name === 'string' ? data.name : doc.id,
-              wardNo: typeof data.wardNo === 'number' ? data.wardNo : 0,
-              serialNo: typeof data.serialNo === 'number' ? data.serialNo : 0,
-            };
-          }
+    resolveNames(wanted)
+      .then((next) => {
+        if (!cancelled && Object.keys(next).length > 0) {
+          setNames((previous) => ({ ...previous, ...next }));
         }
-        if (!cancelled) setNames((previous) => ({ ...previous, ...next }));
-      } catch (caught) {
+      })
+      .catch((caught: unknown) => {
         // A partial resolve is not a page failure — the affected rows keep
         // showing their voter id (voterId → w{ward}-{serial} is itself
         // informative), and the rest render normally.
         console.error('[changes] voter name resolve failed', caught);
-      }
-    })();
+      });
 
     return () => {
       cancelled = true;

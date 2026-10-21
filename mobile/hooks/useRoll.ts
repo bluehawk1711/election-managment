@@ -5,31 +5,39 @@
  * row with its local overlay, and rebuilds the search index when either side
  * changes. Screens consume this and never touch a `RollSource` directly.
  *
- * ## Cache-first, refetch in background
+ * ## Loading order
  *
- * The read path is two independent loads, and each is ordered cache-then-
- * network:
+ * The read path is two loads, and each is cache-then-bundle rather than
+ * cache-then-network:
  *
- *   1. `wards` — from `lib/roll/cache.ts`, then Firestore.
- *   2. the selected ward's voters — from the same cache, then Firestore.
+ *   1. `wards` — from `lib/roll/cache.ts`, then the JSON shipped in the APK.
+ *   2. the selected ward's voters — from the same cache, then the same JSON.
  *
- * Whichever the cache satisfies renders immediately; the network result
- * replaces it when it lands. The user never sees a spinner for data the device
- * already holds, which matters more than usual here: the roll is 6,855
- * Hindi-language rows and a karykarta opens this standing in a lane on a
- * phone that has been in a pocket, not on wifi.
+ * Both settle locally. `lib/roll/bundled-source.ts` is a synchronous `require`
+ * behind an async signature, so the "fetch" resolves in a microtask and **not
+ * one voter record is downloaded, ever**. The cache holds a parsed copy so a
+ * returning user does not re-parse the bundle; it is not a network mirror.
  *
- * The consequence to be aware of when reading the state flags below:
+ * That is a hard rule, not an optimisation. `database.rules.json` grants
+ * `.read` on `voters` only at `voters/$docId` and deliberately not at the
+ * collection root, so a bulk `/voters` read is refused even for a super admin
+ * — a regression here fails loudly instead of quietly spending the free tier
+ * on ~7,000 records per launch. What the account contributes to this screen is
+ * `users/{uid}/voterEdits`: the overlay, a handful of rows, merged over the
+ * bundle at render time.
  *
+ * Consequences for the state flags below, because their names predate this:
+ *
+ * - `connected` now means "the bundled source loaded", which is effectively
+ *   always true after mount. It is kept because screens render their offline
+ *   banner from it and a remote source would need it again; it does not
+ *   describe a socket.
  * - `loading` is `true` only while there is *nothing at all* to show. Once any
- *   rows are present it goes `false` even if the network fetch is still in
- *   flight; `refreshing` covers that window.
- * - `stale` means "these rows came from the device, not from this session's
- *   fetch". It is informational, not an error — the data is correct as of
- *   `refreshedAt`, which is what the offline banner shows.
- * - `connected` is the last known result of a network fetch. `null` before the
- *   first one completes; it does **not** mean the app is offline, because a
- *   cache hit with no network attempt yet is a perfectly good state.
+ *   rows are present it goes `false`; `refreshing` covers the brief in-flight
+ *   window.
+ * - `stale` means "these rows came from the AsyncStorage copy". It is
+ *   informational, not an error — the data is correct as of `refreshedAt`,
+ *   which is what the offline banner shows.
  *
  * Re-renders on an overlay edit come from `subscribeOverlay`, so a save in the
  * edit sheet shows up in a still-mounted list without any refetch. That
@@ -111,14 +119,15 @@ export interface RollState {
 }
 
 /**
- * How many wards the "all wards" selection fetches at a time.
+ * How many wards the "all wards" selection loads at a time.
  *
- * The roll is 6,855 rows across 13 wards. Fetching all of it up front meant a
- * single `getDocs` of every document, a `mergeVoter` pass and a full search
- * index build before the first row could paint — on a mid-range Android over
- * mobile data that is many seconds of nothing. Wards are the natural unit: each
- * is already its own cache key and its own navigation target, and a karykarta
- * looking one person up only ever needs the ward that person is in.
+ * The roll is 6,855 rows across 13 wards. Loading all of it up front meant
+ * merging every row and building a full search index before the first row
+ * could paint — on a mid-range Android that is many seconds of nothing. Wards
+ * are the natural unit: each is its own cache key and its own navigation
+ * target, and a karykarta looking one person up only ever needs the ward that
+ * person is in. The rows are local either way, so this bounds work, not
+ * bandwidth.
  */
 const WARD_BATCH = 3;
 
@@ -171,19 +180,21 @@ export function useRoll(
    */
   const teamOverlayEnabled = options.teamOverlay ?? true;
   /**
-   * Which wards this account may READ, when the caller knows (`null` =
+   * Which wards this account may SEE, when the caller knows (`null` =
    * unrestricted, the admin case).
    *
-   * The rules layer answers a query for a ward outside the caller's scope
-   * with PERMISSION_DENIED, not an empty result — and because the "all
-   * wards" selection runs one query per ward under `Promise.all`, a SINGLE
-   * denied ward rejects the whole batch and the screen shows nothing but an
-   * error. That is what happened to a karykarta on open: wardNo starts `null`
-   * ("all"), the first batch is wards 1–3, and unless they happen to own one
-   * of those three every fetch fails until they narrow the selector to their
-   * own ward. Scoping `inScope` here means the queries that leave the device
-   * are only ever the ones rules will answer — the client mirror of
-   * `visibleWards` rather than a second opinion about it.
+   * This used to be security-shaped: the roll came from Firestore one ward at
+   * a time, and a query for a ward outside the caller's scope was refused with
+   * PERMISSION_DENIED — an unscoped open showed a karykarta an error rather
+   * than rows, and `wardScope` existed to stop the app asking at all.
+   *
+   * It is now purely presentational, and that is worth saying plainly rather
+   * than implying away: every ward ships inside the APK, so a determined user
+   * can read the bundle without this code's permission. What scoping buys is
+   * focus — a karykarta's list, counts and map start on their own ward instead
+   * of all thirteen — and it is still the client mirror of `visibleWards`, not
+   * a second opinion about it. Treat the bundled roll as public data and keep
+   * secrets out of it.
    */
   const wardScope = options.wardScope ?? null;
   // Content key for the effect deps below: callers build the scope array in

@@ -1,41 +1,34 @@
 'use client';
 
 /**
- * Roll import — the panel's door onto `scripts/seed-roll.mjs`.
+ * Roll import — the panel's door onto `mobile/scripts/seed-rtdb.mjs`.
  *
  * Two things a data owner needs after reparsing the PDF:
  *
- *  1. **Verify** what is actually IN Firestore now: per-ward document counts
- *     against the seeded `voters` summary, plus the areas the roll is
+ *  1. **Verify** what is actually IN the Realtime Database now: per-ward
+ *     counts against the seeded `wards` summary, plus the areas the roll is
  *     categorised under (`area → ward → voter`, one shipped: Veernagar).
- *     Counts come from `getCountFromServer` — a server-side count, not a
- *     `getDocs` pulling 6,855 documents over the wire to add them up.
+ *     RTDB has no server-side count — Firestore's `getCountFromServer` has no
+ *     equivalent — so a count is a ward read, and this page is the ONE place
+ *     in the panel that touches the roll at all (see `runCheck`).
  *
- *  2. **Re-import** the UPDATED roll (the fixed `house_no` pass and any later
- *     extraction work) through `/api/roll/seed`, which shells out to the same
- *     Admin-SDK script the CLI uses, with its summary-vs-CSV validation
+ *  2. **Re-import** the UPDATED roll through `/api/roll/seed`, which shells
+ *     out to the same Admin-SDK script the CLI uses, with its validation
  *     intact. `--dry-run` parses and validates without writing — the button
  *     to press FIRST.
  *
- * `voters` is read-only from clients by design (firestore.rules), so this is
- * the only write surface the roll ever sees — and it is `dataTools`
+ * `votersByWard` is read-only from clients by design (`database.rules`), so
+ * this is the only write surface the roll ever sees — and it is `dataTools`
  * (developer), exactly like every other place `lib/roles.ts` grants that
  * word. The route itself re-checks `NODE_ENV !== 'production'`.
  */
 import { Database, Download, Loader2, PlayCircle, ShieldCheck } from 'lucide-react';
-import {
-  collection,
-  getCountFromServer,
-  getDocs,
-  query,
-  where,
-} from 'firebase/firestore';
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import { subscribeCollectionOf, useLiveQuery } from '@/hooks/use-live';
 import { buildWardsQuery } from '@/lib/api';
 import { exportBackup } from '@/lib/backup';
-import { db } from '@/lib/firebase';
+import { getChildren } from '@/lib/db';
 import { wardFromDoc } from '@/lib/mappers';
 import { can } from '@/lib/roles';
 import type { WardMeta } from '@/lib/types';
@@ -96,25 +89,32 @@ export default function RollImportPage() {
       const meta = wards.data ?? [];
       const wardStats: WardCheck[] = [];
       for (const ward of meta) {
-        const counted = await getCountFromServer(
-          query(collection(db, 'voters'), where('wardNo', '==', ward.wardNo))
-        );
+        // The roll is sharded per ward, so "how many voters does ward N
+        // really have" is one read of that shard. RTDB offers no
+        // `getCountFromServer`, and the alternative — an Admin-SDK route —
+        // would put the service key behind a button whose only job is a
+        // number. This is the one deliberate bulk read in the panel: it is
+        // developer-only, it runs once after an import, and it reads the
+        // ward metadata it is checking against rather than trusting it.
+        const rows = await getChildren(`votersByWard/${ward.wardNo}`);
         wardStats.push({
           wardNo: ward.wardNo,
           expected: ward.voterCount,
-          actual: counted.data().count,
+          actual: rows.length,
         });
       }
-      const totalSnapshot = await getCountFromServer(collection(db, 'voters'));
-      const areasSnapshot = await getDocs(collection(db, 'areas'));
+      // Summed from the wards just counted — a second `get()` over every
+      // shard would be the same bytes for the same answer.
+      const total = wardStats.reduce((sum, ward) => sum + ward.actual, 0);
+      const areaRows = await getChildren('areas');
       setCheck({
         wards: wardStats.sort((a, b) => a.wardNo - b.wardNo),
-        total: totalSnapshot.data().count,
+        total,
         expectedTotal: meta.reduce((sum, ward) => sum + ward.voterCount, 0),
-        areas: areasSnapshot.docs.map((doc) => {
-          const data = doc.data();
+        areas: areaRows.map((row) => {
+          const data = row.data();
           return {
-            id: doc.id,
+            id: row.id,
             name: typeof data.name === 'string' ? data.name : '',
             constituencyId:
               typeof data.constituencyId === 'string' ? data.constituencyId : '',
