@@ -2,7 +2,8 @@
  * Bulk phone update (user demand #8, entry styles):
  *
  *   1. **Tick rows** — long-press in the list, tap “Bulk phone”; the ticked
- *      ids arrive here as the `ids` param. This is the MAIN flow and it asks
+ *      ids are read here from `lib/roll/bulk-selection.ts` (never route
+ *      params — see the note at `tickedIds`). This is the MAIN flow and it asks
  *      for one thing only: a phone number. No voter id, no EPIC — the people
  *      are already on screen with their photo and name, so typing an id to
  *      say "these ones" would be asking for what the selection already said.
@@ -19,7 +20,7 @@
  *      somewhere else and strict parsing would make half of it fail silently.
  *
  * Every write goes through `patchVoter` like a single edit — so base-roll
- * immutability, the pending-sync queue and (now) the Firestore push all keep
+ * immutability, the pending-sync queue and (now) the remote push all keep
  * working with no bulk-specific code path to drift.
  *
  * The roll is loaded `eager` (all 13 wards) on purpose: ticked ids and pasted
@@ -35,6 +36,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { Text } from '@/components/ui/text';
 import { useToast } from '@/components/ui/toast';
 import { View } from '@/components/ui/view';
+import { useBulkSelection } from '@/hooks/useBulkSelection';
 import { useColor } from '@/hooks/useColor';
 import { useRoll } from '@/hooks/useRoll';
 import { overlayStorage, patchVoter } from '@/lib/roll/overlay';
@@ -45,7 +47,7 @@ import { pushEdits } from '@/lib/roll/sync';
 import type { VoterView } from '@/lib/roll/types';
 import { useAuth } from '@/providers/auth-provider';
 import { UserX } from 'lucide-react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet } from 'react-native';
@@ -85,12 +87,12 @@ export default function BulkPhoneScreen() {
   const toast = useToast();
   const { user, profile } = useAuth();
 
-  const params = useLocalSearchParams<{ ids?: string | string[] }>();
-  const tickedIds = useMemo(() => {
-    const raw = params.ids;
-    if (!raw) return [];
-    return (Array.isArray(raw) ? raw : [raw]).filter(Boolean);
-  }, [params.ids]);
+  // The ticked ids, straight from the shared selection store — the list
+  // screen writes the same one. Route params used to carry them, and
+  // expo-router serialises an array param via `value.toString()`: one
+  // comma-joined string came back, no id ever resolved, and this screen
+  // opened on "nothing selected" with the voter rows missing entirely.
+  const { ids: tickedIds } = useBulkSelection();
 
   // All wards, so resolution is independent of the list's ward selection.
   const roll = useRoll(null, { eager: true });
@@ -128,9 +130,11 @@ export default function BulkPhoneScreen() {
     return map;
   }, [roll.voters]);
 
+  // A Set, so iteration order is tick order and a double-tapped row cannot
+  // appear twice.
   const ticked = useMemo(
     () =>
-      tickedIds
+      [...tickedIds]
         .map((id) => byId.get(id))
         .filter((voter): voter is VoterView => Boolean(voter)),
     [tickedIds, byId]
@@ -443,18 +447,23 @@ const styles = StyleSheet.create({
    * background is the card colour, so the box still holds up in dark mode.
    */
   row: {
-    flexDirection: 'row',
-    gap: 10,
-    padding: 10,
+    gap: 12,
+    padding: 12,
     borderRadius: 12,
     borderWidth: 1,
+  },
+  /** Identity: face on the left, the three name lines to its right. */
+  rowIdentity: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
   },
   /** The portrait gets the same treatment at thumbnail scale — a bordered,
    *  rounded square, never a bare image floating beside the name. */
   rowPhoto: {
-    width: 46,
-    height: 46,
-    borderRadius: 10,
+    width: 56,
+    height: 56,
+    borderRadius: 12,
     borderWidth: 1,
     overflow: 'hidden',
   },
@@ -464,18 +473,28 @@ const styles = StyleSheet.create({
   },
   /** `minWidth: 0` lets this column shrink: a long Devanagari name or an
    *  open keyboard would otherwise push the row wider than the screen. */
-  rowText: { flex: 1, minWidth: 0, gap: 4 },
+  rowText: { flex: 1, minWidth: 0, gap: 2 },
+  /** The id itself, louder than its label — the label says which id this is,
+   *  the value is what gets cross-checked. */
+  rowEpicValue: { fontWeight: '700' },
 });
 
 /**
- * One ticked voter in the bulk list: photo, name, and THEIR number field —
- * the three things that identify "this person, this number", held together
- * in one bordered box so a scrolling list of forty reads as forty voters
- * rather than as eighty loose lines.
+ * One ticked voter in the bulk list, shaped like a search-suggestion row:
+ * the IDENTITY block on top (photo, name, EPIC id, serial/ward) and the
+ * NUMBER field underneath it, full width, in its own bordered box.
  *
- * The face and the name lead because the question this row answers is "which
- * voter is this number going onto?", and a bare name in a scrolling list
- * answers it badly.
+ * The earlier shape put the field inside the text column beside the photo,
+ * which squeezed the number to about two thirds of the row and left the
+ * reader hunting for which line was editable. Splitting identity from input
+ * gives each its own band: the eye reads "who is this?" in the top band and
+ * "what number goes on them?" in the bottom one, and the field is now as
+ * wide as the row it belongs to.
+ *
+ * The EPIC id leads the meta because it is the voter's real-world id — the
+ * thing on the slip a volunteer cross-checks against — with serial and ward
+ * after it. Every meta line is caption weight so the NAME stays the loudest
+ * thing in the block.
  *
  * The photo precedence is the roll list's own (own capture → bundled roll
  * portrait → placeholder), so a face here is the face everywhere else in the
@@ -507,54 +526,68 @@ function BulkVoterRow({
 
   return (
     <View style={[styles.row, { borderColor: border, backgroundColor: card }]}>
-      {photoSource ? (
-        <Image
-          source={photoSource}
-          width={46}
-          height={46}
-          variant='default'
-          // Recycled rows flash a spinner otherwise — same call as the card.
-          showLoadingIndicator={false}
-          showErrorFallback={false}
-          containerStyle={[styles.rowPhoto, { borderColor: border }]}
-        />
-      ) : (
-        <View
-          style={[
-            styles.rowPhoto,
-            styles.rowPhotoPlaceholder,
-            { backgroundColor: muted, borderColor: border },
-          ]}
-        >
-          <Icon name={UserX} size={16} color={outline} />
-        </View>
-      )}
+      {/* ── Identity band: who the number is going onto ─────────────── */}
+      <View style={styles.rowIdentity}>
+        {photoSource ? (
+          <Image
+            source={photoSource}
+            width={56}
+            height={56}
+            variant='default'
+            // Recycled rows flash a spinner otherwise — same call as the card.
+            showLoadingIndicator={false}
+            showErrorFallback={false}
+            containerStyle={[styles.rowPhoto, { borderColor: border }]}
+          />
+        ) : (
+          <View
+            style={[
+              styles.rowPhoto,
+              styles.rowPhotoPlaceholder,
+              { backgroundColor: muted, borderColor: border },
+            ]}
+          >
+            <Icon name={UserX} size={20} color={outline} />
+          </View>
+        )}
 
-      <View style={styles.rowText}>
-        {/* `subtitle`, not `body`: the name is what identifies this row, and
-            at this size it has to lead the number field under it. */}
-        <Text variant='subtitle' numberOfLines={1}>
-          {effective.name}
-        </Text>
-        <Text variant='caption' numberOfLines={1}>
-          {t('voters.serial', { no: voter.serialNo })}
-          {effective.fatherOrHusbandName
-            ? ` · ${effective.fatherOrHusbandName}`
-            : ''}
-          {effective.houseNo
-            ? ` · ${t('voters.house')} ${effective.houseNo}`
-            : ''}
-        </Text>
-        <Input
-          value={value}
-          onChangeText={onChange}
-          keyboardType='phone-pad'
-          placeholder={t('common.phone')}
-          containerStyle={{ marginTop: 2 }}
-          variant='outline'
-          disabled={disabled}
-        />
+        <View style={styles.rowText}>
+          {/* `subtitle`, not `body`: the name is what identifies this row. */}
+          <Text variant='subtitle' numberOfLines={1}>
+            {effective.name}
+          </Text>
+          {/* The EPIC id — the voter's real-world id — with its label, so a
+              row can be checked against the slip in the field. */}
+          <Text variant='caption' numberOfLines={1}>
+            {t('voters.epic')}
+            <Text style={styles.rowEpicValue}>{`  ${voter.epicId}`}</Text>
+          </Text>
+          <Text variant='caption' numberOfLines={1}>
+            {t('voters.serial', { no: voter.serialNo })}
+            {' · '}
+            {t('voters.ward', { no: voter.wardNo })}
+            {effective.fatherOrHusbandName
+              ? ` · ${effective.fatherOrHusbandName}`
+              : ''}
+          </Text>
+        </View>
       </View>
+
+      {/* ── Input band: the number itself, full width ───────────────────
+          Below the identity block rather than beside it, so the field is as
+          wide as the row and reads as "this voter's number" instead of a
+          third line competing with the name. The outline variant draws the
+          border on focus in the primary colour — the same bounded field the
+          rest of the app's forms use. */}
+      <Input
+        label={t('common.phone')}
+        value={value}
+        onChangeText={onChange}
+        keyboardType='phone-pad'
+        placeholder={t('common.phone')}
+        variant='outline'
+        disabled={disabled}
+      />
     </View>
   );
 }

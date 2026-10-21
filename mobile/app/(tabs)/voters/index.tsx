@@ -17,6 +17,7 @@ import { useToast } from '@/components/ui/toast';
 import { useColor } from '@/hooks/useColor';
 import { Icon } from '@/components/ui/icon';
 import { useRoll } from '@/hooks/useRoll';
+import { useBulkSelection } from '@/hooks/useBulkSelection';
 import { useAuth } from '@/providers/auth-provider';
 import { can, canReadWard } from '@/lib/roles';
 import {
@@ -229,7 +230,7 @@ export default function VotersScreen() {
   }, [profile, profileLoading, params.ward]);
   /**
    * Which roll area's data the list shows — see `AreaSelect`, fed from the
-   * Firestore `areas` collection (one shipped: Veernagar).
+   * `areas` collection (one shipped: Veernagar).
    */
   const [area, setArea] = useState('veernagar');
 
@@ -255,8 +256,14 @@ export default function VotersScreen() {
    * only while this set is empty, and otherwise toggles too). Empty set =
    * normal mode; the bar above the list renders off `size`, so there is no
    * separate mode flag to get out of sync with it.
+   *
+   * Lives in `lib/roll/bulk-selection.ts` rather than component state: the
+   * bulk screen reads the SAME set, and route params used to lose it —
+   * expo-router flattens the array to one comma-joined string, so every
+   * ticked id arrived unresolvable and the bulk screen opened empty.
    */
-  const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
+  const { ids: selected, toggle: toggleSelected, clear: clearSelection } =
+    useBulkSelection();
   const selecting = selected.size > 0;
 
   const allWardNumbers = useMemo(
@@ -583,7 +590,7 @@ export default function VotersScreen() {
   };
 
   // No role is a real state, not an error: every signed-in account starts with
-  // no capabilities (`lib/roles.ts`), and `firestore.rules` denies every read.
+  // no capabilities (`lib/roles.ts`), and `database.rules.json` denies every read.
   // Rendering this as "no voters found" would tell a karykarta their ward is
   // empty, which is wrong and sends them looking for a data problem that is not
   // there.
@@ -594,15 +601,6 @@ export default function VotersScreen() {
     setQuery('');
   };
 
-  /** Ticks/unticks one row — the only mutation selection mode needs. */
-  const toggleSelected = (id: string) => {
-    setSelected((current) => {
-      const next = new Set(current);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  };
 
   /**
    * A tap opens the edit sheet directly.
@@ -691,19 +689,18 @@ export default function VotersScreen() {
                   <Button
                     size='sm'
                     icon={Phone}
-                    onPress={() =>
-                      router.push({
-                        pathname: '/(tabs)/voters/bulk',
-                        params: { ids: [...selected] },
-                      })
-                    }
+                    // No `ids` param: the bulk screen reads the selection
+                    // straight from `lib/roll/bulk-selection.ts`. Passing it
+                    // through the URL is what used to empty this screen —
+                    // the array serialised to one comma-joined string.
+                    onPress={() => router.push({ pathname: '/(tabs)/voters/bulk' })}
                   >
                     {t('voters.bulkPhone')}
                   </Button>
                   <Button
                     size='sm'
                     variant='outline'
-                    onPress={() => setSelected(new Set())}
+                    onPress={clearSelection}
                   >
                     {t('common.cancel')}
                   </Button>
