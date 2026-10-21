@@ -69,6 +69,9 @@ export async function POST(request: Request): Promise<Response> {
           ? profile.teamId
           : null,
       locked: profile?.locked === true,
+      // The rules cannot read this sibling from the `device` node, so a
+      // multi-device account's rebind exemption has to ride on the token.
+      multiDevice: profile?.multiDevice === true,
     };
 
     await adminAuth().setCustomUserClaims(uid, claims);
