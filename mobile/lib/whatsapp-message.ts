@@ -8,11 +8,13 @@
  * text they never wrote. `whatsappUrl` therefore treats an empty string as a
  * first-class value: no text → a bare `wa.me` link that just opens the chat.
  *
- * What a user types in the compose sheet is saved here automatically, so the
- * next WhatsApp tap on any screen — a voter row, Help, the update gate —
- * offers that same text back instead of asking them to retype it. It lives
- * in AsyncStorage: the message belongs to this device's drafts, not to the
- * campaign record, so it is deliberately NOT synced to the database.
+ * The message saved in Settings lives here and is offered back on every
+ * WhatsApp tap — a voter row, Help, the update gate — as the starting text
+ * for that send. The compose sheet keeps edits per-send: changing one chat
+ * never rewrites the saved default, which only Settings' explicit Save can
+ * do. It lives in AsyncStorage: the message belongs to this device's drafts,
+ * not to the campaign record, so it is deliberately NOT synced to the
+ * database.
  *
  * `useWhatsappMessage` (hooks/useWhatsappMessage.ts) is the React face of
  * this module; everything here is framework-free so Settings and the compose
@@ -69,8 +71,8 @@ export function readWhatsappMessage(): Promise<string> {
 }
 
 /**
- * Save what the user typed — called on every keystroke by the hook, so a
- * message exists the moment the app is closed or a send is attempted.
+ * Save what the user typed — called by the hook from Settings' Save button,
+ * so a message exists the moment the reader asks for it to be kept.
  *
  * Whitespace-only text is stored as NOTHING: an empty message must stay
  * empty, otherwise a stray space would silently turn "no message" into "a
@@ -91,7 +93,7 @@ export async function writeWhatsappMessage(text: string): Promise<void> {
   }
 }
 
-/** Clears the saved message — Settings' "Clear message" action. */
+/** Clears the saved message (Settings saves an empty draft the same way). */
 export function clearWhatsappMessage(): Promise<void> {
   return writeWhatsappMessage('');
 }

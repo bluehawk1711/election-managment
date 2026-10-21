@@ -14,8 +14,9 @@
  *    the modal can exist before auth state is known.
  *
  * "Update" opens WhatsApp at the configured support number through the
- * compose sheet — EMPTY, because nothing this app sends automatically is as
- * trustworthy as what the person holding the phone wrote (the old
+ * compose sheet, starting from the message the reader saved (or nothing at
+ * all) and editable before sending — nothing this app writes automatically
+ * is as trustworthy as what the person holding the phone wrote (the old
  * pre-written request is gone with every other default message; see
  * `components/whatsapp-compose.tsx`). With no number configured the button
  * hides: a dead wa.me link is worse than an honest "contact your super
@@ -158,9 +159,9 @@ function UpdateLock({
           </Text>
         </Pressable>
 
-        {/* The message the CTA sends is the reader's own — saved by them if
-            they wrote one, nothing at all otherwise. Mounted permanently: the
-            sheet runs its own close animation. */}
+        {/* The message the CTA sends is the reader's own — the saved text if
+            they wrote one, nothing at all otherwise, and editable for this
+            send. Mounted permanently: the sheet runs its own close animation. */}
         <WhatsAppCompose
           visible={composing}
           phone={supportPhone}

@@ -58,10 +58,24 @@ export default function SettingsScreen() {
   const { update, saving } = useProfile();
   const { language, languages, setLanguage } = useLanguage();
   const { mode, setMode } = useModeToggle();
-  // The message every WhatsApp button sends. Typed here OR typed in the
-  // compose sheet — both land in the same store, saved on every keystroke.
-  const { message: whatsappMessage, ready, setMessage: setWhatsappMessage } =
-    useWhatsappMessage();
+  // The message every WhatsApp button starts with. Editing here is a draft:
+  // nothing is written until Save is pressed, which is the whole reason this
+  // card has a button. The compose sheet opens on the saved text and keeps
+  // its own edits per-send, so a one-off change never rewrites this default.
+  const {
+    message: savedWhatsapp,
+    ready: whatsappReady,
+    setMessage: saveWhatsapp,
+  } = useWhatsappMessage();
+  /** `null` = untouched draft, so the field follows storage until typed in. */
+  const [whatsappDraft, setWhatsappDraft] = useState<string | null>(null);
+  const whatsappMessage = whatsappDraft ?? savedWhatsapp;
+  const whatsappHasText = whatsappMessage.trim().length > 0;
+  // Whitespace-only text saves as nothing (`lib/whatsapp-message.ts`), so a
+  // draft of spaces is not a change when the saved message is already empty.
+  const whatsappChanged =
+    whatsappDraft !== null &&
+    (whatsappDraft.trim() ? whatsappDraft : '') !== savedWhatsapp;
   const toast = useToast();
   // Theme tokens for the segmented controls — the stylesheet used to
   // hardcode a blue (#2563EB) and a grey border, which fought the dark
@@ -96,6 +110,14 @@ export default function SettingsScreen() {
     } finally {
       setSendingVerification(false);
     }
+  };
+
+  const saveWhatsappMessage = () => {
+    saveWhatsapp(whatsappMessage);
+    // Hand the field back to storage: the hook updates synchronously, so the
+    // draft is no longer needed and "unsaved changes" clears with the save.
+    setWhatsappDraft(null);
+    toast.success(t('settings.whatsappSavedToast'));
   };
 
   const nameChanged = displayName.trim() !== (profile?.displayName ?? '');
@@ -269,11 +291,12 @@ export default function SettingsScreen() {
       </Card>
 
       {/* ── WhatsApp message ────────────────────────────────────────────
-          The same store the compose sheet writes to (`useWhatsappMessage`),
-          so a message written there appears here and a message written here
-          is what the next WhatsApp tap sends. Auto-saved on every keystroke;
-          empty means "open the chat with no message", never a stand-in text:
-          this app has no default message anywhere. */}
+          This card owns the SAVED message; the compose sheet only borrows it
+          as the starting text for one send. Typing here changes a draft, and
+          Save is the only thing that writes — the earlier auto-save made
+          people unsure whether their edit had actually stuck. Empty means
+          "open the chat with no message", never a stand-in text: this app has
+          no default message anywhere. */}
       <Card style={{ gap: 12 }}>
         <View style={{ gap: 2 }}>
           <Text variant='subtitle'>{t('settings.whatsappMessage')}</Text>
@@ -283,26 +306,38 @@ export default function SettingsScreen() {
           type='textarea'
           rows={4}
           value={whatsappMessage}
-          onChangeText={setWhatsappMessage}
+          onChangeText={setWhatsappDraft}
           placeholder={t('whatsapp.placeholder')}
           variant='outline'
-          disabled={!ready}
+          disabled={!whatsappReady}
         />
         <View style={styles.waRow}>
           <Button
             variant='outline'
             size='sm'
-            disabled={!ready || !whatsappMessage.trim()}
-            onPress={() => setWhatsappMessage('')}
+            disabled={!whatsappReady || !whatsappHasText}
+            onPress={() => setWhatsappDraft('')}
           >
             {t('settings.whatsappClear')}
           </Button>
-          <Text variant='caption' style={{ flex: 1, color: outline }}>
-            {whatsappMessage.trim()
-              ? t('settings.whatsappMessageSaved')
-              : t('settings.whatsappMessageEmpty')}
-          </Text>
+          <Button
+            size='sm'
+            style={{ flex: 1 }}
+            disabled={!whatsappReady || !whatsappChanged}
+            onPress={saveWhatsappMessage}
+          >
+            {t('common.save')}
+          </Button>
         </View>
+        {whatsappReady ? (
+          <Text variant='caption' style={{ color: outline }}>
+            {whatsappChanged
+              ? t('settings.whatsappUnsaved')
+              : whatsappHasText
+                ? t('settings.whatsappMessageSaved')
+                : t('settings.whatsappMessageEmpty')}
+          </Text>
+        ) : null}
       </Card>
 
       {/* ── Election day ────────────────────────────────────────────────

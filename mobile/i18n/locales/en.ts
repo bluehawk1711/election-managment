@@ -374,7 +374,8 @@ export const en = {
   'voters.whatsapp': 'WhatsApp',
   'whatsapp.title': 'WhatsApp message',
   'whatsapp.hint': 'Write what you want to send — or leave it empty to just open the chat.',
-  'whatsapp.savedHint': 'This is your saved message and it goes out exactly as written. Edit or clear it in Settings.',
+  'whatsapp.editHint':
+    'Your saved message is filled in. Edit it for this chat if you need to — the saved copy stays as it is.',
   'whatsapp.placeholder': 'Message (optional)',
   'whatsapp.open': 'Open WhatsApp',
   'voters.edit': 'Edit voter',
@@ -744,9 +745,12 @@ export const en = {
   'settings.displayNameHint': 'Shown next to anything you record in the field.',
   'settings.whatsappMessage': 'WhatsApp message',
   'settings.whatsappMessageHint':
-    'Written here or in any WhatsApp sheet — it saves as you type, and this is the only text a WhatsApp button can send.',
-  'settings.whatsappMessageSaved': 'Saved automatically — sent exactly as shown.',
-  'settings.whatsappMessageEmpty': 'Nothing saved — WhatsApp opens the chat with no message. No default is ever added.',
+    'This is the message every WhatsApp button starts with. Edit it here, then tap Save. You can still change it for an individual chat.',
+  'settings.whatsappMessageSaved': 'Saved — every WhatsApp button starts with this text.',
+  'settings.whatsappMessageEmpty':
+    'Nothing saved — WhatsApp opens the chat with no message. No default is ever added.',
+  'settings.whatsappUnsaved': 'Unsaved changes — tap Save to keep them.',
+  'settings.whatsappSavedToast': 'Message saved',
   'settings.whatsappClear': 'Clear message',
   'settings.identity': 'Signed in',
   'settings.noDisplayName': 'No display name',

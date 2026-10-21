@@ -364,7 +364,8 @@ export const hi: Record<TranslationKey, string> = {
   'voters.whatsapp': 'व्हाट्सएप',
   'whatsapp.title': 'व्हाट्सएप संदेश',
   'whatsapp.hint': 'जो भेजना है वह लिखें — या खाली छोड़ें तो सीधा चैट खुलेगा।',
-  'whatsapp.savedHint': 'यह आपका सहेजा गया संदेश है और जैसा है वैसा ही जाएगा। इसे सेटिंग्स में बदलें या हटाएँ।',
+  'whatsapp.editHint':
+    'आपका सहेजा गया संदेश भरा हुआ है। इस चैट के लिए ज़रूरत हो तो इसे बदलें — सहेजी हुई प्रति वैसी ही रहेगी।',
   'whatsapp.placeholder': 'संदेश (वैकल्पिक)',
   'whatsapp.open': 'व्हाट्सएप खोलें',
   'voters.edit': 'मतदाता बदलें',
@@ -719,10 +720,12 @@ export const hi: Record<TranslationKey, string> = {
   'settings.displayNameHint': 'आप जो कुछ फ़ील्ड में दर्ज करते हैं उसके साथ दिखता है।',
   'settings.whatsappMessage': 'व्हाट्सएप संदेश',
   'settings.whatsappMessageHint':
-    'यहाँ या किसी भी व्हाट्सएप शीट में लिखें — टाइप करते ही सेव हो जाता है, और यही एकमात्र संदेश है जो व्हाट्सएप बटन भेज सकता है।',
-  'settings.whatsappMessageSaved': 'अपने आप सेव — जैसा दिख रहा है वैसा ही जाएगा।',
+    'यह वह संदेश है जिससे हर व्हाट्सएप बटन शुरू होता है। यहाँ बदलें और सेव दबाएँ। किसी एक चैट के लिए इसे फिर बदल सकते हैं।',
+  'settings.whatsappMessageSaved': 'सेव है — हर व्हाट्सएप संदेश इसी टेक्स्ट से शुरू होगा।',
   'settings.whatsappMessageEmpty':
     'कुछ सहेजा नहीं गया — व्हाट्सएप बिना संदेश के चैट खोलेगा। कोई डिफ़ॉल्ट संदेश नहीं जुड़ता।',
+  'settings.whatsappUnsaved': 'बदलाव सेव नहीं हुए — सेव दबाएँ।',
+  'settings.whatsappSavedToast': 'संदेश सेव हो गया',
   'settings.whatsappClear': 'संदेश हटाएँ',
   'settings.identity': 'साइन इन',
   'settings.noDisplayName': 'कोई प्रदर्शित नाम नहीं',

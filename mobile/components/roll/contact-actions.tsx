@@ -66,10 +66,10 @@ export function ContactActions({ phone, compact = false, onFail }: Props) {
   const number = enabled ? phoneKey(raw) : '';
 
   /**
-   * Whether the compose sheet is up. The sheet owns the message itself: it
-   * reads and writes the saved one (`hooks/useWhatsappMessage`), so there is
-   * no draft on this component — and nothing starts EMPTY-but-for-a default,
-   * because there is no default (see `lib/contact.ts::whatsappUrl`).
+   * Whether the compose sheet is up. The sheet opens on the message saved in
+   * Settings (`hooks/useWhatsappMessage`) and keeps its edits per-send, so
+   * there is no draft on this component — and nothing starts EMPTY-but-for-a
+   * default, because there is no default (see `lib/contact.ts::whatsappUrl`).
    */
   const [composing, setComposing] = useState(false);
 

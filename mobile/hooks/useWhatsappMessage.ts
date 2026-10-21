@@ -10,15 +10,15 @@ import { useEffect, useState } from 'react';
  * The saved WhatsApp message, kept identical on every screen that shows it.
  *
  * - `message` — what a WhatsApp button will send (`''` = nothing at all).
- * - `saved`   — whether anything is saved. The compose sheet shows its text
- *               field ONLY when this is false: if there is already a message,
- *               the reader is shown that message instead of a blank box they
- *               would have to fill before the sheet means anything.
- * - `ready`   — storage has been consulted. Until then neither branch is
- *               rendered, so a device that HAS a message never flashes an
- *               empty input for the length of a disk read.
- * - `setMessage` — writes straight through: typing is the save, there is no
- *               separate button to forget to press.
+ * - `saved`   — whether anything is saved. The compose sheet uses this to
+ *               choose its hint: a saved message is filled in as a starting
+ *               point, but the field stays editable either way.
+ * - `ready`   — storage has been consulted. Until then the compose sheet
+ *               renders no field, so a device that HAS a message never
+ *               flashes an empty input for the length of a disk read.
+ * - `setMessage` — writes straight through. Settings calls it from its Save
+ *               button, so the only implicit save is the one the reader
+ *               explicitly asked for; the compose sheet keeps its own draft.
  */
 export function useWhatsappMessage(): {
   message: string;
