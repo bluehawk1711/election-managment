@@ -31,13 +31,16 @@ const RANK: Record<AppRole, number> = {
  * `developer` is a superset of `superAdmin` for reads but is *not* the account
  * creator — §5 gives account creation to `superAdmin` and `developer` both.
  *
- * `accountView` vs `accountManage` is the roster split: everything a super admin
- * creates has to be *visible* to the people below them — an admin opens Accounts
- * and sees who is on the team — while creating accounts and granting roles
- * stays with `accountManage`. View and manage are separate capabilities on
- * purpose, so widening visibility cannot accidentally widen write access; the
- * same split exists in `database.rules.json` (the R2/R3 predicates in its
+ * `accountView` vs `accountManage` is the roster split: everything anyone
+ * creates has to be *visible* to the people below them — an admin opens
+ * Accounts and sees who is on the team — while creating accounts and granting
+ * roles stays with `accountManage`. View and manage are separate capabilities
+ * on purpose, so widening visibility cannot accidentally widen write access;
+ * the same split exists in `database.rules.json` (the R2/R3 predicates in its
  * header).
+ *
+ * `admin` is included in `accountManage` so an admin can create a team member
+ * account from Settings → Team accounts and More → Accounts → Create account.
  */
 const CAPABILITIES = {
   voterRead: ['karykarta', 'admin', 'superAdmin', 'developer'],
@@ -46,7 +49,7 @@ const CAPABILITIES = {
   /** Read the accounts roster (read-only). */
   accountView: ['admin', 'superAdmin', 'developer'],
   /** Create accounts and grant or change roles. */
-  accountManage: ['superAdmin', 'developer'],
+  accountManage: ['admin', 'superAdmin', 'developer'],
   /**
    * Choose which team-proposed phone number is *the* number for a voter
    * (`voterPhones/{id}.finalPhone`). Proposing a number is `voterEdit` —

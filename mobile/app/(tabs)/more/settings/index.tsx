@@ -200,7 +200,7 @@ export default function SettingsScreen() {
       )}
 
       {/* ── Team accounts ───────────────────────────────────────────────
-          Super admins and developers can create accounts from Settings (the
+          Admins and super admins can create accounts from Settings (the
           same screen as More → Accounts). The card is hidden for every other
           role rather than shown-and-refused: `database.rules.json` requires
           `accountManage` for the profile write, so a visible button could only

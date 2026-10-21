@@ -26,9 +26,9 @@ describe('can()', () => {
     expect(can('developer', 'reportAllBooths')).toBe(true);
   });
 
-  it('restricts account creation to superAdmin and developer', () => {
+  it('restricts account creation to admin and above', () => {
     expect(can('karykarta', 'accountManage')).toBe(false);
-    expect(can('admin', 'accountManage')).toBe(false);
+    expect(can('admin', 'accountManage')).toBe(true);
     expect(can('superAdmin', 'accountManage')).toBe(true);
     expect(can('developer', 'accountManage')).toBe(true);
   });

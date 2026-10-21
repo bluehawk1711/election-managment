@@ -499,7 +499,7 @@ export const en = {
   'accounts.create': 'Create account',
   'accounts.manage': 'View all accounts',
   'accounts.settingsHint':
-    'Create a sign-in for a team member and assign their role and ward. Only super admins and developers can do this.',
+    'Create a sign-in for a team member and assign their role and ward. Admins and super admins can do this.',
   'accounts.displayName': 'Display name',
   'accounts.email': 'Email',
   'accounts.password': 'Password',
@@ -517,11 +517,11 @@ export const en = {
   'accounts.passwordNotStored':
     'This device has no password for that account — it was created elsewhere (or the save failed), so there is nothing to copy here.',
   'accounts.passwordNotForRole':
-    'Passwords are only shown to super admins, who are the ones allowed to manage accounts.',
+    'Passwords are only shown to admins, who are the ones allowed to manage accounts.',
   'accounts.failed': 'Account creation failed',
   'accounts.emptyBody': 'No accounts have been created yet.',
-  'accounts.superAdminOnly': 'Only a super admin can create accounts.',
-  'accounts.yourRole': 'Your role: {{role}}. Accounts are created by super admins and developers — ask yours to add the karyakarta, or open this screen signed in as one.',
+  'accounts.superAdminOnly': 'Only an admin or super admin can create accounts.',
+  'accounts.yourRole': 'Your role: {{role}}. Accounts are created by admins and super admins — ask yours to add the karyakarta, or open this screen signed in as one.',
   'accounts.emailInvalid': 'Enter a valid email address.',
   'accounts.passwordShort': 'Password must be at least 6 characters.',
   'accounts.nameRequired': 'Display name is required.',
@@ -694,7 +694,7 @@ export const en = {
 
   'help.q.team.1': 'Who can create accounts?',
   'help.a.team.1':
-    'Only a super admin (More → Accounts → New account). Only super admins and developers can change roles, lock accounts or reset passwords. Admins can view the roster but not change it.',
+    'Admins and super admins can create accounts (More → Accounts → New account). Only admins and super admins can change roles, lock accounts or reset passwords.',
   'help.q.team.2': 'What does the ward restriction mean?',
   'help.a.team.2':
     'A karykarta is assigned one ward: they read and edit only that ward\u2019s voters, tasks and field data. This is enforced by the database rules themselves, not just by hiding buttons.',

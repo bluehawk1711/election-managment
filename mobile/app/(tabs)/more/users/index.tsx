@@ -119,7 +119,7 @@ export default function UsersScreen() {
         ListHeaderComponent={
           <View style={styles.header}>
             {/* Create is managed, not viewed: an admin reads the roster and
-                has no create button — the same split as the rules. */}
+                can also create an account — the same split as the rules. */}
             {canManage ? (
               <Button icon={UserCog} onPress={() => router.push('/(tabs)/more/users/new')}>
                 {t('accounts.create')}

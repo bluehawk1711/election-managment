@@ -72,7 +72,7 @@
     //  ## Expressions that repeat on purpose
     //
     //  R4 = signed in AND not locked
-    //  R3 = R4 AND role is superAdmin or developer        (accountManage)
+    //  R3 = R4 AND role is admin, superAdmin or developer        (accountManage)
     //  R2 = R4 AND role is admin, superAdmin or developer (accountView)
     //  R1 = R4 AND role is karykarta, admin, superAdmin or developer (voter)
     //
@@ -343,12 +343,12 @@
         ".write": "auth != null && auth.token.locked !== true && (auth.token.role === 'superAdmin' || auth.token.role === 'developer') && auth.uid !== $uid && !newData.exists()",
 
         // ---------------------------------------------- self-service ------
-        "email":       { ".write": "auth != null && (auth.uid === $uid || (auth.token.locked !== true && (auth.token.role === 'superAdmin' || auth.token.role === 'developer')))" },
-        "displayName": { ".write": "auth != null && (auth.uid === $uid || (auth.token.locked !== true && (auth.token.role === 'superAdmin' || auth.token.role === 'developer')))" },
-        "photoURL":    { ".write": "auth != null && (auth.uid === $uid || (auth.token.locked !== true && (auth.token.role === 'superAdmin' || auth.token.role === 'developer')))" },
-        "onboarded":   { ".write": "auth != null && (auth.uid === $uid || (auth.token.locked !== true && (auth.token.role === 'superAdmin' || auth.token.role === 'developer')))", ".validate": "newData.isBoolean() || !newData.exists()" },
-        "createdAt":   { ".write": "auth != null && (auth.uid === $uid || (auth.token.locked !== true && (auth.token.role === 'superAdmin' || auth.token.role === 'developer')))", ".validate": "newData.isNumber()" },
-        "updatedAt":   { ".write": "auth != null && (auth.uid === $uid || (auth.token.locked !== true && (auth.token.role === 'superAdmin' || auth.token.role === 'developer')))", ".validate": "newData.isNumber() || !newData.exists()" },
+        "email":       { ".write": "auth != null && (auth.uid === $uid || (auth.token.locked !== true && (auth.token.role === 'superAdmin' || auth.token.role === 'developer' || auth.token.role === 'admin')))" },
+        "displayName": { ".write": "auth != null && (auth.uid === $uid || (auth.token.locked !== true && (auth.token.role === 'superAdmin' || auth.token.role === 'developer' || auth.token.role === 'admin')))" },
+        "photoURL":    { ".write": "auth != null && (auth.uid === $uid || (auth.token.locked !== true && (auth.token.role === 'superAdmin' || auth.token.role === 'developer' || auth.token.role === 'admin')))" },
+        "onboarded":   { ".write": "auth != null && (auth.uid === $uid || (auth.token.locked !== true && (auth.token.role === 'superAdmin' || auth.token.role === 'developer' || auth.token.role === 'admin')))", ".validate": "newData.isBoolean() || !newData.exists()" },
+        "createdAt":   { ".write": "auth != null && (auth.uid === $uid || (auth.token.locked !== true && (auth.token.role === 'superAdmin' || auth.token.role === 'developer' || auth.token.role === 'admin')))", ".validate": "newData.isNumber()" },
+        "updatedAt":   { ".write": "auth != null && (auth.uid === $uid || (auth.token.locked !== true && (auth.token.role === 'superAdmin' || auth.token.role === 'developer' || auth.token.role === 'admin')))", ".validate": "newData.isNumber() || !newData.exists()" },
 
         // A device is bound ONCE by its owner. Only an account manager may
         // re-bind or clear it — the point of the lock is that a phone found in
@@ -404,20 +404,20 @@
         // by writing their own profile: the owner simply is not on the write
         // list, whatever role they might claim to hold.
         "role": {
-          ".write": "auth != null && auth.token.locked !== true && (auth.token.role === 'superAdmin' || auth.token.role === 'developer') && auth.uid !== $uid",
+          ".write": "auth != null && auth.token.locked !== true && (auth.token.role === 'superAdmin' || auth.token.role === 'developer' || auth.token.role === 'admin') && auth.uid !== $uid",
           ".validate": "newData.val() === 'karykarta' || newData.val() === 'admin' || newData.val() === 'superAdmin' || newData.val() === 'developer' || !newData.exists()"
         },
         "wardNo": {
-          ".write": "auth != null && auth.token.locked !== true && (auth.token.role === 'superAdmin' || auth.token.role === 'developer') && auth.uid !== $uid",
+          ".write": "auth != null && auth.token.locked !== true && (auth.token.role === 'superAdmin' || auth.token.role === 'developer' || auth.token.role === 'admin') && auth.uid !== $uid",
           ".validate": "(newData.isNumber() && newData.val() > 0) || !newData.exists()"
         },
         "teamId": {
-          ".write": "auth != null && auth.token.locked !== true && (auth.token.role === 'superAdmin' || auth.token.role === 'developer') && auth.uid !== $uid",
+          ".write": "auth != null && auth.token.locked !== true && (auth.token.role === 'superAdmin' || auth.token.role === 'developer' || auth.token.role === 'admin') && auth.uid !== $uid",
           ".validate": "newData.isString() && newData.val().length <= 64 || !newData.exists()"
         },
-        "multiDevice":   { ".write": "auth != null && auth.token.locked !== true && (auth.token.role === 'superAdmin' || auth.token.role === 'developer') && auth.uid !== $uid", ".validate": "newData.isBoolean() || !newData.exists()" },
-        "multiDeviceBy": { ".write": "auth != null && auth.token.locked !== true && (auth.token.role === 'superAdmin' || auth.token.role === 'developer') && auth.uid !== $uid", ".validate": "newData.isString() && newData.val().length <= 128 || !newData.exists()" },
-        "multiDeviceAt": { ".write": "auth != null && auth.token.locked !== true && (auth.token.role === 'superAdmin' || auth.token.role === 'developer') && auth.uid !== $uid", ".validate": "newData.isNumber() || !newData.exists()" },
+        "multiDevice":   { ".write": "auth != null && auth.token.locked !== true && (auth.token.role === 'superAdmin' || auth.token.role === 'developer' || auth.token.role === 'admin') && auth.uid !== $uid", ".validate": "newData.isBoolean() || !newData.exists()" },
+        "multiDeviceBy": { ".write": "auth != null && auth.token.locked !== true && (auth.token.role === 'superAdmin' || auth.token.role === 'developer' || auth.token.role === 'admin') && auth.uid !== $uid", ".validate": "newData.isString() && newData.val().length <= 128 || !newData.exists()" },
+        "multiDeviceAt": { ".write": "auth != null && auth.token.locked !== true && (auth.token.role === 'superAdmin' || auth.token.role === 'developer' || auth.token.role === 'admin') && auth.uid !== $uid", ".validate": "newData.isNumber() || !newData.exists()" },
 
         // Anything not named above cannot be written at all — the RTDB
         // equivalent of `affectedKeys().hasOnly(...)`, and the reason a stray
