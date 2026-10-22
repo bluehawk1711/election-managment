@@ -28,8 +28,8 @@ const RANK: Record<AppRole, number> = {
  * What a role may do. Kept as an explicit map rather than rank comparisons
  * everywhere so the matrix in plan-voters.md §5 has exactly one home.
  *
- * `developer` is a superset of `superAdmin` for reads but is *not* the account
- * creator — §5 gives account creation to `superAdmin` and `developer` both.
+ * `developer` is a superset of `superAdmin` for reads. Account creation sits
+ * with `accountManage`, which `admin`, `superAdmin` and `developer` all hold.
  *
  * `accountView` vs `accountManage` is the roster split: everything anyone
  * creates has to be *visible* to the people below them — an admin opens

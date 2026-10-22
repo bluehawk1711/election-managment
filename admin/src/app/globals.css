@@ -1152,6 +1152,7 @@ body {
   /* Everything in the dialog that isn't the paper. */
   .slip-header,
   .slip-toolbar,
+  .slip-printer,
   .slip-statusBar,
   .slip-boothPanel,
   .slip-shortcutBar {
@@ -1518,4 +1519,421 @@ body {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
+}
+
+/* ================================================================ */
+/* Thermal printer panel - additive to the slip modal                */
+/* ================================================================ */
+
+.slip-printer {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  gap: 8px;
+  margin: 10px 14px 0;
+  padding: 10px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 12px;
+  background: #fff;
+  color: #1f2937;
+}
+
+.slip-printerHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  list-style: none;
+  cursor: pointer;
+}
+
+.slip-printerHead::-webkit-details-marker { display: none; }
+
+.slip-printerHead:focus-visible {
+  outline: 2px solid #ea580c;
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+.slip-printerChevron {
+  flex-shrink: 0;
+  color: #9ca3af;
+  transition: transform 0.2s;
+}
+
+.slip-printer[open] .slip-printerChevron { transform: rotate(180deg); }
+
+.slip-printerBody {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  /* The dialog clips its own overflow; keep the expanded panel scrollable so
+     it can never push the slip (and the fallback print button) out of reach. */
+  max-height: min(48vh, 420px);
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.slip-printerTitle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 800;
+  color: #111827;
+}
+
+.slip-printerTitle small {
+  font-size: 9.5px;
+  font-weight: 500;
+  color: #6b7280;
+}
+
+.slip-printerState {
+  flex-shrink: 0;
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 9.5px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.slip-printerState--ok { background: #dcfce7; color: #166534; }
+.slip-printerState--busy { background: #fef3c7; color: #92400e; }
+.slip-printerState--off { background: #e5e7eb; color: #4b5563; }
+
+.slip-printerHint {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  line-height: 1.4;
+  color: #6b7280;
+}
+
+.slip-printerWarn {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  border: 1px solid #fde68a;
+  border-radius: 8px;
+  padding: 6px 8px;
+  background: #fffbeb;
+  color: #92400e;
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.slip-printerConnectRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.slip-printerBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  border: 1px solid #d1d5db;
+  border-radius: 7px;
+  padding: 5px 8px;
+  background: #fff;
+  color: #374151;
+  font: inherit;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.2;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.slip-printerBtn:hover { background: #f9fafb; border-color: #9ca3af; }
+.slip-printerBtn:disabled { cursor: not-allowed; opacity: 0.45; }
+
+.slip-printerBtnPrimary {
+  border-color: #ea580c;
+  background: #ea580c;
+  color: #fff;
+}
+.slip-printerBtnPrimary:hover { background: #c2410c; border-color: #c2410c; }
+
+.slip-printerBtnDanger {
+  border-color: #fca5a5;
+  background: #fef2f2;
+  color: #991b1b;
+}
+.slip-printerBtnDanger:hover { background: #fee2e2; border-color: #f87171; }
+
+.slip-printerSerial {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.slip-printerBaud {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 9.5px;
+  font-weight: 700;
+  color: #6b7280;
+}
+
+.slip-printerBaud select {
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  padding: 3px 4px;
+  background: #fff;
+  color: #374151;
+  font: inherit;
+  font-size: 10px;
+}
+
+.slip-printerDevice {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 6px 8px;
+  background: #f9fafb;
+  font-size: 10px;
+  line-height: 1.35;
+  color: #4b5563;
+}
+
+.slip-printerDeviceRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.slip-printerDeviceName {
+  flex: 1;
+  min-width: 100px;
+  font-size: 11px;
+  font-weight: 800;
+  color: #111827;
+}
+
+.slip-printerKind {
+  border-radius: 999px;
+  padding: 1px 6px;
+  background: #e0e7ff;
+  color: #3730a3;
+  font-size: 8.5px;
+  font-weight: 800;
+}
+
+.slip-printerDevice code {
+  overflow-wrap: anywhere;
+  font-size: 8.5px;
+  color: #6b7280;
+}
+
+.slip-printerPreviewRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.slip-printerPreview {
+  display: flex;
+  place-content: flex-start center;
+  flex: 0 0 138px;
+  height: 190px;
+  overflow: auto;
+  border: 1px dashed #9ca3af;
+  border-radius: 8px;
+  background: #f9fafb;
+}
+
+.slip-printerPreview img {
+  display: block;
+  width: 100%;
+  height: auto;
+  background: #fff;
+}
+
+.slip-printerPreviewEmpty {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin: auto;
+  padding: 8px;
+  font-size: 9.5px;
+  color: #9ca3af;
+  text-align: center;
+}
+
+.slip-printerPreviewMeta {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  font-size: 9.5px;
+  line-height: 1.35;
+  color: #6b7280;
+}
+
+.slip-printerPreviewMeta b {
+  font-size: 10px;
+  color: #374151;
+}
+
+.slip-printerPrintRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  border-top: 1px solid #f3f4f6;
+  padding-top: 8px;
+}
+
+.slip-printerPrintBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 180px;
+  border: 0;
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: #111827;
+  color: #fff;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.slip-printerPrintBtn:hover { background: #374151; }
+.slip-printerPrintBtn:disabled { cursor: not-allowed; opacity: 0.4; }
+
+.slip-printerProgressWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 9.5px;
+  color: #6b7280;
+}
+
+.slip-printerBar {
+  height: 6px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #e5e7eb;
+}
+
+.slip-printerBarFill {
+  height: 100%;
+  border-radius: inherit;
+  background: #ea580c;
+  transition: width 0.15s linear;
+}
+
+.slip-printerResult {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 7px 9px;
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+.slip-printerResult b {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10.5px;
+}
+
+.slip-printerResult--ok {
+  border-color: #bbf7d0;
+  background: #f0fdf4;
+  color: #166534;
+}
+.slip-printerResult--sent {
+  border-color: #bfdbfe;
+  background: #eff6ff;
+  color: #1e40af;
+}
+.slip-printerResult--warn {
+  border-color: #fde68a;
+  background: #fffbeb;
+  color: #92400e;
+}
+.slip-printerResult--bad {
+  border-color: #fecaca;
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+.slip-printerTechnical {
+  overflow-wrap: anywhere;
+  color: #6b7280;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 8.5px;
+}
+
+.slip-printerResultActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 3px;
+}
+
+.slip-printerHelp {
+  border-top: 1px solid #f3f4f6;
+  padding-top: 6px;
+  font-size: 9.5px;
+  line-height: 1.45;
+  color: #4b5563;
+}
+
+.slip-printerHelp summary {
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 800;
+  color: #374151;
+}
+
+.slip-printerHelp ul {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin: 5px 0 0;
+  padding-left: 16px;
+}
+
+.slip-printerHelp code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 8.5px;
+}
+
+.slip-printerPrivacy {
+  margin: 0;
+  color: #9ca3af;
+  font-size: 8.5px;
+  line-height: 1.4;
+}
+
+@media (max-width: 520px) {
+  .slip-printerPreviewRow { flex-direction: column; }
+  .slip-printerPreview {
+    flex-basis: auto;
+    width: 100%;
+    height: 220px;
+  }
+  .slip-printerPreviewMeta { width: 100%; }
 }

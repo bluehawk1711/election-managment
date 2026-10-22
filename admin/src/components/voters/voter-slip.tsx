@@ -14,6 +14,8 @@
  *               manager, पर्ची निकालें (print), पर्ची / A4 सिस्टम (full-sheet
  *               print), copy-slip-text, and the "ब्राउज़र में पीडीएफ देखना
  *               प्रारंभ करें" link
+ *   thermal     optional direct PT-210 printer (BLE / Web Serial); additive,
+ *               never part of the browser-print surface
  *   paper       the slip itself — the ONLY thing `@media print` lets out
  *   status bar  मतदाता स्थिति chip, रंगदर्शक colour picker (prints as the
  *               slip's top strip, so a paper stack can be colour-sorted),
@@ -68,6 +70,7 @@ import {
   writeSlipMessageTemplates,
 } from "@/lib/roll/slip-message-store";
 import { useSession } from "@/stores/session";
+import { ThermalPrinterPanel } from "./printer-panel";
 import { SlipMessageManager } from "./slip-message-manager";
 
 /* ------------------------------------------------------------- persistence */
@@ -400,6 +403,14 @@ export function VoterSlipModal({
             </button>
           </div>
 
+          {/* ── direct 58mm thermal print — additive; the HTML slip and
+                 window.print() fallback above stay untouched ─────────── */}
+          <ThermalPrinterPanel
+            data={data}
+            voterId={voterId}
+            rangLabel={RANG.find((option) => option.value === rang)?.label}
+          />
+
           {/* ── the slip — the only printed surface ───────────────── */}
           <div className="slip-slipWrap">
             <SlipPaper
@@ -533,7 +544,9 @@ function SlipPaper({
             </span>
           </div>
           <div className="slip-row">
-            <span className="slip-label">पिता का नाम :</span>
+            <span className="slip-label">
+              {voter.relationLabel?.trim() || "पिता"} का नाम :
+            </span>
             <span className="slip-value">{voter.fatherName}</span>
           </div>
           <div className="slip-row">

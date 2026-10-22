@@ -33,6 +33,8 @@ export interface VoterSlipData {
   voter: {
     name: string;
     fatherName: string;
+    /** `पिता` / `पति` / `माता` as printed on the roll; labels the relation. */
+    relationLabel?: string;
     wardSerial: string | number;
     voterSerial: string | number;
     epic: string;
@@ -77,6 +79,7 @@ export function buildSlipData(args: {
     voter: {
       name: e.name,
       fatherName: e.fatherOrHusbandName,
+      relationLabel: voter.relationLabel,
       wardSerial: voter.wardNo,
       voterSerial: voter.serialNo,
       epic: voter.epicId,

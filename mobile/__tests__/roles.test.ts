@@ -34,10 +34,11 @@ describe('can()', () => {
   });
 
   it('lets admin-and-above view the roster without managing it', () => {
-    // The roster split: everything a super admin creates must be visible to
-    // the people below them, while create/role-grant stay super-admin-only.
-    // Widened visibility must never widen write access — the rules mirror the
-    // same two helpers (canViewAccounts / canManageAccounts).
+    // The roster split: everything anyone creates must be visible to the
+    // people below them — an admin opens Accounts and sees the team — while
+    // create/role-grant stay account-managed (admin upward). Widened
+    // visibility must never widen write access — the rules mirror the same
+    // two helpers (canViewAccounts / canManageAccounts).
     expect(can('karykarta', 'accountView')).toBe(false);
     expect(can(null, 'accountView')).toBe(false);
     expect(can('root', 'accountView')).toBe(false);

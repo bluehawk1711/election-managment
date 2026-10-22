@@ -20,6 +20,16 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## Direct PT-210 thermal printing
+
+The voter slip can print directly to a 58 mm PT-210-class Bluetooth thermal
+printer through Web Bluetooth (BLE) or Web Serial (Windows SPP/USB COM). The
+existing browser print/A4 flow remains available as a fallback.
+
+See [`../docs/pt-210-printing.md`](../docs/pt-210-printing.md) for supported
+platforms, setup, result semantics, privacy notes, troubleshooting, and the
+hardware-validation checklist. Hardware validation is still outstanding.
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:
