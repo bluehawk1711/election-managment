@@ -5471,6 +5471,7 @@
       "gender": "male",
       "locality": "महावीर नगर, सांगरिया",
       "pdfPage": 268,
+      "deleted": true,
       "nameEn": "Babulal",
       "fatherOrHusbandNameEn": "Acalaram",
       "localityEn": "Mahavir Nagar, Sangariya"
@@ -5993,6 +5994,7 @@
       "gender": "male",
       "locality": "महावीर नगर, सांगरिया",
       "pdfPage": 269,
+      "deleted": true,
       "nameEn": "Bhagavat Singh",
       "fatherOrHusbandNameEn": "Nathusingh",
       "localityEn": "Mahavir Nagar, Sangariya"
@@ -6749,6 +6751,7 @@
       "gender": "female",
       "locality": "महावीर नगर, सांगरिया",
       "pdfPage": 271,
+      "deleted": true,
       "nameEn": "Usha Kanvar",
       "fatherOrHusbandNameEn": "Bhavanisingh",
       "localityEn": "Mahavir Nagar, Sangariya"
@@ -6767,6 +6770,7 @@
       "gender": "male",
       "locality": "महावीर नगर, सांगरिया",
       "pdfPage": 271,
+      "deleted": true,
       "nameEn": "Tikamasingh",
       "fatherOrHusbandNameEn": "Kalusingh",
       "localityEn": "Mahavir Nagar, Sangariya"
@@ -7019,6 +7023,7 @@
       "gender": "male",
       "locality": "महावीर नगर, सांगरिया",
       "pdfPage": 271,
+      "deleted": true,
       "nameEn": "Raj Kumar",
       "fatherOrHusbandNameEn": "Mangala Ram",
       "localityEn": "Mahavir Nagar, Sangariya"
