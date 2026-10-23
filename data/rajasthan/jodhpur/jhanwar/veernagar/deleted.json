@@ -1,0 +1,1291 @@
+{
+  "source_pdf": "data/VeerNagar-photos.pdf",
+  "marker": "106x76 px diagonal DELETED stamp drawn over the record cell",
+  "count": 107,
+  "records": [
+    {
+      "ward": 1,
+      "serial": 599,
+      "epic_id": "IRW1338359",
+      "photos_pdf_page": 25,
+      "stamp_bbox_pt": [
+        436.1,
+        694.6,
+        498.4,
+        744.1
+      ]
+    },
+    {
+      "ward": 1,
+      "serial": 635,
+      "epic_id": "IRW1801026",
+      "photos_pdf_page": 27,
+      "stamp_bbox_pt": [
+        89.2,
+        405.2,
+        151.4,
+        454.7
+      ]
+    },
+    {
+      "ward": 1,
+      "serial": 643,
+      "epic_id": "IRW2651537",
+      "photos_pdf_page": 27,
+      "stamp_bbox_pt": [
+        89.2,
+        658.5,
+        151.4,
+        708.0
+      ]
+    },
+    {
+      "ward": 2,
+      "serial": 62,
+      "epic_id": "IRW0058669",
+      "photos_pdf_page": 36,
+      "stamp_bbox_pt": [
+        262.6,
+        296.5,
+        324.9,
+        346.0
+      ]
+    },
+    {
+      "ward": 2,
+      "serial": 221,
+      "epic_id": "IRW1828813",
+      "photos_pdf_page": 42,
+      "stamp_bbox_pt": [
+        436.1,
+        296.5,
+        498.4,
+        346.0
+      ]
+    },
+    {
+      "ward": 2,
+      "serial": 234,
+      "epic_id": "IRW0263566",
+      "photos_pdf_page": 42,
+      "stamp_bbox_pt": [
+        89.2,
+        658.3,
+        151.4,
+        707.8
+      ]
+    },
+    {
+      "ward": 2,
+      "serial": 235,
+      "epic_id": "IRW0858217",
+      "photos_pdf_page": 42,
+      "stamp_bbox_pt": [
+        262.6,
+        658.3,
+        324.9,
+        707.8
+      ]
+    },
+    {
+      "ward": 2,
+      "serial": 410,
+      "epic_id": "CTK4949095",
+      "photos_pdf_page": 49,
+      "stamp_bbox_pt": [
+        89.2,
+        658.3,
+        151.4,
+        707.8
+      ]
+    },
+    {
+      "ward": 2,
+      "serial": 411,
+      "epic_id": "CTK4949103",
+      "photos_pdf_page": 49,
+      "stamp_bbox_pt": [
+        262.6,
+        658.3,
+        324.9,
+        707.8
+      ]
+    },
+    {
+      "ward": 2,
+      "serial": 414,
+      "epic_id": "IRW0060285",
+      "photos_pdf_page": 49,
+      "stamp_bbox_pt": [
+        262.6,
+        730.6,
+        324.9,
+        780.1
+      ]
+    },
+    {
+      "ward": 2,
+      "serial": 415,
+      "epic_id": "IRW0924019",
+      "photos_pdf_page": 49,
+      "stamp_bbox_pt": [
+        436.1,
+        730.6,
+        498.4,
+        780.1
+      ]
+    },
+    {
+      "ward": 2,
+      "serial": 416,
+      "epic_id": "IRW0060236",
+      "photos_pdf_page": 50,
+      "stamp_bbox_pt": [
+        89.2,
+        151.8,
+        151.4,
+        201.3
+      ]
+    },
+    {
+      "ward": 3,
+      "serial": 4,
+      "epic_id": "CTK4949780",
+      "photos_pdf_page": 70,
+      "stamp_bbox_pt": [
+        89.2,
+        242.3,
+        151.4,
+        291.8
+      ]
+    },
+    {
+      "ward": 3,
+      "serial": 27,
+      "epic_id": "IRW0059832",
+      "photos_pdf_page": 70,
+      "stamp_bbox_pt": [
+        436.1,
+        748.8,
+        498.4,
+        798.3
+      ]
+    },
+    {
+      "ward": 3,
+      "serial": 99,
+      "epic_id": "IRW0336362",
+      "photos_pdf_page": 73,
+      "stamp_bbox_pt": [
+        436.1,
+        513.6,
+        498.4,
+        563.1
+      ]
+    },
+    {
+      "ward": 3,
+      "serial": 104,
+      "epic_id": "IRW0059873",
+      "photos_pdf_page": 73,
+      "stamp_bbox_pt": [
+        262.6,
+        658.3,
+        324.9,
+        707.8
+      ]
+    },
+    {
+      "ward": 3,
+      "serial": 267,
+      "epic_id": "IRW1159524",
+      "photos_pdf_page": 80,
+      "stamp_bbox_pt": [
+        436.1,
+        151.8,
+        498.4,
+        201.3
+      ]
+    },
+    {
+      "ward": 3,
+      "serial": 268,
+      "epic_id": "IRW1159532",
+      "photos_pdf_page": 80,
+      "stamp_bbox_pt": [
+        89.2,
+        224.2,
+        151.4,
+        273.7
+      ]
+    },
+    {
+      "ward": 3,
+      "serial": 269,
+      "epic_id": "IRW1159540",
+      "photos_pdf_page": 80,
+      "stamp_bbox_pt": [
+        262.6,
+        224.2,
+        324.9,
+        273.7
+      ]
+    },
+    {
+      "ward": 3,
+      "serial": 270,
+      "epic_id": "IRW1159557",
+      "photos_pdf_page": 80,
+      "stamp_bbox_pt": [
+        436.1,
+        224.2,
+        498.4,
+        273.7
+      ]
+    },
+    {
+      "ward": 3,
+      "serial": 271,
+      "epic_id": "IRW1492271",
+      "photos_pdf_page": 80,
+      "stamp_bbox_pt": [
+        89.2,
+        296.5,
+        151.4,
+        346.0
+      ]
+    },
+    {
+      "ward": 3,
+      "serial": 350,
+      "epic_id": "IRW1267442",
+      "photos_pdf_page": 83,
+      "stamp_bbox_pt": [
+        262.6,
+        334.6,
+        324.9,
+        384.1
+      ]
+    },
+    {
+      "ward": 3,
+      "serial": 384,
+      "epic_id": "IRW1356260",
+      "photos_pdf_page": 84,
+      "stamp_bbox_pt": [
+        262.6,
+        640.2,
+        324.9,
+        689.8
+      ]
+    },
+    {
+      "ward": 3,
+      "serial": 385,
+      "epic_id": "IRW1356294",
+      "photos_pdf_page": 84,
+      "stamp_bbox_pt": [
+        436.1,
+        640.2,
+        498.4,
+        689.8
+      ]
+    },
+    {
+      "ward": 3,
+      "serial": 386,
+      "epic_id": "IRW1356286",
+      "photos_pdf_page": 84,
+      "stamp_bbox_pt": [
+        89.2,
+        712.6,
+        151.4,
+        762.1
+      ]
+    },
+    {
+      "ward": 4,
+      "serial": 4,
+      "epic_id": "IRW2540144",
+      "photos_pdf_page": 107,
+      "stamp_bbox_pt": [
+        89.2,
+        242.3,
+        151.4,
+        291.8
+      ]
+    },
+    {
+      "ward": 4,
+      "serial": 10,
+      "epic_id": "IRW2540169",
+      "photos_pdf_page": 107,
+      "stamp_bbox_pt": [
+        89.2,
+        387.0,
+        151.4,
+        436.5
+      ]
+    },
+    {
+      "ward": 4,
+      "serial": 39,
+      "epic_id": "IRW1754654",
+      "photos_pdf_page": 108,
+      "stamp_bbox_pt": [
+        436.1,
+        368.9,
+        498.4,
+        418.4
+      ]
+    },
+    {
+      "ward": 4,
+      "serial": 40,
+      "epic_id": "IRW1755792",
+      "photos_pdf_page": 108,
+      "stamp_bbox_pt": [
+        89.2,
+        441.2,
+        151.4,
+        490.7
+      ]
+    },
+    {
+      "ward": 4,
+      "serial": 199,
+      "epic_id": "IRW1160316",
+      "photos_pdf_page": 114,
+      "stamp_bbox_pt": [
+        262.6,
+        441.2,
+        324.9,
+        490.7
+      ]
+    },
+    {
+      "ward": 4,
+      "serial": 219,
+      "epic_id": "IRW2528909",
+      "photos_pdf_page": 115,
+      "stamp_bbox_pt": [
+        89.2,
+        296.5,
+        151.4,
+        346.0
+      ]
+    },
+    {
+      "ward": 4,
+      "serial": 222,
+      "epic_id": "IRW2529949",
+      "photos_pdf_page": 115,
+      "stamp_bbox_pt": [
+        89.2,
+        368.9,
+        151.4,
+        418.4
+      ]
+    },
+    {
+      "ward": 4,
+      "serial": 232,
+      "epic_id": "IRW2528990",
+      "photos_pdf_page": 115,
+      "stamp_bbox_pt": [
+        262.6,
+        585.9,
+        324.9,
+        635.4
+      ]
+    },
+    {
+      "ward": 4,
+      "serial": 369,
+      "epic_id": "IRW0859702",
+      "photos_pdf_page": 121,
+      "stamp_bbox_pt": [
+        436.1,
+        151.8,
+        498.4,
+        201.3
+      ]
+    },
+    {
+      "ward": 5,
+      "serial": 227,
+      "epic_id": "IRW2528925",
+      "photos_pdf_page": 153,
+      "stamp_bbox_pt": [
+        436.1,
+        370.8,
+        498.4,
+        420.3
+      ]
+    },
+    {
+      "ward": 5,
+      "serial": 246,
+      "epic_id": "IRW2528974",
+      "photos_pdf_page": 154,
+      "stamp_bbox_pt": [
+        89.2,
+        224.2,
+        151.4,
+        273.7
+      ]
+    },
+    {
+      "ward": 5,
+      "serial": 272,
+      "epic_id": "IRW2529006",
+      "photos_pdf_page": 155,
+      "stamp_bbox_pt": [
+        436.1,
+        151.8,
+        498.4,
+        201.3
+      ]
+    },
+    {
+      "ward": 5,
+      "serial": 282,
+      "epic_id": "IRW2528982",
+      "photos_pdf_page": 155,
+      "stamp_bbox_pt": [
+        89.2,
+        441.2,
+        151.4,
+        490.7
+      ]
+    },
+    {
+      "ward": 5,
+      "serial": 286,
+      "epic_id": "IRW2531002",
+      "photos_pdf_page": 155,
+      "stamp_bbox_pt": [
+        262.6,
+        513.6,
+        324.9,
+        563.1
+      ]
+    },
+    {
+      "ward": 5,
+      "serial": 326,
+      "epic_id": "IRW2528958",
+      "photos_pdf_page": 157,
+      "stamp_bbox_pt": [
+        436.1,
+        151.8,
+        498.4,
+        201.3
+      ]
+    },
+    {
+      "ward": 5,
+      "serial": 352,
+      "epic_id": "IRW0476044",
+      "photos_pdf_page": 158,
+      "stamp_bbox_pt": [
+        262.6,
+        151.8,
+        324.9,
+        201.3
+      ]
+    },
+    {
+      "ward": 5,
+      "serial": 370,
+      "epic_id": "IRW2533917",
+      "photos_pdf_page": 158,
+      "stamp_bbox_pt": [
+        262.6,
+        585.9,
+        324.9,
+        635.4
+      ]
+    },
+    {
+      "ward": 5,
+      "serial": 560,
+      "epic_id": "IRW1895325",
+      "photos_pdf_page": 165,
+      "stamp_bbox_pt": [
+        89.2,
+        658.3,
+        151.4,
+        707.8
+      ]
+    },
+    {
+      "ward": 5,
+      "serial": 561,
+      "epic_id": "IRW1895333",
+      "photos_pdf_page": 165,
+      "stamp_bbox_pt": [
+        262.6,
+        658.3,
+        324.9,
+        707.8
+      ]
+    },
+    {
+      "ward": 5,
+      "serial": 647,
+      "epic_id": "IRW2496800",
+      "photos_pdf_page": 169,
+      "stamp_bbox_pt": [
+        89.2,
+        495.7,
+        151.4,
+        545.2
+      ]
+    },
+    {
+      "ward": 5,
+      "serial": 648,
+      "epic_id": "IRW2519809",
+      "photos_pdf_page": 169,
+      "stamp_bbox_pt": [
+        262.6,
+        495.7,
+        324.9,
+        545.2
+      ]
+    },
+    {
+      "ward": 6,
+      "serial": 7,
+      "epic_id": "IRW2618593",
+      "photos_pdf_page": 180,
+      "stamp_bbox_pt": [
+        89.2,
+        332.8,
+        151.4,
+        382.3
+      ]
+    },
+    {
+      "ward": 6,
+      "serial": 8,
+      "epic_id": "IRW2618841",
+      "photos_pdf_page": 180,
+      "stamp_bbox_pt": [
+        262.6,
+        332.8,
+        324.9,
+        382.3
+      ]
+    },
+    {
+      "ward": 6,
+      "serial": 9,
+      "epic_id": "IRW2625150",
+      "photos_pdf_page": 180,
+      "stamp_bbox_pt": [
+        436.1,
+        332.8,
+        498.4,
+        382.3
+      ]
+    },
+    {
+      "ward": 6,
+      "serial": 10,
+      "epic_id": "IRW2630697",
+      "photos_pdf_page": 180,
+      "stamp_bbox_pt": [
+        89.2,
+        405.2,
+        151.4,
+        454.7
+      ]
+    },
+    {
+      "ward": 6,
+      "serial": 13,
+      "epic_id": "IRW2639805",
+      "photos_pdf_page": 180,
+      "stamp_bbox_pt": [
+        89.2,
+        477.5,
+        151.4,
+        527.0
+      ]
+    },
+    {
+      "ward": 6,
+      "serial": 14,
+      "epic_id": "IRW2639813",
+      "photos_pdf_page": 180,
+      "stamp_bbox_pt": [
+        262.6,
+        477.5,
+        324.9,
+        527.0
+      ]
+    },
+    {
+      "ward": 6,
+      "serial": 17,
+      "epic_id": "IRW2644771",
+      "photos_pdf_page": 180,
+      "stamp_bbox_pt": [
+        262.6,
+        549.9,
+        324.9,
+        599.4
+      ]
+    },
+    {
+      "ward": 6,
+      "serial": 18,
+      "epic_id": "IRW2644789",
+      "photos_pdf_page": 180,
+      "stamp_bbox_pt": [
+        436.1,
+        549.9,
+        498.4,
+        599.4
+      ]
+    },
+    {
+      "ward": 6,
+      "serial": 24,
+      "epic_id": "IRW2650448",
+      "photos_pdf_page": 180,
+      "stamp_bbox_pt": [
+        436.1,
+        694.6,
+        498.4,
+        744.1
+      ]
+    },
+    {
+      "ward": 6,
+      "serial": 26,
+      "epic_id": "IRW2658581",
+      "photos_pdf_page": 181,
+      "stamp_bbox_pt": [
+        262.6,
+        151.8,
+        324.9,
+        201.3
+      ]
+    },
+    {
+      "ward": 6,
+      "serial": 27,
+      "epic_id": "IRW2658565",
+      "photos_pdf_page": 181,
+      "stamp_bbox_pt": [
+        436.1,
+        151.8,
+        498.4,
+        201.3
+      ]
+    },
+    {
+      "ward": 6,
+      "serial": 174,
+      "epic_id": "IRW1872167",
+      "photos_pdf_page": 188,
+      "stamp_bbox_pt": [
+        89.2,
+        151.8,
+        151.4,
+        201.3
+      ]
+    },
+    {
+      "ward": 6,
+      "serial": 188,
+      "epic_id": "IRW2489482",
+      "photos_pdf_page": 188,
+      "stamp_bbox_pt": [
+        436.1,
+        441.2,
+        498.4,
+        490.7
+      ]
+    },
+    {
+      "ward": 6,
+      "serial": 189,
+      "epic_id": "IRW2489573",
+      "photos_pdf_page": 188,
+      "stamp_bbox_pt": [
+        89.2,
+        513.6,
+        151.4,
+        563.1
+      ]
+    },
+    {
+      "ward": 6,
+      "serial": 263,
+      "epic_id": "IRW2497535",
+      "photos_pdf_page": 191,
+      "stamp_bbox_pt": [
+        436.1,
+        603.9,
+        498.4,
+        653.4
+      ]
+    },
+    {
+      "ward": 6,
+      "serial": 264,
+      "epic_id": "IRW2497543",
+      "photos_pdf_page": 191,
+      "stamp_bbox_pt": [
+        89.2,
+        676.3,
+        151.4,
+        725.8
+      ]
+    },
+    {
+      "ward": 6,
+      "serial": 265,
+      "epic_id": "IRW2497519",
+      "photos_pdf_page": 191,
+      "stamp_bbox_pt": [
+        262.6,
+        676.3,
+        324.9,
+        725.8
+      ]
+    },
+    {
+      "ward": 7,
+      "serial": 14,
+      "epic_id": "IRW2506871",
+      "photos_pdf_page": 198,
+      "stamp_bbox_pt": [
+        262.6,
+        459.4,
+        324.9,
+        508.9
+      ]
+    },
+    {
+      "ward": 7,
+      "serial": 15,
+      "epic_id": "IRW2539922",
+      "photos_pdf_page": 198,
+      "stamp_bbox_pt": [
+        436.1,
+        459.4,
+        498.4,
+        508.9
+      ]
+    },
+    {
+      "ward": 7,
+      "serial": 16,
+      "epic_id": "IRW2539823",
+      "photos_pdf_page": 198,
+      "stamp_bbox_pt": [
+        89.2,
+        531.8,
+        151.4,
+        581.2
+      ]
+    },
+    {
+      "ward": 7,
+      "serial": 17,
+      "epic_id": "IRW2509529",
+      "photos_pdf_page": 198,
+      "stamp_bbox_pt": [
+        262.6,
+        531.8,
+        324.9,
+        581.2
+      ]
+    },
+    {
+      "ward": 7,
+      "serial": 18,
+      "epic_id": "IRW2540003",
+      "photos_pdf_page": 198,
+      "stamp_bbox_pt": [
+        436.1,
+        531.8,
+        498.4,
+        581.2
+      ]
+    },
+    {
+      "ward": 7,
+      "serial": 19,
+      "epic_id": "IRW2540037",
+      "photos_pdf_page": 198,
+      "stamp_bbox_pt": [
+        89.2,
+        604.1,
+        151.4,
+        653.6
+      ]
+    },
+    {
+      "ward": 7,
+      "serial": 250,
+      "epic_id": "IRW2496735",
+      "photos_pdf_page": 208,
+      "stamp_bbox_pt": [
+        89.2,
+        368.9,
+        151.4,
+        418.4
+      ]
+    },
+    {
+      "ward": 7,
+      "serial": 251,
+      "epic_id": "IRW1384429",
+      "photos_pdf_page": 208,
+      "stamp_bbox_pt": [
+        262.6,
+        368.9,
+        324.9,
+        418.4
+      ]
+    },
+    {
+      "ward": 7,
+      "serial": 252,
+      "epic_id": "IRW1384411",
+      "photos_pdf_page": 208,
+      "stamp_bbox_pt": [
+        436.1,
+        368.9,
+        498.4,
+        418.4
+      ]
+    },
+    {
+      "ward": 7,
+      "serial": 295,
+      "epic_id": "IRW0171025",
+      "photos_pdf_page": 210,
+      "stamp_bbox_pt": [
+        89.2,
+        151.8,
+        151.4,
+        201.3
+      ]
+    },
+    {
+      "ward": 8,
+      "serial": 45,
+      "epic_id": "IRW2539781",
+      "photos_pdf_page": 217,
+      "stamp_bbox_pt": [
+        436.1,
+        585.9,
+        498.4,
+        635.4
+      ]
+    },
+    {
+      "ward": 8,
+      "serial": 74,
+      "epic_id": "IRW1639566",
+      "photos_pdf_page": 218,
+      "stamp_bbox_pt": [
+        262.6,
+        658.3,
+        324.9,
+        707.8
+      ]
+    },
+    {
+      "ward": 8,
+      "serial": 75,
+      "epic_id": "IRW1639558",
+      "photos_pdf_page": 218,
+      "stamp_bbox_pt": [
+        436.1,
+        658.3,
+        498.4,
+        707.8
+      ]
+    },
+    {
+      "ward": 8,
+      "serial": 76,
+      "epic_id": "IRW2539849",
+      "photos_pdf_page": 218,
+      "stamp_bbox_pt": [
+        89.2,
+        730.6,
+        151.4,
+        780.1
+      ]
+    },
+    {
+      "ward": 8,
+      "serial": 90,
+      "epic_id": "IRW1796150",
+      "photos_pdf_page": 219,
+      "stamp_bbox_pt": [
+        89.2,
+        459.4,
+        151.4,
+        508.9
+      ]
+    },
+    {
+      "ward": 8,
+      "serial": 91,
+      "epic_id": "IRW1777929",
+      "photos_pdf_page": 219,
+      "stamp_bbox_pt": [
+        262.6,
+        459.4,
+        324.9,
+        508.9
+      ]
+    },
+    {
+      "ward": 8,
+      "serial": 212,
+      "epic_id": "IRW2424794",
+      "photos_pdf_page": 224,
+      "stamp_bbox_pt": [
+        262.6,
+        296.5,
+        324.9,
+        346.0
+      ]
+    },
+    {
+      "ward": 8,
+      "serial": 213,
+      "epic_id": "IRW2424588",
+      "photos_pdf_page": 224,
+      "stamp_bbox_pt": [
+        436.1,
+        296.5,
+        498.4,
+        346.0
+      ]
+    },
+    {
+      "ward": 9,
+      "serial": 139,
+      "epic_id": "IRW2497295",
+      "photos_pdf_page": 238,
+      "stamp_bbox_pt": [
+        89.2,
+        730.6,
+        151.4,
+        780.1
+      ]
+    },
+    {
+      "ward": 11,
+      "serial": 33,
+      "epic_id": "IRW1038082",
+      "photos_pdf_page": 262,
+      "stamp_bbox_pt": [
+        436.1,
+        224.2,
+        498.4,
+        273.7
+      ]
+    },
+    {
+      "ward": 11,
+      "serial": 248,
+      "epic_id": "IRW1861244",
+      "photos_pdf_page": 270,
+      "stamp_bbox_pt": [
+        436.1,
+        296.5,
+        498.4,
+        346.0
+      ]
+    },
+    {
+      "ward": 11,
+      "serial": 249,
+      "epic_id": "IRW1861269",
+      "photos_pdf_page": 270,
+      "stamp_bbox_pt": [
+        89.2,
+        368.9,
+        151.4,
+        418.4
+      ]
+    },
+    {
+      "ward": 11,
+      "serial": 250,
+      "epic_id": "IRW1854876",
+      "photos_pdf_page": 270,
+      "stamp_bbox_pt": [
+        262.6,
+        368.9,
+        324.9,
+        418.4
+      ]
+    },
+    {
+      "ward": 11,
+      "serial": 251,
+      "epic_id": "IRW1845056",
+      "photos_pdf_page": 270,
+      "stamp_bbox_pt": [
+        436.1,
+        368.9,
+        498.4,
+        418.4
+      ]
+    },
+    {
+      "ward": 11,
+      "serial": 253,
+      "epic_id": "IRW1902386",
+      "photos_pdf_page": 270,
+      "stamp_bbox_pt": [
+        262.6,
+        441.2,
+        324.9,
+        490.7
+      ]
+    },
+    {
+      "ward": 11,
+      "serial": 254,
+      "epic_id": "IRW1791581",
+      "photos_pdf_page": 270,
+      "stamp_bbox_pt": [
+        436.1,
+        441.2,
+        498.4,
+        490.7
+      ]
+    },
+    {
+      "ward": 11,
+      "serial": 255,
+      "epic_id": "IRW1791409",
+      "photos_pdf_page": 270,
+      "stamp_bbox_pt": [
+        89.2,
+        513.6,
+        151.4,
+        563.1
+      ]
+    },
+    {
+      "ward": 11,
+      "serial": 276,
+      "epic_id": "IRW2658748",
+      "photos_pdf_page": 271,
+      "stamp_bbox_pt": [
+        89.2,
+        370.8,
+        151.4,
+        420.3
+      ]
+    },
+    {
+      "ward": 11,
+      "serial": 494,
+      "epic_id": "IRW2513307",
+      "photos_pdf_page": 280,
+      "stamp_bbox_pt": [
+        89.2,
+        296.5,
+        151.4,
+        346.0
+      ]
+    },
+    {
+      "ward": 11,
+      "serial": 495,
+      "epic_id": "IRW2513836",
+      "photos_pdf_page": 280,
+      "stamp_bbox_pt": [
+        262.6,
+        296.5,
+        324.9,
+        346.0
+      ]
+    },
+    {
+      "ward": 11,
+      "serial": 499,
+      "epic_id": "IRW2657013",
+      "photos_pdf_page": 280,
+      "stamp_bbox_pt": [
+        89.2,
+        459.4,
+        151.4,
+        508.9
+      ]
+    },
+    {
+      "ward": 12,
+      "serial": 118,
+      "epic_id": "IRW1811603",
+      "photos_pdf_page": 295,
+      "stamp_bbox_pt": [
+        89.2,
+        368.9,
+        151.4,
+        418.4
+      ]
+    },
+    {
+      "ward": 12,
+      "serial": 249,
+      "epic_id": "IRW1164441",
+      "photos_pdf_page": 300,
+      "stamp_bbox_pt": [
+        89.2,
+        296.5,
+        151.4,
+        346.0
+      ]
+    },
+    {
+      "ward": 12,
+      "serial": 444,
+      "epic_id": "IRW1693100",
+      "photos_pdf_page": 307,
+      "stamp_bbox_pt": [
+        89.2,
+        441.2,
+        151.4,
+        490.7
+      ]
+    },
+    {
+      "ward": 12,
+      "serial": 445,
+      "epic_id": "IRW1693126",
+      "photos_pdf_page": 307,
+      "stamp_bbox_pt": [
+        262.6,
+        441.2,
+        324.9,
+        490.7
+      ]
+    },
+    {
+      "ward": 12,
+      "serial": 446,
+      "epic_id": "IRW1814292",
+      "photos_pdf_page": 307,
+      "stamp_bbox_pt": [
+        436.1,
+        441.2,
+        498.4,
+        490.7
+      ]
+    },
+    {
+      "ward": 12,
+      "serial": 447,
+      "epic_id": "IRW1693134",
+      "photos_pdf_page": 307,
+      "stamp_bbox_pt": [
+        89.2,
+        513.6,
+        151.4,
+        563.1
+      ]
+    },
+    {
+      "ward": 12,
+      "serial": 629,
+      "epic_id": "IRW1989151",
+      "photos_pdf_page": 314,
+      "stamp_bbox_pt": [
+        89.2,
+        423.3,
+        151.4,
+        472.8
+      ]
+    },
+    {
+      "ward": 12,
+      "serial": 630,
+      "epic_id": "IRW1986983",
+      "photos_pdf_page": 314,
+      "stamp_bbox_pt": [
+        262.6,
+        423.3,
+        324.9,
+        472.8
+      ]
+    },
+    {
+      "ward": 12,
+      "serial": 631,
+      "epic_id": "IRW1987197",
+      "photos_pdf_page": 314,
+      "stamp_bbox_pt": [
+        436.1,
+        423.3,
+        498.4,
+        472.8
+      ]
+    },
+    {
+      "ward": 12,
+      "serial": 632,
+      "epic_id": "IRW1986959",
+      "photos_pdf_page": 314,
+      "stamp_bbox_pt": [
+        89.2,
+        495.7,
+        151.4,
+        545.2
+      ]
+    },
+    {
+      "ward": 12,
+      "serial": 665,
+      "epic_id": "IRW2519262",
+      "photos_pdf_page": 316,
+      "stamp_bbox_pt": [
+        436.1,
+        151.8,
+        498.4,
+        201.3
+      ]
+    },
+    {
+      "ward": 13,
+      "serial": 249,
+      "epic_id": "IRW0983379",
+      "photos_pdf_page": 332,
+      "stamp_bbox_pt": [
+        436.1,
+        151.8,
+        498.4,
+        201.3
+      ]
+    },
+    {
+      "ward": 13,
+      "serial": 477,
+      "epic_id": "IRW1038504",
+      "photos_pdf_page": 340,
+      "stamp_bbox_pt": [
+        436.1,
+        660.2,
+        498.4,
+        709.7
+      ]
+    }
+  ]
+}

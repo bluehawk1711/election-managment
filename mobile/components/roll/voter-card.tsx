@@ -118,6 +118,11 @@ export function VoterCard({ voter, meters, onPress, onLongPress, selected = fals
 
   const e = voter.effective;
 
+  // Ink for the DELETED stamp — the theme's destructive red, the same one
+  // the danger chips use, so "struck from the roll" reads as the same
+  // vocabulary everywhere in the app.
+  const destructive = useColor('destructive');
+
   // Photo precedence: the user's own capture (overlay) first, then the
   // bundled roll portrait (`assets/photos/`, keyed by voter id), then the
   // placeholder — see lib/roll/photos.ts.
@@ -134,7 +139,7 @@ export function VoterCard({ voter, meters, onPress, onLongPress, selected = fals
       accessibilityRole='button'
       // The whole card is one hit target that opens the edit sheet, so the
       // label has to say that as well as who the voter is.
-      accessibilityLabel={`${e.name}, ${t('voters.edit')}`}
+      accessibilityLabel={`${e.name}${voter.deleted ? ' (DELETED)' : ''}, ${t('voters.edit')}`}
       accessibilityState={onLongPress ? { selected } : undefined}
       style={({ pressed }) => [
         styles.card,
@@ -311,6 +316,20 @@ export function VoterCard({ voter, meters, onPress, onLongPress, selected = fals
           </View>
         </View>
       </View>
+
+      {/* The roll's own marker, kept big: `data/VeerNagar-photos.pdf` draws
+          a diagonal DELETED stamp across the struck record's cell, so the
+          card says it the same way the paper does — across the whole card,
+          photo and data alike, instead of as one more chip in the row where
+          a glance would miss it. Rendered last so it layers above the
+          content, `pointerEvents='none'` so the card stays one tap target. */}
+      {voter.deleted ? (
+        <View style={styles.deletedStamp} pointerEvents='none'>
+          <Text style={[styles.deletedStampText, { color: destructive }]}>
+            DELETED
+          </Text>
+        </View>
+      ) : null}
     </Pressable>
   );
 }
@@ -418,4 +437,29 @@ const styles = StyleSheet.create({
   // The value takes the room the label leaves, so a long locality wraps inside
   // its own box instead of widening the row past the card's edge.
   inlineValue: { flex: 1, minWidth: 0 },
+  // DELETED stamp (only ever rendered when `voter.deleted`). Absolute-fill
+  // + centred + rotated is what makes it diagonal without measuring the
+  // text: the label sits dead centre of the card and its rotation carries
+  // the ends over the photo and the fields, exactly the way the printed
+  // stamp straddles a record cell. The card is `position: 'relative'` by
+  // default, so this anchors to the card, not the screen.
+  deletedStamp: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    transform: [{ rotate: '-20deg' }],
+  },
+  // Big enough to be the first thing read, translucent enough that the
+  // fields underneath stay legible — a badge you must squint past would
+  // hide the very record it is marking.
+  deletedStampText: {
+    fontSize: 32,
+    fontWeight: '900',
+    letterSpacing: 4,
+    opacity: 0.5,
+  },
 });

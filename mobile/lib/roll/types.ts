@@ -35,6 +35,17 @@ export interface RollVoter {
   /** The PDF page this row came from — lets anyone open the source. */
   pdfPage: number;
   /**
+   * `true` when `data/VeerNagar-photos.pdf` draws the diagonal **DELETED**
+   * stamp over this record's cell — the roll's own marker that the voter was
+   * struck (EXTRACTION.md §Step 8; the list lives in
+   * `data/rajasthan/jodhpur/jhanwar/veernagar/deleted.json`).
+   *
+   * Bundled rows only, like the romanised copies below: absent (`undefined`)
+   * means "not marked deleted". The card layers a big DELETED badge over
+   * itself when this is set — it is base-roll data, never an overlay.
+   */
+  deleted?: boolean;
+  /**
    * Romanised copies of the three Hindi fields, generated from the CSVs by
    * `scripts/generate-ward-bundles.ts` (via `lib/roll/romanize.ts`).
    *

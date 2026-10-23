@@ -11,6 +11,7 @@ part-1 / part-2 roll PDF.
 | `data/rajasthan/jodhpur/jhanwar/veernagar/ward-01.csv` … `ward-13.csv` | one row per voter (6855 total), UTF-8 **with BOM** so Excel renders Devanagari |
 | `data/rajasthan/jodhpur/jhanwar/veernagar/wards-summary.csv` | per-ward counts (verified vs cover), delimitation text, booth/room, page range |
 | `data/rajasthan/jodhpur/jhanwar/veernagar/records_final.json` | same records + ward metadata as JSON (machine-readable master) |
+| `data/rajasthan/jodhpur/jhanwar/veernagar/deleted.json` | the 107 records the photos PDF stamps DELETED (Step 8) |
 | `verification.md` (repo root) | every OCR-sourced / corrected / suspicious value, listed for human check |
 
 Ward CSV columns: `serial_no, epic_id, name, relation, father_or_husband_name,
@@ -61,6 +62,7 @@ sources can be merged by position.
   | `fix_final.py` | 5 corrections + `verification.md` + `records_final.json` |
   | `align_houses.py` | 5b the house policy — digits-or-empty, cell-OCR ground truth for disagreements (`जे-36` → `36`, no number → empty) |
   | `write_csv.py` | 6 per-ward CSVs |
+  | `deleted_flags.py` | 8 the DELETED list (`deleted.json`) lifted from the photos PDF |
   | `records_v4c.json` | pre-fix snapshot (source of the “was” values in `verification.md`) |
   | `problems.json` | rows that still miss a field after step 3 (repair input) |
 
@@ -234,6 +236,33 @@ WEE2101913, WLK3063823`).
 
 ---
 
+## Step 8 — DELETED flags from `data/VeerNagar-photos.pdf` (`tools/extract_roll/deleted_flags.py`)
+
+107 record cells in the photos PDF carry one extra image: the 106×76 px
+diagonal **DELETED** stamp drawn over the record (the only non-portrait,
+non-scan image kind in the document — all 107 placements are the same xref,
+so the marker is unambiguous). The script reads `data/photos/manifest.json`
+(Step 7), keeps `kind == 'aux'`, and validates every placement against the
+roll: `(ward, serial)` must resolve in `records_final.json` **and** that
+record's EPIC must equal the one the manifest gave the stamp — geometry+EPIC
+text vs the roll lookup, the same two-identification cross-check used in
+Step 7, agreeing on **107/107**.
+
+Output: `deleted.json` — `{ ward, serial, epic_id, photos_pdf_page,
+stamp_bbox_pt }` per struck voter, sorted by ward and serial. Per ward:
+`1:3  2:9  3:13  4:9  5:12  6:17  7:10  8:8  9:1  11:12  12:11  13:2`
+(ward 10 has none), 107 distinct EPICs — no voter stamped twice.
+
+`mobile/scripts/generate-ward-bundles.ts` merges this file at bundle time,
+setting `deleted: true` on those rows only (absent otherwise), and aborts if
+a marker's EPIC disagrees with its row or points at a serial that does not
+exist — so the mobile card and the admin panel can only ever badge a voter
+the marker actually named. `RollVoter.deleted` carries it into the UI, where
+the card layers a big diagonal DELETED badge over itself
+(`mobile/components/roll/voter-card.tsx`, `admin/src/app/voters/page.tsx`).
+
+---
+
 ## Validation (all PASSED — re-run these after any change)
 
 1. **Count** per ward == cover-page अंतिम count → 13/13 wards, 6855/6855 rows.
@@ -245,6 +274,9 @@ WEE2101913, WLK3063823`).
    is `^\d{1,6}$` or empty (the house policy — empty rows are §D).
 6. **Age vs raw text layer** — 0 remaining mismatches.
 7. No label residue (`पिता का नाम:` etc.) left inside any value column.
+8. **DELETED markers** — bundle runs print `deleted flags: 107/107 rows
+   marked`: every stamp in `deleted.json` resolves to a roll row with the
+   matching EPIC, and no EPIC is stamped twice.
 
 ## What is *not* fully machine-verified
 

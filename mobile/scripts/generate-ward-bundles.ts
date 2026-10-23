@@ -67,6 +67,13 @@ interface BundledRow {
   gender: 'male' | 'female' | 'other';
   locality: string;
   pdfPage: number;
+  /**
+   * Present (`true`) only on the rows the photos PDF stamps DELETED — the
+   * marker list in `data/rajasthan/jodhpur/jhanwar/veernagar/deleted.json`
+   * (EXTRACTION.md §Step 8). Omitted everywhere else, so a non-deleted row
+   * stays byte-for-byte what it was.
+   */
+  deleted?: boolean;
   nameEn: string;
   fatherOrHusbandNameEn: string;
   localityEn: string;
@@ -99,7 +106,44 @@ function headerIndex(header: string[], file: string): Map<string, number> {
   return index;
 }
 
-function readWardFile(wardNo: number): BundledRow[] {
+/**
+ * `deleted.json` → voter id (`w{ward}-{serial}`) → the EPIC id the marker
+ * was validated against.
+ *
+ * Written by `tools/extract_roll/deleted_flags.py` from the 106x76 DELETED
+ * stamps drawn over record cells in `data/VeerNagar-photos.pdf`. A missing or
+ * internally inconsistent file aborts the run: a bundle that silently drops
+ * the deleted flag is worse than no bundle, because both apps render the
+ * badge straight off this field.
+ */
+function readDeletedFlags(): Map<string, string> {
+  const file = path.join(DATA_DIR, 'deleted.json');
+  if (!existsSync(file)) throw new Error(`Missing ${file}`);
+
+  const parsed = JSON.parse(readFileSync(file, 'utf8')) as {
+    count?: number;
+    records?: { ward: number; serial: number; epic_id: string }[];
+  };
+  const records = parsed.records ?? [];
+  if (!records.length) throw new Error(`${file}: no records`);
+  if (parsed.count !== records.length) {
+    throw new Error(`${file}: count ${parsed.count} vs ${records.length} records`);
+  }
+
+  const byId = new Map<string, string>();
+  for (const record of records) {
+    const id = `w${record.ward}-${record.serial}`;
+    if (byId.has(id)) throw new Error(`${file}: duplicate marker for ${id}`);
+    byId.set(id, record.epic_id);
+  }
+  return byId;
+}
+
+function readWardFile(
+  wardNo: number,
+  deleted: ReadonlyMap<string, string>,
+  consumed: Set<string>
+): BundledRow[] {
   const file = path.join(DATA_DIR, `ward-${String(wardNo).padStart(2, '0')}.csv`);
   if (!existsSync(file)) throw new Error(`Missing ${file}`);
 
@@ -156,8 +200,24 @@ function readWardFile(wardNo: number): BundledRow[] {
     }
     if (problems.length > 20) return;
 
+    const id = `w${wardNo}-${serialNo}`;
+    const markedEpic = deleted.get(id);
+    if (markedEpic !== undefined) {
+      // The marker and the row must agree on WHO was struck — the flag
+      // carries no epic of its own, so a mismatch here would badge the
+      // wrong voter.
+      if (markedEpic !== at('epic_id')) {
+        problems.push(
+          `ward-${wardNo} line ${lineNo}: deleted.json says ${markedEpic}, ` +
+            `row has "${at('epic_id')}"`
+        );
+      } else {
+        consumed.add(id);
+      }
+    }
+
     voters.push({
-      id: `w${wardNo}-${serialNo}`,
+      id,
       wardNo,
       serialNo,
       epicId: at('epic_id'),
@@ -170,6 +230,9 @@ function readWardFile(wardNo: number): BundledRow[] {
       gender: gender ?? 'male',
       locality,
       pdfPage: Number.isFinite(pdfPage) ? pdfPage : 0,
+      // Omitted (not `false`) on every non-marked row — see BundledRow. A
+      // wrong epic above already threw by the time this would be written.
+      ...(markedEpic !== undefined ? { deleted: true } : {}),
       // The English copy: romanised, title-cased, regenerated from the CSV
       // above — never edited by hand, never stored anywhere but here.
       nameEn: titleCase(romanize(name)),
@@ -228,8 +291,14 @@ function main(): void {
   let totalVoters = 0;
   const tally = { male: 0, female: 0, other: 0 };
 
+  // EXTRACTION.md §Step 8 — the DELETED stamps lifted from the photos PDF.
+  const deleted = readDeletedFlags();
+  const consumedDeleted = new Set<string>();
+  let deletedRows = 0;
+
   for (const ward of summary) {
-    const voters = readWardFile(ward.wardNo);
+    const voters = readWardFile(ward.wardNo, deleted, consumedDeleted);
+    deletedRows += voters.filter((voter) => voter.deleted).length;
 
     // The summary is the ground truth the PDF extraction was checked
     // against; a mismatch here means the CSVs changed under us.
@@ -259,6 +328,17 @@ function main(): void {
       `ward ${String(ward.wardNo).padStart(2, '0')}: ${voters.length} rows -> ${path.relative(process.cwd(), file)}`
     );
   }
+
+  // Every marker must have found its row: a stale entry means the CSVs and
+  // the marker list disagree about who exists.
+  const orphaned = [...deleted.keys()].filter((id) => !consumedDeleted.has(id));
+  if (orphaned.length) {
+    throw new Error(
+      `deleted.json: ${orphaned.length} marker(s) with no matching row: ` +
+        orphaned.slice(0, 10).join(', ')
+    );
+  }
+  console.log(`deleted flags: ${deletedRows}/${deleted.size} rows marked`);
 
   writeJson(path.join(OUT_DIR, 'wards.json'), {
     generatedAt: new Date().toISOString(),

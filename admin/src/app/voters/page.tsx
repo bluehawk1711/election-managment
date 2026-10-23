@@ -706,7 +706,12 @@ function RollRow({
       <Panel
         className={cn(
           'flex items-start gap-3 p-4 transition-colors hover:border-brand-400/40',
-          selected && 'border-brand-400/60 bg-brand-500/[0.06]'
+          selected && 'border-brand-400/60 bg-brand-500/[0.06]',
+          // The DELETED stamp is absolutely centred on the card, so a
+          // marked row turns its panel into the stamp's containing block —
+          // and clips it, so the rotated ends stay inside the card instead
+          // of spilling onto the rows beside it.
+          row.deleted && 'relative overflow-hidden'
         )}
       >
       {/* The tick is what "select these for the batch" means; it sits before
@@ -792,6 +797,23 @@ function RollRow({
         <FileText className='size-3.5' />
         पर्ची
       </Button>
+
+      {/* The roll's own marker, kept big — `data/VeerNagar-photos.pdf`
+          draws this diagonal DELETED stamp across the struck record's cell,
+          so the row says it the way the paper does: over the whole card,
+          photo and fields alike, rather than as one more slot a scan would
+          skip. `pointer-events-none` keeps the row's own click targets
+          (tick, photo, slip button) working underneath it. */}
+      {row.deleted ? (
+        <div
+          aria-hidden
+          className='pointer-events-none absolute inset-0 flex items-center justify-center'
+        >
+          <span className='-rotate-[20deg] select-none text-4xl font-black tracking-[0.3em] text-signal-rose/55'>
+            DELETED
+          </span>
+        </div>
+      ) : null}
       </Panel>
     </div>
   );
