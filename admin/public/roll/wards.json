@@ -1,10 +1,10 @@
 {
-  "generatedAt": "2026-10-23T15:44:37.828Z",
+  "generatedAt": "2026-10-23T17:07:58.409Z",
   "source": "bundle",
-  "total": 6855,
+  "total": 6878,
   "tally": {
-    "male": 3832,
-    "female": 3023,
+    "male": 3842,
+    "female": 3036,
     "other": 0
   },
   "wards": [
@@ -22,9 +22,9 @@
     },
     {
       "wardNo": 2,
-      "voterCount": 778,
-      "male": 440,
-      "female": 338,
+      "voterCount": 789,
+      "male": 445,
+      "female": 344,
       "thirdGender": 0,
       "delimitation": "शंकरनगर, हिम्मतनगर, प्रेमनगर का क्षेत्र",
       "boothNo": 92,
@@ -34,9 +34,9 @@
     },
     {
       "wardNo": 3,
-      "voterCount": 808,
-      "male": 432,
-      "female": 376,
+      "voterCount": 813,
+      "male": 435,
+      "female": 378,
       "thirdGender": 0,
       "delimitation": "राधाकृष्ण विहार, विनायक विहार का क्षेत्र",
       "boothNo": 93,
@@ -58,9 +58,9 @@
     },
     {
       "wardNo": 5,
-      "voterCount": 763,
-      "male": 434,
-      "female": 329,
+      "voterCount": 770,
+      "male": 436,
+      "female": 334,
       "thirdGender": 0,
       "delimitation": "गणेश नगर, न्यू गणेश, नगर वीर तेजाजी मंदिर का क्षेत्र",
       "boothNo": 95,

@@ -21,7 +21,7 @@
  *            (mock: `public/clipboard-image.png`).
  *   select   tick rows, Select page, or Select all (the current search/ward
  *            result) to drive the bulk actions: `VoterSlipsBatchModal` tiles
- *            compact slips 3 × 7 per A4 sheet, `BulkPhoneModal` is mobile's
+ *            compact slips 2 × 6 per A4 sheet, `BulkPhoneModal` is mobile's
  *            one-number-fills-all editor, and the CSV export copies the same
  *            rows for a spreadsheet round trip. One more print path ignores
  *            search and prints the active ward in full.
@@ -342,7 +342,7 @@ export default function VotersPage() {
     });
   };
 
-  /** Tick the current page — the fast path to a 21-slip A4 sheet. */
+  /** Tick the current page — the fast path to a 12-slip A4 sheet. */
   const selectShown = () => {
     if (!filtered) return;
     setSelectedIds((previous) => {
@@ -872,7 +872,7 @@ function SelectionBar({
           {count.toLocaleString()} selected
         </span>
         <span className='hidden text-xs text-mist-600 sm:inline'>
-          · one A4 sheet holds 21 slips
+          · one A4 sheet holds 12 slips
         </span>
         <Button variant='secondary' className='ml-auto' onClick={onExport}>
           <Download className='size-3.5' />

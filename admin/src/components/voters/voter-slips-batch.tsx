@@ -3,9 +3,9 @@
 /**
  * Multi-slip printing — the batch sibling of `VoterSlipModal`.
  *
- * The field ask is a sheet, not a pile: 3 slips across × 7 down = 21 per A4
- * page. The single slip is designed to be cut out and handed over; at 21 per
- * page it has to become a COMPACT artefact (≈62 × 38 mm), so this file renders
+ * The field ask is a sheet, not a pile: 2 slips across × 6 down = 12 per A4
+ * page. The single slip is designed to be cut out and handed over; at 12 per
+ * page it has to become a COMPACT artefact (≈94 × 44 mm), so this file renders
  * a dedicated `CompactSlip` rather than shrinking the full slip's DOM. The
  * data contract is shared (`VoterSlipData`), so the fields that print are the
  * same ones the single slip prints — only the presentation is tighter.
@@ -13,8 +13,8 @@
  * Print mechanics mirror `VoterSlipModal`: a portal directly under <body>,
  * the overlay carries the `slip-overlay` class (the print stylesheet hides
  * every other body child), and `@media print` turns `.slip-batch-page` into a
- * fixed 3 × 7 grid. Pages after the first break with `break-after: page`, so
- * 22 slips are two sheets, not one overflowing sheet.
+ * fixed 2 × 6 grid. Pages after the first break with `break-after: page`, so
+ * 13 slips are two sheets, not one overflowing sheet.
  */
 import { Printer, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -22,8 +22,8 @@ import { createPortal } from "react-dom";
 import { savedRangColor } from "@/components/voters/voter-slip";
 import type { VoterSlipData } from "@/lib/roll/slip";
 
-/** How many slips fit on one A4 sheet: 3 columns × 7 rows. */
-const PER_PAGE = 21;
+/** How many slips fit on one A4 sheet: 2 columns × 6 rows. */
+const PER_PAGE = 12;
 
 export interface BatchSlipItem {
   /** Stable voter id — keys the photo fallback and the saved colour mark. */
@@ -38,7 +38,7 @@ interface Props {
   onClose: () => void;
 }
 
-/** `items` → pages of at most 21, in the order the voter list selected them. */
+/** `items` → pages of at most 12, in the order the voter list selected them. */
 function paginate(items: readonly BatchSlipItem[]): BatchSlipItem[][] {
   const pages: BatchSlipItem[][] = [];
   for (let index = 0; index < items.length; index += PER_PAGE) {
@@ -84,7 +84,7 @@ export function VoterSlipsBatchModal({ items, label, onClose }: Props) {
             <div className="slip-headerSub">
               {label ? `${label} · ` : ''}
               {items.length.toLocaleString()} पर्चियाँ · {pages.length.toLocaleString()} A4 पेज ·
-              हर पेज पर 3 × 7
+              हर पेज पर 2 × 6
             </div>
           </div>
           <button
@@ -99,7 +99,7 @@ export function VoterSlipsBatchModal({ items, label, onClose }: Props) {
 
         <div className="slip-batch-toolbar">
           <span>
-            हर पेज पर 3 कॉलम × 7 पंक्तियाँ (कुल 21 पर्चियाँ)। A4 पेपर पर प्रिंट करें।
+            हर पेज पर 2 कॉलम × 6 पंक्तियाँ (कुल 12 पर्चियाँ)। A4 पेपर पर प्रिंट करें।
           </span>
           <button
             type="button"
@@ -132,7 +132,7 @@ export function VoterSlipsBatchModal({ items, label, onClose }: Props) {
 
 /**
  * One slip at batch scale. It carries the same facts as the full slip, minus
- * the decorative divider and the long footer slogan — at 62 × 38 mm those are
+ * the decorative divider and the long footer slogan — at 94 × 44 mm those are
  * the first things that would push the EPIC or the booth off the paper.
  *
  * The title is clipped to two lines and the booth address to two; every other
@@ -169,7 +169,9 @@ function CompactSlip({ item }: { item: BatchSlipItem }) {
             ) : null}
           </div>
           <div className="slip-compact-line">
-            <span className="slip-compact-label">पिता: </span>
+            <span className="slip-compact-label">
+              {voter.relationLabel?.trim() || "पिता"}:{" "}
+            </span>
             <b>{voter.fatherName}</b>
           </div>
           <div className="slip-compact-line">
