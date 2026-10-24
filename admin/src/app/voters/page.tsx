@@ -288,8 +288,16 @@ export default function VotersPage() {
 
   const openBatch = useCallback(
     (rows: readonly VoterView[], label: string) => {
-      if (rows.length === 0) return;
-      setBatch({ items: rows.map(batchItemFor), label });
+      // Deleted voters never reach a printed slip. The operator may still see
+      // and tick them in the list (the row renders its deleted state), but a
+      // print run is a physical artefact handed to a booth — printing a
+      // struck roll would put a voter who is no longer on it into the field.
+      // Filtering here is the single choke point both print paths share
+      // ("Print full ward" and the selection bar), so a deleted row cannot
+      // slip into a sheet from either.
+      const printable = rows.filter((row) => !row.deleted);
+      if (printable.length === 0) return;
+      setBatch({ items: printable.map(batchItemFor), label });
     },
     [batchItemFor]
   );
@@ -511,7 +519,7 @@ export default function VotersPage() {
           <span className='text-xs text-mist-600'>
             {selectedRows.length > 0
               ? `${selectedRows.length.toLocaleString()} selected · use the action bar below`
-              : 'Select voters to print slips, update phone numbers, or export CSV.'}
+              : 'Select voters to print slips, update phone numbers, or export CSV. Deleted voters are skipped when printing.'}
           </span>
 
           <div className='ml-auto flex flex-wrap items-center gap-2'>
@@ -546,8 +554,8 @@ export default function VotersPage() {
               disabled={activeWard === 'all' || !scoped || scoped.length === 0}
               title={
                 activeWard === 'all'
-                  ? 'Choose a specific ward first — this prints every voter in that ward.'
-                  : `Print every voter in ward ${activeWard}, ignoring the search box.`
+                  ? 'Choose a specific ward first — this prints every active voter in that ward.'
+                  : `Print every active voter in ward ${activeWard}, ignoring the search box. Deleted voters are skipped.`
               }
             >
               <Printer className='size-3.5' />

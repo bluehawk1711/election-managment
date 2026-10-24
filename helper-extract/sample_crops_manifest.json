@@ -1,0 +1,77 @@
+[
+  {
+    "index": 0,
+    "sl_no": "1",
+    "page": 3,
+    "file": "sample_voter_p03_sl1.png",
+    "bbox_pixel": [
+      165,
+      498,
+      630,
+      683
+    ],
+    "page_image": "page_hi_03.png",
+    "page_image_width": 1653,
+    "page_image_height": 2338
+  },
+  {
+    "index": 162,
+    "sl_no": "163",
+    "page": 9,
+    "file": "sample_voter_p09_sl163.png",
+    "bbox_pixel": [
+      621,
+      437,
+      1081,
+      632
+    ],
+    "page_image": "page_hi_09.png",
+    "page_image_width": 1653,
+    "page_image_height": 2338
+  },
+  {
+    "index": 324,
+    "sl_no": "325",
+    "page": 15,
+    "file": "sample_voter_p15_sl325.png",
+    "bbox_pixel": [
+      162,
+      1019,
+      627,
+      1221
+    ],
+    "page_image": "page_hi_15.png",
+    "page_image_width": 1653,
+    "page_image_height": 2338
+  },
+  {
+    "index": 486,
+    "sl_no": "498",
+    "page": 22,
+    "file": "sample_voter_p22_sl498.png",
+    "bbox_pixel": [
+      574,
+      416,
+      1035,
+      606
+    ],
+    "page_image": "page_hi_22.png",
+    "page_image_width": 1653,
+    "page_image_height": 2338
+  },
+  {
+    "index": 648,
+    "sl_no": "241",
+    "page": 32,
+    "file": "sample_voter_p32_sl241.png",
+    "bbox_pixel": [
+      570,
+      1143,
+      1038,
+      1342
+    ],
+    "page_image": "page_hi_32.png",
+    "page_image_width": 1653,
+    "page_image_height": 2338
+  }
+]
