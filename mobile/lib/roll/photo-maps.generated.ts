@@ -4,7 +4,7 @@
  * Built by `scripts/generate-photo-maps.mjs` from the `assets/photos/ward-NN/`
  * directories. (Never put a glob ending in a star-slash in this comment —
  * that sequence closes a block comment early and turns the map into code.)
- * (7001 portraits). Every entry is a static require so Metro can bundle
+ * (7026 portraits). Every entry is a static require so Metro can bundle
  * the asset; the lookup lives in `lib/roll/photos.ts`.
  */
 export const PHOTO_ASSETS: Record<number, Record<string, number>> = {
@@ -2261,6 +2261,12 @@ export const PHOTO_ASSETS: Record<number, Record<string, number>> = {
     "w3-806": require("../../assets/photos/ward-03/w3-806.jpg"),
     "w3-807": require("../../assets/photos/ward-03/w3-807.jpg"),
     "w3-808": require("../../assets/photos/ward-03/w3-808.jpg"),
+    "w3-809": require("../../assets/photos/ward-03/w3-809.jpg"),
+    "w3-810": require("../../assets/photos/ward-03/w3-810.jpg"),
+    "w3-811": require("../../assets/photos/ward-03/w3-811.jpg"),
+    "w3-812": require("../../assets/photos/ward-03/w3-812.jpg"),
+    "w3-813": require("../../assets/photos/ward-03/w3-813.jpg"),
+    "w3-814": require("../../assets/photos/ward-03/w3-814.jpg"),
   },
   4: {
     "w4-1": require("../../assets/photos/ward-04/w4-1.jpg"),
@@ -4184,6 +4190,12 @@ export const PHOTO_ASSETS: Record<number, Record<string, number>> = {
     "w6-286": require("../../assets/photos/ward-06/w6-286.jpg"),
     "w6-287": require("../../assets/photos/ward-06/w6-287.jpg"),
     "w6-288": require("../../assets/photos/ward-06/w6-288.jpg"),
+    "w6-289": require("../../assets/photos/ward-06/w6-289.jpg"),
+    "w6-290": require("../../assets/photos/ward-06/w6-290.jpg"),
+    "w6-291": require("../../assets/photos/ward-06/w6-291.jpg"),
+    "w6-292": require("../../assets/photos/ward-06/w6-292.jpg"),
+    "w6-293": require("../../assets/photos/ward-06/w6-293.jpg"),
+    "w6-294": require("../../assets/photos/ward-06/w6-294.jpg"),
   },
   7: {
     "w7-1": require("../../assets/photos/ward-07/w7-1.jpg"),
@@ -4499,6 +4511,10 @@ export const PHOTO_ASSETS: Record<number, Record<string, number>> = {
     "w7-311": require("../../assets/photos/ward-07/w7-311.jpg"),
     "w7-312": require("../../assets/photos/ward-07/w7-312.jpg"),
     "w7-313": require("../../assets/photos/ward-07/w7-313.jpg"),
+    "w7-314": require("../../assets/photos/ward-07/w7-314.jpg"),
+    "w7-315": require("../../assets/photos/ward-07/w7-315.jpg"),
+    "w7-316": require("../../assets/photos/ward-07/w7-316.jpg"),
+    "w7-317": require("../../assets/photos/ward-07/w7-317.jpg"),
   },
   8: {
     "w8-1": require("../../assets/photos/ward-08/w8-1.jpg"),
@@ -5210,6 +5226,15 @@ export const PHOTO_ASSETS: Record<number, Record<string, number>> = {
     "w10-192": require("../../assets/photos/ward-10/w10-192.jpg"),
     "w10-193": require("../../assets/photos/ward-10/w10-193.jpg"),
     "w10-194": require("../../assets/photos/ward-10/w10-194.jpg"),
+    "w10-195": require("../../assets/photos/ward-10/w10-195.jpg"),
+    "w10-196": require("../../assets/photos/ward-10/w10-196.jpg"),
+    "w10-197": require("../../assets/photos/ward-10/w10-197.jpg"),
+    "w10-198": require("../../assets/photos/ward-10/w10-198.jpg"),
+    "w10-199": require("../../assets/photos/ward-10/w10-199.jpg"),
+    "w10-200": require("../../assets/photos/ward-10/w10-200.jpg"),
+    "w10-201": require("../../assets/photos/ward-10/w10-201.jpg"),
+    "w10-202": require("../../assets/photos/ward-10/w10-202.jpg"),
+    "w10-203": require("../../assets/photos/ward-10/w10-203.jpg"),
   },
   11: {
     "w11-1": require("../../assets/photos/ward-11/w11-1.jpg"),
