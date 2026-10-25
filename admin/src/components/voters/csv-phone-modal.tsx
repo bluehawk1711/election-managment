@@ -204,7 +204,7 @@ export function CsvPhoneModal({ voters, onClose, onSaved }: Props) {
             onClick={onClose}
             disabled={busy}
             aria-label='Close CSV import'
-            className='rounded-lg p-2 text-mist-600 transition-colors hover:bg-white/5 hover:text-mist-50 disabled:opacity-40'
+            className='rounded-lg p-2 text-mist-600 transition-colors hover:bg-black/5 dark:hover:bg-white/5 hover:text-mist-50 disabled:opacity-40'
           >
             <X className='size-4.5' />
           </button>
@@ -376,7 +376,7 @@ export function CsvPhoneModal({ voters, onClose, onSaved }: Props) {
                 Saving {progress.done.toLocaleString()} /{' '}
                 {progress.total.toLocaleString()}…
               </p>
-              <div className='mt-1.5 h-1.5 overflow-hidden rounded-full bg-white/10'>
+              <div className='mt-1.5 h-1.5 overflow-hidden rounded-full bg-black/10 dark:bg-white/10'>
                 <div
                   className='h-full rounded-full bg-brand-500 transition-all'
                   style={{ width: `${percent}%` }}
@@ -423,7 +423,7 @@ function Stat({
   tone?: 'brand' | 'rose';
 }) {
   return (
-    <div className='rounded-xl border border-line bg-white/[0.02] px-3 py-2.5'>
+    <div className='rounded-xl border border-line bg-black/[0.02] dark:bg-white/[0.02] px-3 py-2.5'>
       <p
         className={cn(
           'text-lg font-semibold tabular-nums',

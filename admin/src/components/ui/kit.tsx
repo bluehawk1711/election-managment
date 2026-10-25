@@ -44,7 +44,7 @@ const BUTTON_TONES: Record<ButtonVariant, string> = {
     'brand-gradient text-white shadow-[0_12px_32px_-14px_rgb(99_102_241/0.85)] hover:brightness-110',
   secondary:
     'border border-line-strong bg-ink-800 text-mist-200 hover:border-brand-400/50 hover:text-mist-50',
-  ghost: 'text-mist-400 hover:bg-white/5 hover:text-mist-50',
+  ghost: 'text-mist-400 hover:bg-black/5 dark:hover:bg-white/5 hover:text-mist-50',
   danger:
     'border border-signal-rose/30 bg-signal-rose/10 text-signal-rose hover:bg-signal-rose/20',
   whatsapp: 'border border-[#25D366]/35 bg-[#25D366]/12 text-[#25D366] hover:bg-[#25D366]/20',
@@ -91,7 +91,7 @@ export function Chip({
         'rounded-full border px-3 py-1 text-xs font-medium transition-all duration-150',
         active
           ? 'border-brand-400/60 bg-brand-500/15 text-brand-400 shadow-[0_0_24px_-8px_rgb(99_102_241/0.6)]'
-          : 'border-line bg-white/[0.03] text-mist-400 hover:border-line-strong hover:text-mist-200',
+          : 'border-line bg-black/[0.03] dark:bg-white/[0.03] text-mist-400 hover:border-line-strong hover:text-mist-200',
         className
       )}
     >
@@ -114,7 +114,7 @@ export function RoleBadge({ role }: { role: string | null }) {
     <span
       className={cn(
         'inline-flex items-center rounded-md border px-2 py-0.5 text-[11px] font-medium tracking-wide',
-        ROLE_TONES[role ?? ''] ?? 'border-line bg-white/[0.03] text-mist-400'
+        ROLE_TONES[role ?? ''] ?? 'border-line bg-black/[0.03] dark:bg-white/[0.03] text-mist-400'
       )}
     >
       {roleLabel(role)}
@@ -130,10 +130,10 @@ export function StatusBadge({ status }: { status: string }) {
     issue: 'bg-signal-rose/10 text-signal-rose border-signal-rose/30',
     voted: 'bg-signal-emerald/10 text-signal-emerald border-signal-emerald/30',
     notVoted: 'bg-signal-rose/10 text-signal-rose border-signal-rose/30',
-    unknown: 'bg-white/[0.04] text-mist-400 border-line',
+    unknown: 'bg-black/[0.04] dark:bg-white/[0.04] text-mist-400 border-line',
     right: 'bg-brand-500/12 text-brand-400 border-brand-400/30',
     centerRight: 'bg-brand-400/10 text-brand-400 border-brand-400/25',
-    center: 'bg-white/[0.05] text-mist-200 border-line-strong',
+    center: 'bg-black/[0.05] dark:bg-white/[0.05] text-mist-200 border-line-strong',
     centerLeft: 'bg-violet-400/10 text-violet-400 border-violet-400/25',
     left: 'bg-violet-400/12 text-violet-400 border-violet-400/30',
   };
@@ -142,7 +142,7 @@ export function StatusBadge({ status }: { status: string }) {
     <span
       className={cn(
         'inline-flex items-center rounded-md border px-2 py-0.5 text-[11px] font-medium capitalize',
-        tones[status] ?? 'border-line bg-white/[0.03] text-mist-400'
+        tones[status] ?? 'border-line bg-black/[0.03] dark:bg-white/[0.03] text-mist-400'
       )}
     >
       {label}
@@ -212,9 +212,9 @@ export function Select({
         className={cn(
           CONTROL,
           'cursor-pointer appearance-none pr-10',
-          'bg-gradient-to-b from-ink-800 to-ink-900/90 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]',
+          'bg-gradient-to-b from-ink-800 to-ink-900/90 shadow-[inset_0_1px_0_rgba(10,14,22,0.05)] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]',
           'hover:border-line-strong hover:from-ink-800/80',
-          'focus:border-brand-400/60 focus:shadow-[inset_0_1px_0_rgba(255,255,255,0.05),0_0_0_3px_rgba(99,102,241,0.14)] focus:outline-none',
+          'focus:border-brand-400/60 focus:shadow-[inset_0_1px_0_rgba(10,14,22,0.05),0_0_0_3px_rgba(99,102,241,0.14)] focus:outline-none dark:focus:shadow-[inset_0_1px_0_rgba(255,255,255,0.05),0_0_0_3px_rgba(99,102,241,0.14)]',
           className
         )}
         {...props}
@@ -261,7 +261,7 @@ export function EmptyState({
   return (
     <div className="grid place-items-center px-6 py-16 text-center">
       {icon ? (
-        <div className="mb-4 grid size-12 place-items-center rounded-2xl border border-line bg-white/[0.03] text-mist-600">
+        <div className="mb-4 grid size-12 place-items-center rounded-2xl border border-line bg-black/[0.03] dark:bg-white/[0.03] text-mist-600">
           {icon}
         </div>
       ) : null}

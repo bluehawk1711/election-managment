@@ -374,7 +374,7 @@ export default function VoterChangesPage() {
                 return (
                   <div
                     key={entry.id}
-                    className='flex flex-wrap items-start gap-3 px-4 py-3 transition-colors hover:bg-white/[0.02]'
+                    className='flex flex-wrap items-start gap-3 px-4 py-3 transition-colors hover:bg-black/[0.02] dark:hover:bg-white/[0.02]'
                   >
                     <div className='min-w-0 flex-1 basis-52'>
                       <p className='truncate text-sm text-mist-50'>
@@ -399,7 +399,7 @@ export default function VoterChangesPage() {
                           <span
                             key={key}
                             title={value}
-                            className='max-w-[220px] truncate rounded-md border border-line bg-white/[0.03] px-1.5 py-0.5 text-[11px] text-mist-400'
+                            className='max-w-[220px] truncate rounded-md border border-line bg-black/[0.03] dark:bg-white/[0.03] px-1.5 py-0.5 text-[11px] text-mist-400'
                           >
                             <span className='text-mist-600'>{key}:</span> {value || '—'}
                           </span>

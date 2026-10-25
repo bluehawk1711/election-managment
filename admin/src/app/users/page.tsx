@@ -614,7 +614,7 @@ export default function AccountsPage() {
               return (
                 <div
                   key={profile.uid}
-                  className="flex flex-wrap items-center gap-3 px-4 py-3.5 transition-colors hover:bg-white/[0.02] md:flex-nowrap"
+                  className="flex flex-wrap items-center gap-3 px-4 py-3.5 transition-colors hover:bg-black/[0.02] dark:hover:bg-white/[0.02] md:flex-nowrap"
                 >
                   <Initials name={profile.displayName || profile.email} />
                   <div className="min-w-0 flex-1">
@@ -633,7 +633,7 @@ export default function AccountsPage() {
                       {profile.device ? (
                         <span
                           title={`Bound from this device ${formatWhen(profile.device.lastActiveAt)} — one account, one device; a sign-in anywhere else locks it.`}
-                          className="inline-flex max-w-full items-center gap-1 rounded-md border border-line bg-white/[0.03] px-1.5 py-0.5 text-[10px] text-mist-500"
+                          className="inline-flex max-w-full items-center gap-1 rounded-md border border-line bg-black/[0.03] dark:bg-white/[0.03] px-1.5 py-0.5 text-[10px] text-mist-500"
                         >
                           <Smartphone className="size-3 shrink-0" />
                           <span className="truncate">
@@ -643,7 +643,7 @@ export default function AccountsPage() {
                       ) : (
                         <span
                           title="This account has never bound a device — the next sign-in (from an app or the web) will bind it."
-                          className="rounded-md border border-line bg-white/[0.02] px-1.5 py-0.5 text-[10px] text-mist-600"
+                          className="rounded-md border border-line bg-black/[0.02] dark:bg-white/[0.02] px-1.5 py-0.5 text-[10px] text-mist-600"
                         >
                           no device yet
                         </span>
@@ -691,7 +691,7 @@ export default function AccountsPage() {
                   <div className="flex items-center gap-3">
                     <RoleBadge role={profile.role} />
                     {profile.role === 'karykarta' && profile.wardNo ? (
-                      <span className="rounded-md border border-line bg-white/[0.03] px-2 py-0.5 text-[11px] tabular-nums text-mist-400">
+                      <span className="rounded-md border border-line bg-black/[0.03] dark:bg-white/[0.03] px-2 py-0.5 text-[11px] tabular-nums text-mist-400">
                         ward {profile.wardNos?.join(', ') ?? profile.wardNo}
                       </span>
                     ) : null}
@@ -1023,7 +1023,7 @@ export default function AccountsPage() {
                           className={`rounded-md border px-2 py-1 text-[11px] transition-colors ${
                             nextTeam.trim() === label
                               ? 'border-brand-400/60 bg-brand-500/15 text-brand-300'
-                              : 'border-line-strong bg-white/[0.03] text-mist-300 hover:border-brand-400/50 hover:text-mist-50'
+                              : 'border-line-strong bg-black/[0.03] dark:bg-white/[0.03] text-mist-300 hover:border-brand-400/50 hover:text-mist-50'
                           }`}
                         >
                           {label}
@@ -1237,7 +1237,7 @@ export default function AccountsPage() {
                   <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
                     <RoleBadge role={detailProfile.role} />
                     {detailProfile.wardNo != null ? (
-                      <span className="rounded-md border border-line bg-white/[0.03] px-1.5 py-0.5 text-[10px] tabular-nums text-mist-400">
+                      <span className="rounded-md border border-line bg-black/[0.03] dark:bg-white/[0.03] px-1.5 py-0.5 text-[10px] tabular-nums text-mist-400">
                         ward {detailProfile.wardNos?.join(', ') ?? detailProfile.wardNo}
                       </span>
                     ) : null}
@@ -1256,7 +1256,7 @@ export default function AccountsPage() {
                 <button
                   onClick={() => setDetailTarget(null)}
                   aria-label="Close"
-                  className="rounded-lg p-1.5 text-mist-600 transition-colors hover:bg-white/5 hover:text-mist-200"
+                  className="rounded-lg p-1.5 text-mist-600 transition-colors hover:bg-black/5 dark:hover:bg-white/5 hover:text-mist-200"
                 >
                   <X className="size-4" />
                 </button>
@@ -1264,7 +1264,7 @@ export default function AccountsPage() {
 
               <div className="mt-5 space-y-4 text-xs">
                 {/* Profile — everything the users/{uid} document carries. */}
-                <section className="rounded-xl border border-line bg-white/[0.02] p-3.5">
+                <section className="rounded-xl border border-line bg-black/[0.02] dark:bg-white/[0.02] p-3.5">
                   <h3 className="mb-2.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-mist-600">
                     Profile
                   </h3>
@@ -1312,7 +1312,7 @@ export default function AccountsPage() {
 
                 {/* Login record — the Firebase Auth side, via the local
                     Admin-SDK route. */}
-                <section className="rounded-xl border border-line bg-white/[0.02] p-3.5">
+                <section className="rounded-xl border border-line bg-black/[0.02] dark:bg-white/[0.02] p-3.5">
                   <h3 className="mb-2.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-mist-600">
                     Login record (Firebase Auth)
                   </h3>
@@ -1359,7 +1359,7 @@ export default function AccountsPage() {
                 {/* Password vault — managers only; the rules would deny the
                     read for anyone else, so the section is not even asked. */}
                 {canManage ? (
-                  <section className="rounded-xl border border-line bg-white/[0.02] p-3.5">
+                  <section className="rounded-xl border border-line bg-black/[0.02] dark:bg-white/[0.02] p-3.5">
                     <h3 className="mb-2.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-mist-600">
                       Password vault
                     </h3>
@@ -1394,7 +1394,7 @@ export default function AccountsPage() {
                 ) : null}
 
                 {/* Current load — assigned tasks, one-shot read. */}
-                <section className="rounded-xl border border-line bg-white/[0.02] p-3.5">
+                <section className="rounded-xl border border-line bg-black/[0.02] dark:bg-white/[0.02] p-3.5">
                   <h3 className="mb-2.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-mist-600">
                     Current load
                   </h3>

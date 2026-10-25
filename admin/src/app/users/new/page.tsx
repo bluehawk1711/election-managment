@@ -119,7 +119,7 @@ export default function NewAccountPage() {
         <Link
           href="/users"
           aria-label="Back to accounts"
-          className="rounded-lg border border-line bg-white/[0.03] p-2 text-mist-400 transition-colors hover:text-mist-50"
+          className="rounded-lg border border-line bg-black/[0.03] dark:bg-white/[0.03] p-2 text-mist-400 transition-colors hover:text-mist-50"
         >
           <ArrowLeft className="size-4" />
         </Link>

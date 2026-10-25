@@ -224,7 +224,7 @@ export function BulkPhoneModal({ voters, onClose, onSaved }: Props) {
             onClick={onClose}
             disabled={busy}
             aria-label="Close bulk phone update"
-            className="rounded-lg p-2 text-mist-600 transition-colors hover:bg-white/5 hover:text-mist-50 disabled:opacity-40"
+            className="rounded-lg p-2 text-mist-600 transition-colors hover:bg-black/5 dark:hover:bg-white/5 hover:text-mist-50 disabled:opacity-40"
           >
             <X className="size-4.5" />
           </button>
@@ -297,7 +297,7 @@ function BulkPhoneRow({
   const e = voter.effective;
 
   return (
-    <div className="rounded-xl border border-line bg-white/[0.02] p-3">
+    <div className="rounded-xl border border-line bg-black/[0.02] dark:bg-white/[0.02] p-3">
       <div className="flex items-center gap-3">
         {photo && !photoFailed ? (
           // eslint-disable-next-line @next/next/no-img-element

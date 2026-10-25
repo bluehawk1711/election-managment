@@ -308,7 +308,7 @@ export default function TasksPage() {
               return (
                 <div
                   key={task.id}
-                  className="flex flex-wrap items-start gap-3 px-4 py-3.5 transition-colors hover:bg-white/[0.02] lg:flex-nowrap"
+                  className="flex flex-wrap items-start gap-3 px-4 py-3.5 transition-colors hover:bg-black/[0.02] dark:hover:bg-white/[0.02] lg:flex-nowrap"
                 >
                   <div className="min-w-0 flex-1 basis-full lg:basis-auto">
                     <div className="flex flex-wrap items-center gap-2">

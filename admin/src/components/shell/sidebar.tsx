@@ -143,7 +143,7 @@ export function Rail({ compact, onNavigate, overlay = false }: RailProps) {
             onClick={collapse}
             aria-label={compact ? 'Expand sidebar' : 'Collapse sidebar'}
             className={cn(
-              'rounded-lg p-2 text-mist-600 transition-colors hover:bg-white/5 hover:text-mist-200'
+              'rounded-lg p-2 text-mist-600 transition-colors hover:bg-black/5 dark:hover:bg-white/5 hover:text-mist-200'
             )}
           >
             <PanelLeft className={cn('size-4 transition-transform', compact && 'rotate-180')} />
@@ -164,7 +164,7 @@ export function Rail({ compact, onNavigate, overlay = false }: RailProps) {
               title={compact ? item.label : undefined}
               className={cn(
                 'relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors duration-150',
-                active ? 'text-white' : 'text-mist-400 hover:bg-white/[0.04] hover:text-mist-200',
+                active ? 'text-white' : 'text-mist-400 hover:bg-black/[0.04] dark:hover:bg-white/[0.04] hover:text-mist-200',
                 compact && 'justify-center px-0'
               )}
             >

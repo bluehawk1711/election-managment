@@ -511,7 +511,7 @@ export default function VotersPage() {
                   ? 'border-brand-400 bg-brand-500 text-white'
                   : someFilteredSelected
                     ? 'border-brand-400/70 bg-brand-500/20 text-brand-400'
-                    : 'border-line-strong bg-white/[0.03] text-transparent'
+                    : 'border-line-strong bg-black/[0.03] dark:bg-white/[0.03] text-transparent'
               )}
             >
               {someFilteredSelected && !allFilteredSelected ? (
@@ -746,7 +746,7 @@ function RollRow({
           'mt-5 grid size-5 shrink-0 place-items-center rounded border transition-colors',
           selected
             ? 'border-brand-400 bg-brand-500 text-white'
-            : 'border-line-strong bg-white/[0.03] text-transparent hover:border-brand-400/60'
+            : 'border-line-strong bg-black/[0.03] dark:bg-white/[0.03] text-transparent hover:border-brand-400/60'
         )}
       >
         <Check className='size-3.5' strokeWidth={3} />

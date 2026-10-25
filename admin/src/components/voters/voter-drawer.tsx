@@ -394,7 +394,7 @@ export function VoterDrawer({
           <button
             onClick={onClose}
             aria-label="Close voter"
-            className="rounded-lg p-2 text-mist-600 transition-colors hover:bg-white/5 hover:text-mist-50"
+            className="rounded-lg p-2 text-mist-600 transition-colors hover:bg-black/5 dark:hover:bg-white/5 hover:text-mist-50"
           >
             <X className="size-4.5" />
           </button>
@@ -437,7 +437,7 @@ export function VoterDrawer({
                     'inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors',
                     tel
                       ? 'border-signal-emerald/40 bg-signal-emerald/10 text-signal-emerald hover:bg-signal-emerald/20'
-                      : 'pointer-events-none border-line bg-white/[0.02] text-mist-600'
+                      : 'pointer-events-none border-line bg-black/[0.02] dark:bg-white/[0.02] text-mist-600'
                   )}
                 >
                   <Phone className="size-3.5" /> Call
@@ -456,7 +456,7 @@ export function VoterDrawer({
                     'inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors',
                     wa
                       ? 'border-[#25D366]/35 bg-[#25D366]/12 text-[#25D366] hover:bg-[#25D366]/20'
-                      : 'pointer-events-none border-line bg-white/[0.02] text-mist-600'
+                      : 'pointer-events-none border-line bg-black/[0.02] dark:bg-white/[0.02] text-mist-600'
                   )}
                 >
                   <MessageCircle className="size-3.5" /> WhatsApp
@@ -520,7 +520,7 @@ export function VoterDrawer({
                             key={author.uid}
                             className="inline-flex items-center gap-1 text-[11px] text-mist-400"
                           >
-                            <span className="grid size-4 place-items-center rounded-full bg-white/[0.07] text-[8px] font-semibold text-mist-200">
+                            <span className="grid size-4 place-items-center rounded-full bg-black/[0.07] dark:bg-white/[0.07] text-[8px] font-semibold text-mist-200">
                               {(author.authorName[0] ?? '?').toUpperCase()}
                             </span>
                             {author.authorName}
@@ -606,7 +606,7 @@ export function VoterDrawer({
                 )}
               </div>
             ) : (
-              <p className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-line bg-white/[0.02] px-3 py-2 text-[11px] text-mist-600">
+              <p className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-line bg-black/[0.02] dark:bg-white/[0.02] px-3 py-2 text-[11px] text-mist-600">
                 <Info className="size-3.5" />
                 Your role cannot propose numbers for ward {row.wardNo}.
               </p>

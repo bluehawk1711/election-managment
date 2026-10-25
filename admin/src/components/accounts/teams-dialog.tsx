@@ -211,7 +211,7 @@ export function TeamsDialog({
               <button
                 onClick={onClose}
                 aria-label='Close'
-                className='rounded-lg p-2 text-mist-600 transition-colors hover:bg-white/[0.06] hover:text-mist-200'
+                className='rounded-lg p-2 text-mist-600 transition-colors hover:bg-black/[0.06] dark:hover:bg-white/[0.06] hover:text-mist-200'
               >
                 <X className='size-4' />
               </button>
@@ -273,7 +273,7 @@ export function TeamsDialog({
                   );
                   const adding = addingTo === team.id;
                   return (
-                    <div key={team.id} className='rounded-xl border border-line bg-white/[0.02] p-3.5'>
+                    <div key={team.id} className='rounded-xl border border-line bg-black/[0.02] dark:bg-white/[0.02] p-3.5'>
                       <div className='flex items-center gap-2'>
                         <span className='inline-flex items-center gap-1.5 rounded-md border border-brand-400/35 bg-brand-400/10 px-2 py-0.5 text-xs font-medium text-brand-300'>
                           <Users className='size-3.5' />
@@ -289,7 +289,7 @@ export function TeamsDialog({
                             setPicked(new Set());
                             setError(null);
                           }}
-                          className='inline-flex items-center gap-1 rounded-lg border border-line-strong bg-white/[0.03] px-2.5 py-1 text-xs font-medium text-mist-200 transition-colors hover:border-brand-400/50 hover:text-mist-50'
+                          className='inline-flex items-center gap-1 rounded-lg border border-line-strong bg-black/[0.03] dark:bg-white/[0.03] px-2.5 py-1 text-xs font-medium text-mist-200 transition-colors hover:border-brand-400/50 hover:text-mist-50'
                         >
                           <UserPlus className='size-3.5' /> Add
                         </button>
@@ -322,7 +322,7 @@ export function TeamsDialog({
                                     : `Remove from ${team.id}`
                                 }
                                 aria-label={`Remove ${nameOf(uid, uid)} from ${team.id}`}
-                                className='rounded p-0.5 text-mist-600 transition-colors hover:bg-white/[0.06] hover:text-signal-rose disabled:cursor-not-allowed disabled:opacity-35'
+                                className='rounded p-0.5 text-mist-600 transition-colors hover:bg-black/[0.06] dark:hover:bg-white/[0.06] hover:text-signal-rose disabled:cursor-not-allowed disabled:opacity-35'
                               >
                                 <X className='size-3' />
                               </button>
@@ -363,7 +363,7 @@ export function TeamsDialog({
                                       className={`flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-xs transition-colors ${
                                         on
                                           ? 'bg-brand-500/15 text-mist-50'
-                                          : 'text-mist-400 hover:bg-white/[0.04]'
+                                          : 'text-mist-400 hover:bg-black/[0.04] dark:hover:bg-white/[0.04]'
                                       }`}
                                     >
                                       <span

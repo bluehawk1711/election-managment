@@ -11,7 +11,17 @@
    the active nav pill. Motion is state-communicating only (routes, drawers,
    staggering) — see `motion-page.tsx`. */
 @import "tailwindcss";
+@import "tw-animate-css";
 
+/* next-themes with attribute="class" toggles .dark on <html> */
+@custom-variant dark (&:is(.dark *));
+
+/* ───────────────────────────────────────────────
+   Static palette — declared once as the DARK ramp; :root below re-flips it
+   for light and .dark re-states it, so every ink/mist utility class resolves
+   per mode without touching a single className.
+   Use directly: bg-ink-900, text-mist-400, text-brand-400…
+   ─────────────────────────────────────────────── */
 @theme {
   /* Canvas */
   --color-ink-950: #06080d;
@@ -31,7 +41,7 @@
   --color-mist-400: #8b94a8;
   --color-mist-600: #5b6377;
 
-  /* Brand + signals (fixed hexes so contrast never depends on a theme flip) */
+  /* Brand + signals */
   --color-brand-400: #818cf8;
   --color-brand-500: #6366f1;
   --color-brand-600: #4f46e5;
@@ -42,8 +52,299 @@
   --color-signal-sky: #38bdf8;
 }
 
+/* ───────────────────────────────────────────────
+   Light — cool paper, white cards, indigo primary
+   ─────────────────────────────────────────────── */
 :root {
+  color-scheme: light;
+  --radius: 0.75rem;
+
+  --background: #f6f7fb;
+  --foreground: #0a0e16;
+
+  --card: #ffffff;
+  --card-foreground: #0a0e16;
+  --popover: #ffffff;
+  --popover-foreground: #0a0e16;
+
+  --primary: #4f46e5;
+  --primary-foreground: #ffffff;
+  --secondary: #eceff6;
+  --secondary-foreground: #18202f;
+  --muted: #eef1f7;
+  --muted-foreground: #5b6377;
+  --accent: #e8eaff;
+  --accent-foreground: #3730a3;
+
+  --destructive: #e11d48;
+  --destructive-foreground: #ffffff;
+  --success: #047857;
+  --success-foreground: #ffffff;
+  --warning: #f59e0b;
+  --warning-foreground: #1a1203;
+  --info: #0369a1;
+  --info-foreground: #ffffff;
+
+  --border: rgb(10 14 22 / 0.09);
+  --input: rgb(10 14 22 / 0.12);
+  --ring: #6366f1;
+
+  --chart-1: #4f46e5;
+  --chart-2: #059669;
+  --chart-3: #d97706;
+  --chart-4: #0284c7;
+  --chart-5: #7c3aed;
+
+  --sidebar: #fbfcfe;
+  --sidebar-foreground: #0a0e16;
+  --sidebar-primary: #4f46e5;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #eceffb;
+  --sidebar-accent-foreground: #0a0e16;
+  --sidebar-border: rgb(10 14 22 / 0.08);
+  --sidebar-ring: #6366f1;
+
+  --card-shadow:
+    0 1px 2px rgb(10 14 22 / 0.04), 0 10px 28px -10px rgb(10 14 22 / 0.10);
+  --glow: rgb(99 102 241 / 0.10);
+
+  /* Static palette, flipped for the light canvas. Ramp order is preserved:
+     what was the brightest ink in dark becomes the darkest text in light
+     (mist-50 = primary text, mist-600 = dimmest), so hierarchy between
+     utilities like text-mist-50 and text-mist-600 survives the swap.
+     brand/signal colours darken too — #818cf8 on white is ~2.8:1, which is
+     why text-brand-400 and the status badges get indigo-600-depth values
+     here instead. */
+  --color-ink-950: #f6f7fb;
+  --color-ink-900: #ffffff;
+  --color-ink-850: #fbfcff;
+  --color-ink-800: #eceff6;
+  --color-ink-750: #e4e9f2;
+  --color-ink-700: #d9e0ec;
+
+  --color-line: rgb(10 14 22 / 0.09);
+  --color-line-strong: rgb(10 14 22 / 0.18);
+
+  --color-mist-50: #0a0e16;
+  --color-mist-200: #36404f;
+  --color-mist-400: #5b6377;
+  --color-mist-600: #6b7486;
+
+  --color-brand-400: #4f46e5;
+  --color-violet-400: #7c3aed;
+  --color-signal-emerald: #047857;
+  --color-signal-amber: #b45309;
+  --color-signal-rose: #e11d48;
+  --color-signal-sky: #0369a1;
+}
+
+/* ───────────────────────────────────────────────
+   Dark — ink canvas, stepped surfaces, soft indigo
+   ─────────────────────────────────────────────── */
+.dark {
   color-scheme: dark;
+
+  --background: #0a0e16;
+  --foreground: #eef1f7;
+
+  --card: #0e131d;
+  --card-foreground: #eef1f7;
+  --popover: #131a27;
+  --popover-foreground: #eef1f7;
+
+  --primary: #818cf8;
+  --primary-foreground: #06080d;
+  --secondary: #18202f;
+  --secondary-foreground: #eef1f7;
+  --muted: #131a27;
+  --muted-foreground: #8b94a8;
+  --accent: #1e2839;
+  --accent-foreground: #eef1f7;
+
+  --destructive: #fb7185;
+  --destructive-foreground: #06080d;
+  --success: #34d399;
+  --success-foreground: #06080d;
+  --warning: #fbbf24;
+  --warning-foreground: #06080d;
+  --info: #38bdf8;
+  --info-foreground: #06080d;
+
+  --border: rgb(255 255 255 / 0.07);
+  --input: rgb(255 255 255 / 0.10);
+  --ring: #818cf8;
+
+  --chart-1: #818cf8;
+  --chart-2: #34d399;
+  --chart-3: #fbbf24;
+  --chart-4: #38bdf8;
+  --chart-5: #a78bfa;
+
+  --sidebar: #06080d;
+  --sidebar-foreground: #c5ccd9;
+  --sidebar-primary: #818cf8;
+  --sidebar-primary-foreground: #06080d;
+  --sidebar-accent: #131a27;
+  --sidebar-accent-foreground: #eef1f7;
+  --sidebar-border: rgb(255 255 255 / 0.07);
+  --sidebar-ring: #818cf8;
+
+  --card-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.04), 0 14px 36px -14px rgb(0 0 0 / 0.65);
+  --glow: rgb(99 102 241 / 0.16);
+
+  /* Static palette restored to the dark ramp from @theme. Both this block and
+     :root are unlayered with equal specificity, so SOURCE ORDER decides —
+     .dark is declared last, which is what makes the class authoritative. */
+  --color-ink-950: #06080d;
+  --color-ink-900: #0a0e16;
+  --color-ink-850: #0e131d;
+  --color-ink-800: #131a27;
+  --color-ink-750: #18202f;
+  --color-ink-700: #1e2839;
+
+  --color-line: rgb(255 255 255 / 0.07);
+  --color-line-strong: rgb(255 255 255 / 0.14);
+
+  --color-mist-50: #eef1f7;
+  --color-mist-200: #c5ccd9;
+  --color-mist-400: #8b94a8;
+  --color-mist-600: #5b6377;
+
+  --color-brand-400: #818cf8;
+  --color-violet-400: #a78bfa;
+  --color-signal-emerald: #34d399;
+  --color-signal-amber: #fbbf24;
+  --color-signal-rose: #fb7185;
+  --color-signal-sky: #38bdf8;
+}
+
+/* ───────────────────────────────────────────────
+   Map CSS vars → Tailwind utilities (bg-card, text-primary…)
+   ─────────────────────────────────────────────── */
+/* ───────────────────────────────────────────────
+   Light twins of the legacy dark-only rules
+
+   The hand-written rules further down this file (body glow, scrollbars,
+   .panel, .glass, .edge-lit, .skeleton, .brand-text, ::selection) predate
+   theming and hardcode dark-canvas rgb() values. They stay untouched as the
+   DARK definitions; each gets a higher-specificity light twin here, so the
+   two modes share one source of truth per surface instead of duplicated
+   blocks that drift apart. Slip/paper/print styles are deliberately absent:
+   those are fixed-light artefacts in both modes.
+   ─────────────────────────────────────────────── */
+:root:not(.dark) ::selection {
+  background: rgb(99 102 241 / 0.28);
+  color: #0a0e16;
+}
+:root:not(.dark) * {
+  scrollbar-color: rgb(10 14 22 / 0.18) transparent;
+}
+:root:not(.dark) *::-webkit-scrollbar-thumb {
+  background: rgb(10 14 22 / 0.18);
+}
+:root:not(.dark) *::-webkit-scrollbar-thumb:hover {
+  background: rgb(10 14 22 / 0.34);
+}
+:root:not(.dark) .panel {
+  background: rgb(255 255 255 / 0.86);
+}
+:root:not(.dark) .edge-lit::before {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgb(10 14 22 / 0.10) 20%,
+    rgb(99 102 241 / 0.30) 55%,
+    transparent
+  );
+}
+:root:not(.dark) .glass {
+  background: rgb(255 255 255 / 0.78);
+}
+:root:not(.dark) .brand-text {
+  background-image: linear-gradient(120deg, #4f46e5, #7c3aed);
+}
+:root:not(.dark) .skeleton {
+  background: linear-gradient(
+    90deg,
+    rgb(10 14 22 / 0.04) 25%,
+    rgb(10 14 22 / 0.09) 45%,
+    rgb(10 14 22 / 0.04) 65%
+  );
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  --shadow-card: var(--card-shadow);
+}
+
+/* Soft indigo glow behind hero sections: <div class="bg-glow"> */
+@utility bg-glow {
+  background-image: radial-gradient(
+    60rem 28rem at 50% -8%,
+    var(--glow),
+    transparent 70%
+  );
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    @apply antialiased;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  ::selection {
+    background: color-mix(in oklab, var(--primary) 28%, transparent);
+  }
 }
 
 html {

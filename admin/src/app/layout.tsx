@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono, Noto_Sans_Devanagari } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
+import { AppTheme } from "./theme-provider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -37,11 +38,15 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en">
+    // next-themes writes `class="light|dark"` on <html> before first paint;
+    // letting React own that attribute would make hydration complain.
+    <html lang="en" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${notoDevanagari.variable} antialiased`}
       >
-        <Providers>{children}</Providers>
+        <AppTheme>
+          <Providers>{children}</Providers>
+        </AppTheme>
       </body>
     </html>
   );

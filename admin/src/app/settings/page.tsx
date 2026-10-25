@@ -230,7 +230,7 @@ export default function SettingsPage() {
                 </p>
               ) : null}
 
-              <p className='rounded-lg border border-line bg-white/[0.02] px-3 py-2 text-[11px] leading-relaxed text-mist-500'>
+              <p className='rounded-lg border border-line bg-black/[0.02] dark:bg-white/[0.02] px-3 py-2 text-[11px] leading-relaxed text-mist-500'>
                 The app reports its own version from <code>app.json → version</code>. Comparison
                 is numeric per segment (<code>1.10.0</code> &gt; <code>1.9.0</code>). Locking a
                 build does not remove data — it is a modal over the whole app until the update
@@ -254,7 +254,7 @@ export default function SettingsPage() {
         {/* --------------------------------------------- support line --- */}
         <Panel className='p-6'>
           <div className='flex items-center gap-3'>
-            <span className='grid size-10 place-items-center rounded-xl border border-line bg-white/[0.03]'>
+            <span className='grid size-10 place-items-center rounded-xl border border-line bg-black/[0.03] dark:bg-white/[0.03]'>
               <LifeBuoy className='size-5 text-signal-emerald' />
             </span>
             <div>
@@ -290,7 +290,7 @@ export default function SettingsPage() {
                 </p>
               ) : null}
 
-              <div className='rounded-lg border border-line bg-white/[0.02] px-3 py-2 text-[11px] leading-relaxed text-mist-500'>
+              <div className='rounded-lg border border-line bg-black/[0.02] dark:bg-white/[0.02] px-3 py-2 text-[11px] leading-relaxed text-mist-500'>
                 <span className='text-mist-400'>Preview:</span>{' '}
                 {waNumber ? (
                   <span className='text-brand-400'>

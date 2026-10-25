@@ -235,7 +235,7 @@ export default function OverviewPage() {
                     const total = Math.max(ward.male + ward.female + ward.thirdGender, 1);
                     return (
                       <StaggerItem key={ward.wardNo}>
-                        <div className="grid grid-cols-[auto_1fr_auto] items-center gap-3 rounded-lg px-2 py-2.5 transition-colors hover:bg-white/[0.03]">
+                        <div className="grid grid-cols-[auto_1fr_auto] items-center gap-3 rounded-lg px-2 py-2.5 transition-colors hover:bg-black/[0.03] dark:hover:bg-white/[0.03]">
                           <span className="w-7 text-center text-xs font-semibold tabular-nums text-mist-400">
                             {ward.wardNo}
                           </span>
@@ -248,7 +248,7 @@ export default function OverviewPage() {
                                 {ward.voterCount.toLocaleString('en-IN')}
                               </span>
                             </div>
-                            <div className="mt-1.5 flex h-1.5 overflow-hidden rounded-full bg-white/[0.05]">
+                            <div className="mt-1.5 flex h-1.5 overflow-hidden rounded-full bg-black/[0.05] dark:bg-white/[0.05]">
                               <span
                                 className="rounded-full bg-brand-500/80"
                                 style={{ width: `${(ward.male / total) * 100}%` }}
@@ -332,11 +332,11 @@ export default function OverviewPage() {
                         <span className="w-28 shrink-0">
                           <RoleBadge role={role} />
                         </span>
-                        <div className="h-2 flex-1 overflow-hidden rounded-full bg-white/[0.05]">
+                        <div className="h-2 flex-1 overflow-hidden rounded-full bg-black/[0.05] dark:bg-white/[0.05]">
                           <div
                             className={cn(
                               'h-full rounded-full',
-                              count > 0 ? 'brand-gradient' : 'bg-white/[0.04]'
+                              count > 0 ? 'brand-gradient' : 'bg-black/[0.04] dark:bg-white/[0.04]'
                             )}
                             style={{ width: `${(count / max) * 100}%` }}
                           />
@@ -366,7 +366,7 @@ export default function OverviewPage() {
             {(users.data ?? []).slice(0, 12).map((profile) => (
               <div
                 key={profile.uid}
-                className="flex items-center gap-2.5 rounded-xl border border-line bg-white/[0.02] px-3 py-2"
+                className="flex items-center gap-2.5 rounded-xl border border-line bg-black/[0.02] dark:bg-white/[0.02] px-3 py-2"
               >
                 <Initials name={profile.displayName || profile.email} size="sm" />
                 <div className="leading-tight">
