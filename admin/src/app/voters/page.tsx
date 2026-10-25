@@ -21,7 +21,7 @@
  *            (mock: `public/clipboard-image.png`).
  *   select   tick rows, Select page, or Select all (the current search/ward
  *            result) to drive the bulk actions: `VoterSlipsBatchModal` tiles
- *            compact slips 2 × 6 per A4 sheet, `BulkPhoneModal` is mobile's
+ *            compact slips on a chosen A4/A3 grid, `BulkPhoneModal` is mobile's
  *            one-number-fills-all editor, and the CSV export copies the same
  *            rows for a spreadsheet round trip. One more print path ignores
  *            search and prints the active ward in full.

@@ -1182,15 +1182,15 @@ body {
 }
 
 /* ================================================================ */
-/* Batch voter slips — 2 columns × 6 rows on A4 (12 per sheet)        */
+/* Batch voter slips — selectable grid (2-3 × 4-7) on A4 or A3        */
 /*                                                                    */
 /* The single slip is a cut-out artefact at 420px; twelve of them     */
 /* on one A4 sheet need a compact variant. These styles own ONLY the  */
 /* batch modal and the compact paper, so the single-slip design (and  */
 /* its reference PDF) is untouched.                                   */
 /*                                                                    */
-/* A4 printable box at the global 10mm margin is 190 × 277mm. With a  */
-/* 2mm gutter that is 94 × 44.3mm per slip; the compact paper is      */
+/* The batch dialog injects its own @page (6mm) and sets --slip-sheet- */
+/* vars for the chosen paper/grid — the compact paper is still the one */
 /* built to that budget, not scaled with `transform` (which would     */
 /* blur the text and break pagination).                                */
 /* ================================================================ */
@@ -1202,7 +1202,7 @@ body {
 .slip-batch-modal {
   display: flex;
   flex-direction: column;
-  width: min(1000px, 100%);
+  width: min(1120px, 100%);
   max-height: 94vh;
   overflow: hidden;
   border-radius: 18px;
@@ -1247,14 +1247,14 @@ body {
   background: #d1d5db;
 }
 
-/* One A4 page on screen: real millimetres, so the preview is the print. */
+/* One sheet on screen: real millimetres, so the preview is the print. */
 .slip-batch-page {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  grid-template-rows: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(var(--slip-sheet-cols, 2), minmax(0, 1fr));
+  grid-template-rows: repeat(var(--slip-sheet-rows, 6), minmax(0, 1fr));
   gap: 2mm;
-  width: 190mm;
-  height: 276mm;
+  width: var(--slip-sheet-w, 190mm);
+  height: var(--slip-sheet-h, 276mm);
   margin: 0 auto 18px;
   padding: 0;
   box-sizing: border-box;
@@ -1277,10 +1277,10 @@ body {
 .slip-compact {
   display: flex;
   flex-direction: column;
-  gap: 0.45mm;
+  gap: calc(0.45mm * var(--slip-scale, 1));
   width: 100%;
   height: 100%;
-  padding: 1.5mm 1.8mm;
+  padding: calc(1.5mm * var(--slip-scale, 1)) calc(1.8mm * var(--slip-scale, 1));
   box-sizing: border-box;
   overflow: hidden;
   border: 0.3mm dashed #6b7280;
@@ -1289,7 +1289,7 @@ body {
   color: #1f2937;
   font-family: var(--font-devanagari, 'Noto Sans Devanagari'), 'Mukta',
     system-ui, sans-serif;
-  font-size: 5.8pt;
+  font-size: calc(5.8pt * var(--slip-scale, 1));
   line-height: 1.15;
   -webkit-print-color-adjust: exact;
   print-color-adjust: exact;
@@ -1297,7 +1297,7 @@ body {
 
 .slip-compact-strip {
   flex-shrink: 0;
-  height: 1mm;
+  height: calc(1mm * var(--slip-scale, 1));
   border-radius: 999px;
 }
 
@@ -1305,7 +1305,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 1mm;
+  gap: calc(1mm * var(--slip-scale, 1));
   min-width: 0;
 }
 
@@ -1313,10 +1313,10 @@ body {
   display: inline-block;
   flex-shrink: 0;
   border-radius: 999px;
-  padding: 0.2mm 1.2mm;
+  padding: calc(0.2mm * var(--slip-scale, 1)) calc(1.2mm * var(--slip-scale, 1));
   background: #ea580c;
   color: #fff;
-  font-size: 4.6pt;
+  font-size: calc(4.6pt * var(--slip-scale, 1));
   font-weight: 800;
   letter-spacing: 0.01em;
   white-space: nowrap;
@@ -1325,10 +1325,10 @@ body {
 .slip-compact-ward {
   flex-shrink: 0;
   border-radius: 0.8mm;
-  padding: 0.12mm 0.9mm;
+  padding: calc(0.12mm * var(--slip-scale, 1)) calc(0.9mm * var(--slip-scale, 1));
   background: #fef3c7;
   color: #92400e;
-  font-size: 5pt;
+  font-size: calc(5pt * var(--slip-scale, 1));
   font-weight: 800;
   white-space: nowrap;
 }
@@ -1339,7 +1339,7 @@ body {
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
   color: #111827;
-  font-size: 6.4pt;
+  font-size: calc(6.4pt * var(--slip-scale, 1));
   font-weight: 800;
   line-height: 1.1;
   text-align: center;
@@ -1348,7 +1348,7 @@ body {
 .slip-compact-main {
   display: flex;
   align-items: flex-start;
-  gap: 1.5mm;
+  gap: calc(1.5mm * var(--slip-scale, 1));
   min-height: 0;
 }
 
@@ -1356,14 +1356,14 @@ body {
   display: flex;
   flex: 1;
   flex-direction: column;
-  gap: 0.4mm;
+  gap: calc(0.4mm * var(--slip-scale, 1));
   min-width: 0;
 }
 
 .slip-compact-name {
   overflow: hidden;
   color: #111827;
-  font-size: 7.6pt;
+  font-size: calc(7.6pt * var(--slip-scale, 1));
   font-weight: 800;
   line-height: 1.05;
   white-space: nowrap;
@@ -1374,7 +1374,7 @@ body {
   display: block;
   overflow: hidden;
   color: #6b7280;
-  font-size: 5pt;
+  font-size: calc(5pt * var(--slip-scale, 1));
   font-weight: 500;
   line-height: 1.05;
   white-space: nowrap;
@@ -1398,8 +1398,8 @@ body {
 
 .slip-compact-photo {
   display: block;
-  width: 13mm;
-  height: 15.5mm;
+  width: calc(13mm * var(--slip-scale, 1));
+  height: calc(15.5mm * var(--slip-scale, 1));
   border: 0.25mm solid #d1d5db;
   border-radius: 0.8mm;
   object-fit: cover;
@@ -1411,14 +1411,14 @@ body {
   border-style: dashed;
   background: #f9fafb;
   color: #9ca3af;
-  font-size: 3.8pt;
+  font-size: calc(3.8pt * var(--slip-scale, 1));
   line-height: 1;
 }
 
 .slip-compact-row {
   display: flex;
   align-items: baseline;
-  gap: 0.7mm;
+  gap: calc(0.7mm * var(--slip-scale, 1));
   min-width: 0;
   overflow: hidden;
   white-space: nowrap;
@@ -1427,7 +1427,7 @@ body {
 .slip-compact-epic {
   overflow: hidden;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 5.6pt;
+  font-size: calc(5.6pt * var(--slip-scale, 1));
   text-overflow: ellipsis;
 }
 
@@ -1438,10 +1438,10 @@ body {
   -webkit-line-clamp: 2;
   border: 0.25mm solid #e5e7eb;
   border-radius: 0.8mm;
-  padding: 0.3mm 0.9mm;
+  padding: calc(0.3mm * var(--slip-scale, 1)) calc(0.9mm * var(--slip-scale, 1));
   background: #f9fafb;
   color: #374151;
-  font-size: 5.2pt;
+  font-size: calc(5.2pt * var(--slip-scale, 1));
   line-height: 1.12;
 }
 
@@ -1449,13 +1449,13 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.8mm;
+  gap: calc(0.8mm * var(--slip-scale, 1));
   margin-top: auto;
   overflow: hidden;
   border-top: 0.25mm solid #d1d5db;
-  padding-top: 0.3mm;
+  padding-top: calc(0.3mm * var(--slip-scale, 1));
   color: #111827;
-  font-size: 4.8pt;
+  font-size: calc(4.8pt * var(--slip-scale, 1));
   font-weight: 800;
   white-space: nowrap;
 }
@@ -1464,7 +1464,7 @@ body {
   .slip-batch-modal { animation: none; }
 }
 
-/* ---------- batch print: only the 2 × 6 pages survive ---------- */
+/* ---------- batch print: only the batch pages survive ------------- */
 @media print {
   .slip-batch-header,
   .slip-batch-toolbar {
@@ -1490,13 +1490,13 @@ body {
 
   .slip-batch-page {
     display: grid !important;
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-    grid-template-rows: repeat(6, minmax(0, 1fr)) !important;
+    grid-template-columns: repeat(var(--slip-sheet-cols, 2), minmax(0, 1fr)) !important;
+    grid-template-rows: repeat(var(--slip-sheet-rows, 6), minmax(0, 1fr)) !important;
     gap: 2mm !important;
     width: 100% !important;
-    /* 276mm inside the 277mm printable box: the spare millimetre stops
-       Chrome from rounding the last row onto a blank second page. */
-    height: 276mm !important;
+    /* calc: the modal sets --slip-sheet-h for the chosen paper; minus 1mm
+       so Chrome cannot round the last row onto a blank second page. */
+    height: calc(var(--slip-sheet-h, 276mm) - 1mm) !important;
     margin: 0 !important;
     padding: 0 !important;
     box-shadow: none !important;
@@ -1515,7 +1515,7 @@ body {
   }
 
   .slip-compact {
-    border: 0.3mm dashed #000 !important;
+    border: calc(0.3mm * var(--slip-scale, 1)) dashed #000 !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
