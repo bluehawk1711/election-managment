@@ -1147,6 +1147,11 @@ body {
     backdrop-filter: none !important;
     animation: none !important;
     transform: none !important;
+    /* Screen-only centering: without this, Chrome keeps shrink-to-fitting
+       and centering the dialog to its max-content in print (place-items was
+       never reset), which is what put ~40mm empty bands on both sides of
+       every printed sheet. */
+    place-items: normal !important;
   }
 
   /* Everything in the dialog that isn't the paper. */
@@ -1253,7 +1258,7 @@ body {
   grid-template-columns: repeat(var(--slip-sheet-cols, 2), minmax(0, 1fr));
   grid-template-rows: repeat(var(--slip-sheet-rows, 6), minmax(0, 1fr));
   gap: 2mm;
-  width: var(--slip-sheet-w, 190mm);
+
   height: var(--slip-sheet-h, 276mm);
   margin: 0 auto 18px;
   padding: 0;
