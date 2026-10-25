@@ -85,8 +85,13 @@ export interface NewAccount {
   password: string;
   displayName: string;
   role: AppRole;
-  /** Required for a karykarta; ignored for every other role. */
-  wardNo: number | null;
+  /**
+   * The FULL assigned ward set — at least one ward required for a karykarta,
+   * ignored (absent from the profile) for every other role. The write stores
+   * `wardNo` as the first ward plus `wardNos` as the presence map, the same
+   * shape the admin panel's `grantRole` writes.
+   */
+  wardNos: number[] | null;
 }
 
 /**
@@ -105,6 +110,22 @@ export function useCreateAccount() {
 
   const create = useCallback(async (input: NewAccount): Promise<boolean> => {
     setError(null);
+
+    // The ward set, deduped/validated/sorted BEFORE anything is created —
+    // the rules' `$ward.matches(/^[1-9][0-9]{0,2}$/)` ceiling is mirrored
+    // here so a bad entry is a named form error, not a rolled-back Auth
+    // user. A karykarta with no ward reads nothing by design.
+    const wards = [
+      ...new Set(
+        (input.wardNos ?? []).filter(
+          (wardNo) => Number.isInteger(wardNo) && wardNo >= 1 && wardNo <= 999
+        )
+      ),
+    ].sort((a, b) => a - b);
+    if (input.role === 'karykarta' && wards.length === 0) {
+      setError('A karykarta needs at least one ward number above 0.');
+      return false;
+    }
 
     // Fail before creating anything. An account with no way to publish its
     // claim would be unusable the moment it is handed over, so "not
@@ -175,12 +196,16 @@ export function useCreateAccount() {
           photoURL: null,
           onboarded: true,
           role: input.role,
-          // Only karykarta are ward-scoped. Storing `wardNo: null` for everyone
-          // else would be harmless but misleading, and `Profile.wardNo` reads an
-          // explicit null as "unrestricted" — so absence and null mean the same
-          // thing here, and absence is what the seeded data looks like.
-          ...(input.role === 'karykarta' && input.wardNo != null
-            ? { wardNo: input.wardNo }
+          // Only karykarta are ward-scoped. `wardNo` is the FIRST assigned
+          // ward — every single-ward reader (badges, legacy tokens, scripts)
+          // keeps its meaning — while `wardNos` is the FULL set as a presence
+          // map ({"3": true, "7": true}) that /api/account/claims turns into
+          // the comma-delimited `wardNos` claim the rules' membership test
+          // reads. Both keys are ABSENT for every other role: RTDB stores no
+          // null children, and the rules refuse a present ward key on a
+          // non-karykarta rather than merely ignoring it.
+          ...(input.role === 'karykarta' && wards.length > 0
+            ? { wardNo: wards[0], wardNos: Object.fromEntries(wards.map((w) => [String(w), true])) }
             : {}),
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
@@ -216,12 +241,21 @@ export function useCreateAccount() {
         );
       }
 
-      if (
-        input.role === 'karykarta' &&
-        (input.wardNo == null || token.claims.wardNo !== input.wardNo)
-      ) {
+      if (input.role === 'karykarta' && token.claims.wardNo !== wards[0]) {
         throw new Error(
           'The new login did not receive its ward. Nothing was kept — try again.'
+        );
+      }
+
+      // The full-set claim, exactly the shape /api/account/claims mints:
+      // comma-delimited with leading/trailing commas so the rules'
+      // `.contains(',' + ward + ',')` is an exact membership test.
+      if (
+        input.role === 'karykarta' &&
+        token.claims.wardNos !== `,${wards.join(',')},`
+      ) {
+        throw new Error(
+          'The new login did not receive its ward set. Nothing was kept — try again.'
         );
       }
 

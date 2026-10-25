@@ -63,7 +63,16 @@ const CAPABILITIES = {
 
 export type Capability = keyof typeof CAPABILITIES;
 
-export type Scope = { wardNo?: number | null } | null | undefined;
+export type Scope = {
+  wardNo?: number | null;
+  /**
+   * The karykarta's FULL assigned ward set (`users/{uid}.wardNos`, parsed by
+   * `lib/documents.ts` with a fallback to the single `wardNo`). Pass both;
+   * `visibleWards` unions them so a legacy or mid-refresh profile still
+   * resolves its one ward.
+   */
+  wardNos?: readonly number[] | null;
+} | null | undefined;
 
 /** `true` when `role` holds `capability`. Unknown/absent roles hold nothing. */
 export function can(role: unknown, capability: Capability): role is AppRole {
@@ -81,8 +90,9 @@ export function roleAtLeast(role: unknown, minimum: AppRole): role is AppRole {
 /**
  * Which wards a role may read.
  *
- * A karykarta is scoped to `scope.wardNo` when one is assigned; every other
- * role sees the whole roll. `null` means "all wards".
+ * A karykarta is scoped to the SET `scope.wardNos` carries — falling back to
+ * the single `scope.wardNo` for a legacy profile; every other role sees the
+ * whole roll. `null` means "all wards".
  *
  * A karykarta with no ward assigned sees *nothing* rather than everything —
  * scope has to be granted, not defaulted, or the restriction in §5 would be
@@ -95,8 +105,13 @@ export function visibleWards(
 ): number[] | null {
   if (!can(role, 'voterRead')) return [];
   if (role === 'karykarta') {
-    const wardNo = scope?.wardNo;
-    return wardNo == null ? [] : allWards.filter((n) => n === wardNo);
+    // Union of both fields — see Scope. Filtered to real ward numbers, so a
+    // karykarta with nothing assigned still sees NOTHING: scope has to be
+    // granted, never defaulted.
+    const assigned = new Set<number>();
+    if (scope?.wardNo != null) assigned.add(scope.wardNo);
+    for (const wardNo of scope?.wardNos ?? []) assigned.add(wardNo);
+    return allWards.filter((n) => assigned.has(n));
   }
   return null; // null = unrestricted
 }

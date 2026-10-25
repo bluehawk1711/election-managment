@@ -32,8 +32,16 @@ export interface SessionState {
   displayName: string;
   /** From `users/{uid}` — null when absent or not one of the four roles. */
   role: string | null;
-  /** Only meaningful when `role === 'karykarta'`. */
+  /** Only meaningful when `role === 'karykarta'` — the FIRST assigned ward. */
   wardNo: number | null;
+  /**
+   * The full assigned ward set for a karykarta (`users/{uid}.wardNos`),
+   * normalised by providers.tsx so this field alone is the COMPLETE scope:
+   * `wardNo` exists only for legacy profiles and single-ward readers. Null =
+   * nothing assigned, which fails closed in `visibleWards` and every
+   * karykarta gate. Indexed by all ward-chip UIs (voter drawer, list).
+   */
+  wardNos: number[] | null;
   onboarded: boolean;
   /**
    * True once the `users/{uid}` listener has emitted its first snapshot.
@@ -50,6 +58,7 @@ export interface SessionState {
     displayName?: string;
     role?: string | null;
     wardNo?: number | null;
+    wardNos?: number[] | null;
     onboarded?: boolean;
   }) => void;
   signOut: () => void;
@@ -62,6 +71,7 @@ export const useSession = create<SessionState>((set) => ({
   displayName: '',
   role: null,
   wardNo: null,
+  wardNos: null,
   onboarded: false,
   profileReady: false,
 
@@ -85,6 +95,7 @@ export const useSession = create<SessionState>((set) => ({
       displayName: payload.displayName ?? state.displayName,
       role: payload.role === undefined ? state.role : payload.role,
       wardNo: payload.wardNo === undefined ? state.wardNo : payload.wardNo,
+      wardNos: payload.wardNos === undefined ? state.wardNos : payload.wardNos,
       onboarded: payload.onboarded ?? state.onboarded,
     })),
 
@@ -96,6 +107,7 @@ export const useSession = create<SessionState>((set) => ({
       displayName: '',
       role: null,
       wardNo: null,
+      wardNos: null,
       onboarded: false,
       profileReady: false,
     }),

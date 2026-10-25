@@ -68,11 +68,14 @@ export default function ReportsScreen() {
 
   const role = profile?.role ?? null;
   const wardNo = profile?.wardNo ?? null;
+  const wardNos = profile?.wardNos ?? null;
 
   // Memoised on its own: an object literal in the render body is a new
   // reference every pass, which would make every `useMemo` below that lists
-  // it as a dependency recompute unconditionally.
-  const scope = useMemo(() => ({ wardNo }), [wardNo]);
+  // it as a dependency recompute unconditionally. Both ward fields travel
+  // together — `wardNos` is the full assigned set, `wardNo` its legacy
+  // single-ward fallback (Scope's union covers either shape).
+  const scope = useMemo(() => ({ wardNo, wardNos }), [wardNo, wardNos]);
 
   const allowedWards = useMemo(() => {
     const all = (bundle?.wards ?? []).map((ward) => ward.wardNo);

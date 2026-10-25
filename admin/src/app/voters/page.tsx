@@ -125,6 +125,7 @@ function downloadVotersCsv(rows: readonly VoterView[], scope: string) {
 export default function VotersPage() {
   const role = useSession((s) => s.role);
   const wardNo = useSession((s) => s.wardNo);
+  const wardNos = useSession((s) => s.wardNos);
   const uid = useSession((s) => s.uid);
   const queryClient = useQueryClient();
 
@@ -158,8 +159,15 @@ export default function VotersPage() {
   } | null>(null);
 
   const allowed = useMemo(
-    () => (bundle ? visibleWards(role, { wardNo }, bundle.wards.map((w) => w.wardNo)) : null),
-    [role, wardNo, bundle]
+    () =>
+      bundle
+        ? visibleWards(
+            role,
+            { wardNo, wardNos },
+            bundle.wards.map((w) => w.wardNo)
+          )
+        : null,
+    [role, wardNo, wardNos, bundle]
   );
 
   const mayRead = can(role, 'voterRead');

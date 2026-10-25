@@ -129,6 +129,22 @@ export const teamFromDoc = (doc: AnyDoc): TeamRoster => {
   return { id: doc.id, members };
 };
 
+/**
+ * `users/{uid}.wardNos` is stored as `{ "3": true, "7": true }` — an RTDB-
+ * style presence map (see `grantRole` in lib/api.ts). Read back as a sorted
+ * ward list; anything malformed reads as `null` (no multi-ward set) rather
+ * than crashing the users table — same defensive contract as
+ * `parseDeviceBinding`, which sits right below.
+ */
+const parseWardNos = (value: unknown): number[] | null => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  const wards = Object.keys(value as Record<string, unknown>)
+    .filter((key) => /^[1-9][0-9]{0,2}$/.test(key))
+    .map(Number)
+    .sort((a, b) => a - b);
+  return wards.length > 0 ? wards : null;
+};
+
 export const profileFromDoc = (doc: AnyDoc): Profile => {
   const data = doc.data();
   return {
@@ -139,6 +155,11 @@ export const profileFromDoc = (doc: AnyDoc): Profile => {
     onboarded: data.onboarded === true,
     role: typeof data.role === 'string' ? data.role : null,
     wardNo: typeof data.wardNo === 'number' ? data.wardNo : null,
+    wardNos: parseWardNos(data.wardNos) ??
+      // …else fall back to the single legacy `wardNo`, so `profile.wardNos`
+      // is always the COMPLETE assigned set — the same normalisation
+      // providers.tsx applies to the session store.
+      (typeof data.wardNo === 'number' && data.wardNo > 0 ? [data.wardNo] : null),
     createdAt: data.createdAt ?? null,
     device: parseDeviceBinding(data.device),
     locked: data.locked === true,

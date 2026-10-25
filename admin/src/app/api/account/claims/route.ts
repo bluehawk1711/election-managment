@@ -27,10 +27,14 @@
  * ## Who may call it
  *
  * The route is reachable in production, so it authenticates the caller: the
- * browser sends the signed-in manager's Firebase ID token, and only a
- * superAdmin or developer whose own token is not locked may publish claims.
- * Without that check this would be an unauthenticated write endpoint that
- * could be used to force a token refresh for any uid.
+ * browser sends the signed-in manager's Firebase ID token, and only an admin,
+ * superAdmin or developer whose own token is not locked may publish claims —
+ * the exact three roles `database.rules` allows to write `role`/`wardNo`/
+ * `wardNos` on a profile, so an admin granting a karykarta wards can complete
+ * the flow instead of leaving the token stale. Widening the caller adds no
+ * forgeable input: the claims are derived from the profile server-side, never
+ * from the request body. Without that check this would be an unauthenticated
+ * write endpoint that could be used to force a token refresh for any uid.
  *
  * ## Why the Admin SDK is imported inside the handler
  *
@@ -176,13 +180,41 @@ function claimsFor(profile: Record<string, unknown> | null): Record<
   // A ward is meaningful only for a karykarta. The profile rule already
   // enforces that, but deriving the claim defensively keeps a malformed or
   // legacy profile from granting ward scope to an admin.
-  if (
-    role === 'karykarta' &&
-    typeof profile.wardNo === 'number' &&
-    Number.isFinite(profile.wardNo) &&
-    profile.wardNo > 0
-  ) {
-    claims.wardNo = profile.wardNo;
+  if (role === 'karykarta') {
+    // The assigned set lives in `users/{uid}.wardNos` — an object map
+    // (`{"3": true, "7": true}`) whose keys are the wards. A profile granted
+    // before that field existed carries only the single `wardNo`, which the
+    // grant path now also keeps in sync as the FIRST ward of the set.
+    const map = profile.wardNos;
+    const wards: number[] =
+      map && typeof map === 'object' && !Array.isArray(map)
+        ? Object.keys(map as Record<string, unknown>)
+            .filter((key) => /^[1-9][0-9]{0,2}$/.test(key))
+            .map(Number)
+            .sort((a, b) => a - b)
+        : [];
+    if (
+      wards.length === 0 &&
+      typeof profile.wardNo === 'number' &&
+      Number.isFinite(profile.wardNo) &&
+      profile.wardNo > 0
+    ) {
+      wards.push(profile.wardNo);
+    }
+
+    if (wards.length > 0) {
+      // `wardNo` — the first assigned ward — stays for every single-ward
+      // reader: older rules branches, scripts, and the create-account token
+      // check all still expect it.
+      claims.wardNo = wards[0];
+      // `wardNos` — comma-delimited WITH leading/trailing commas so the
+      // rules' `.contains(',' + ward + ',')` is an exact membership test:
+      // `,1,` can never match ward 11's `,11,`. Delimiters live in the claim
+      // (rather than being concatenated in the rule) so the rule grammar only
+      // ever calls `.contains()` on a plain token property — the documented
+      // `$room_id.contains(...)` shape.
+      claims.wardNos = `,${wards.join(',')},`;
+    }
   }
 
   if (typeof profile.teamId === 'string' && profile.teamId.trim() !== '') {
@@ -303,7 +335,9 @@ export async function POST(request: Request): Promise<Response> {
 
   if (
     caller.locked === true ||
-    (caller.role !== 'superAdmin' && caller.role !== 'developer')
+    (caller.role !== 'admin' &&
+      caller.role !== 'superAdmin' &&
+      caller.role !== 'developer')
   ) {
     log('warn', 'caller-forbidden', {
       requestId,
@@ -313,7 +347,7 @@ export async function POST(request: Request): Promise<Response> {
     });
     return reply(requestId, 403, {
       ok: false,
-      error: 'Only a super admin or developer can publish claims.',
+      error: 'Only an admin, super admin or developer can publish claims.',
       stage: 'authorization',
     });
   }

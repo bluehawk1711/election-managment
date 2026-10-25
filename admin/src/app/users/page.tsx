@@ -7,18 +7,24 @@
  *  - `can(role, 'accountView')` gates the PAGE (karykarta never see the
  *    roster — Firestore's `list` rule would deny the query anyway; the local
  *    check only spares the permission-denied toast);
- *  - `can(role, 'accountManage')` gates every WRITE control (create, role
- *    grant, delete) — same split as rules' `canViewAccounts` /
- *    `canManageAccounts`, so widened visibility can never widen power;
+ *  - `can(role, 'accountManage')` gates create / vault / lock / delete, and
+ *    `can(role, 'roleGrant')` — admin and up, the exact caller set the rules
+ *    allow to write `role`/`wardNo`/`wardNos` — gates the role-and-ward
+ *    dialog: an admin can assign a karykarta's wards while every destructive
+ *    or credential control stays super-admin-only, so widened visibility can
+ *    never widen power beyond what the rules already allow;
  *  - `firestore.rules` re-checks everything with the caller's profile — the
  *    `uid != request.auth.uid` invariants mean this UI can refuse to offer
  *    self-promotion or self-deletion, but a curl that ignores it gets denied
  *    server-side regardless.
  *
- * Role edits are `updateDoc({role, wardNo?})` — affected keys only, because
- * that is literally the rules' `hasOnly(['role', 'wardNo'])` list. Leaving
- * karykarta sends `deleteField()` for wardNo: the RESULT must not carry a
- * ward for a non-scoped role, and only a sentinel removes a key.
+ * Role edits are `updateDoc({role, wardNo?, wardNos?})` — affected keys only:
+ * `database.rules` evaluates each CHILD of `users/{uid}` against its own
+ * rule, so granting a karykarta writes `role` plus the ward pair (wardNo =
+ * first ward, wardNos = the full set), while leaving karykarta writes
+ * `wardNo: null, wardNos: null` — RTDB stores no `null` children, so writing
+ * null REMOVES the key, which is exactly the "absent" state the
+ * non-karykarta rule demands.
  */
 import {
   Eye,
@@ -102,6 +108,14 @@ export default function AccountsPage() {
   });
 
   const canManage = can(role, 'accountManage');
+  /**
+   * The role-and-ward dialog's gate — admin, superAdmin and developer, the
+   * exact caller set `database.rules` puts on the `role`/`wardNo`/`wardNos`
+   * profile children (and that /api/account/claims accepts). Separate from
+   * `canManage` so assigning a karykarta's wards is available to an admin
+   * while create/vault/lock/delete stay super-admin-only.
+   */
+  const canGrant = can(role, 'roleGrant');
   const canView = can(role, 'accountView');
 
   const [search, setSearch] = useState('');
@@ -210,23 +224,41 @@ export default function AccountsPage() {
 
   const [roleTarget, setRoleTarget] = useState<Profile | null>(null);
   const [nextRole, setNextRole] = useState<AppRole>('karykarta');
-  const [nextWard, setNextWard] = useState('');
+  const [nextWards, setNextWards] = useState('');
   const [roleBusy, setRoleBusy] = useState(false);
   const [roleError, setRoleError] = useState<string | null>(null);
 
   const openRoleDialog = (profile: Profile) => {
     setRoleTarget(profile);
     setNextRole((profile.role as AppRole | null) ?? 'karykarta');
-    setNextWard(
-      profile.wardNo != null && profile.wardNo > 0 ? String(profile.wardNo) : ''
-    );
+    // Pre-fill the FULL assigned set — `profile.wardNos` is already the
+    // complete scope (mappers.ts falls back to the single legacy wardNo).
+    setNextWards((profile.wardNos ?? []).join(', '));
     setRoleError(null);
   };
 
+  /**
+   * The ward field in this dialog: one or more ward numbers separated by
+   * commas, spaces or any other non-digit — deduped, validated against the
+   * rules' 1..999 ceiling, sorted ascending (the shape grantRole
+   * normalises and stores as wardNo + wardNos).
+   */
+  const parseWards = (text: string): number[] =>
+    [
+      ...new Set(
+        text
+          .split(/[^\d]+/)
+          .filter(Boolean)
+          .map(Number)
+          .filter((wardNo) => wardNo >= 1 && wardNo <= 999)
+      ),
+    ].sort((a, b) => a - b);
+
   const submitRole = async () => {
     if (!roleTarget) return;
-    if (nextRole === 'karykarta' && !/^[1-9][0-9]{0,2}$/.test(nextWard)) {
-      setRoleError('A karykarta needs a ward number above 0.');
+    const wards = parseWards(nextWards);
+    if (nextRole === 'karykarta' && wards.length === 0) {
+      setRoleError('A karykarta needs at least one ward number above 0.');
       return;
     }
     setRoleBusy(true);
@@ -235,13 +267,15 @@ export default function AccountsPage() {
       await grantRole({
         targetUid: roleTarget.uid,
         role: nextRole,
-        wardNo: nextRole === 'karykarta' ? Number(nextWard) : null,
+        wardNos: nextRole === 'karykarta' ? wards : null,
         profile: roleTarget,
       });
       toast.success(
         'Role updated',
         `${roleTarget.displayName || roleTarget.email} is now ${roleLabel(nextRole)}${
-          nextRole === 'karykarta' ? ` (ward ${nextWard})` : ''
+          nextRole === 'karykarta'
+            ? ` (ward${wards.length > 1 ? 's' : ''} ${wards.join(', ')})`
+            : ''
         }.`
       );
       setRoleTarget(null);
@@ -516,8 +550,11 @@ export default function AccountsPage() {
         <div>
           <h2 className="text-xl font-semibold tracking-tight text-mist-50">Accounts</h2>
           <p className="text-sm text-mist-400">
-            {users.isLoading ? 'Loading roster…' : `${rows.length} of ${(users.data ?? []).length} on file`}
-            {!canManage ? ' · read-only for your role' : ''}
+            {users.isLoading ? 'Loading roster…' : `${rows.length} of ${(users.data ?? []).length} on file`}                    {canManage
+                      ? ''
+                      : canGrant
+                        ? ' · can change roles & wards'
+                        : ' · read-only for your role'}
           </p>
         </div>
 
@@ -655,7 +692,7 @@ export default function AccountsPage() {
                     <RoleBadge role={profile.role} />
                     {profile.role === 'karykarta' && profile.wardNo ? (
                       <span className="rounded-md border border-line bg-white/[0.03] px-2 py-0.5 text-[11px] tabular-nums text-mist-400">
-                        ward {profile.wardNo}
+                        ward {profile.wardNos?.join(', ') ?? profile.wardNo}
                       </span>
                     ) : null}
                     {!profile.role ? (
@@ -681,6 +718,22 @@ export default function AccountsPage() {
                     >
                       <Info className="size-4" />
                     </button>
+                    {/* Role grant — `roleGrant` (admin and up), one level wider
+                        than the manager-only buttons beside it: an admin can
+                        assign a karykarta's wards without getting the vault,
+                        lock or delete controls. Self-grant was always blocked
+                        (the rules refuse `auth.uid === $uid` on `role`), and
+                        the button stays absent rather than disabled for it. */}
+                    {canGrant && !isSelf ? (
+                      <button
+                        onClick={() => openRoleDialog(profile)}
+                        title="Change role & wards"
+                        aria-label={`Change role & wards for ${profile.email}`}
+                        className="rounded-lg p-2 text-mist-600 transition-colors hover:bg-brand-500/10 hover:text-brand-400"
+                      >
+                        <KeyRound className="size-4" />
+                      </button>
+                    ) : null}
                     {canManage ? (
                       <>
                       {/* Check / change the password — the vault dialog. */}
@@ -748,14 +801,6 @@ export default function AccountsPage() {
                           <Lock className="size-4" />
                         </button>
                       )}
-                      <button
-                        onClick={() => openRoleDialog(profile)}
-                        disabled={isSelf}
-                        title={isSelf ? 'You cannot change your own role' : 'Change role & ward'}
-                        className="rounded-lg p-2 text-mist-600 transition-colors hover:bg-brand-500/10 hover:text-brand-400 disabled:cursor-not-allowed disabled:opacity-35"
-                      >
-                        <KeyRound className="size-4" />
-                      </button>
                       {/* Team assignment — free-form label; same-label
                           accounts read each other's field notes. Same
                           canManageAccounts gate. */}
@@ -866,17 +911,16 @@ export default function AccountsPage() {
                       className="overflow-hidden"
                     >
                       <Field
-                        label="Ward number"
-                        hint="Required — a karykarta with no ward reads nothing, by design."
+                        label="Wards"
+                        hint="One or more, comma-separated — e.g. 3, 5, 7. A karykarta with no ward reads nothing, by design."
                       >
                         <Input
-                          value={nextWard}
+                          value={nextWards}
                           onChange={(event) => {
-                            setNextWard(event.target.value.replace(/\D/g, ''));
+                            setNextWards(event.target.value);
                             setRoleError(null);
                           }}
-                          inputMode="numeric"
-                          placeholder="e.g. 3"
+                          placeholder="e.g. 3, 5, 7"
                         />
                       </Field>
                     </motion.div>
@@ -1194,7 +1238,7 @@ export default function AccountsPage() {
                     <RoleBadge role={detailProfile.role} />
                     {detailProfile.wardNo != null ? (
                       <span className="rounded-md border border-line bg-white/[0.03] px-1.5 py-0.5 text-[10px] tabular-nums text-mist-400">
-                        ward {detailProfile.wardNo}
+                        ward {detailProfile.wardNos?.join(', ') ?? detailProfile.wardNo}
                       </span>
                     ) : null}
                     {detailProfile.locked ? (
@@ -1234,7 +1278,7 @@ export default function AccountsPage() {
                       value={
                         roleLabel(detailProfile.role) +
                         (detailProfile.role === 'karykarta' && detailProfile.wardNo != null
-                          ? ` · ward ${detailProfile.wardNo}`
+                          ? ` · ward ${detailProfile.wardNos?.join(', ') ?? detailProfile.wardNo}`
                           : '')
                       }
                     />
@@ -1366,7 +1410,11 @@ export default function AccountsPage() {
                   )}
                 </section>
 
-                {canManage ? (
+                {/* Role grant needs only `roleGrant` (admin and up) — the
+                    exact caller set the rules put on the profile's
+                    `role`/`wardNo`/`wardNos` children — so an admin sees this
+                    button while everything below it stays super-admin-only. */}
+                {canGrant ? (
                   <div className="flex flex-wrap gap-2 pt-1">
                     <Button
                       variant="secondary"
@@ -1379,6 +1427,14 @@ export default function AccountsPage() {
                     >
                       <UserCog className="size-4" /> Change role
                     </Button>
+                  </div>
+                ) : null}
+
+                {/* Password vault, lock and delete — `accountManage`, i.e.
+                    super admin + developer; the rules refuse an admin the
+                    profile delete and the lock writes, so the panel does too. */}
+                {canManage ? (
+                  <div className="flex flex-wrap gap-2 pt-1">
                     <Button
                       variant="secondary"
                       onClick={() => {

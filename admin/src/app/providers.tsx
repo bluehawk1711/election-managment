@@ -63,12 +63,36 @@ function SessionEffect() {
             ? (snapshot.data() as Record<string, unknown>)
             : null;
 
+          // The full assigned ward set: the `wardNos` map when present,
+          // falling back to the single legacy `wardNo` — so `session.wardNos`
+          // is ALWAYS the complete scope and consumers need only it. The map
+          // is `{ "3": true, "7": true }` (written by grantRole / applyProfile
+          // in lib/api.ts); keys are coerced to sorted numbers, and an empty
+          // or malformed map degrades to the single ward rather than to "no
+          // scope", because a karykarta's `wardNo` is authoritative on its own.
+          const wardNos = (() => {
+            if (!data) return null;
+            if (
+              data.wardNos &&
+              typeof data.wardNos === 'object' &&
+              !Array.isArray(data.wardNos)
+            ) {
+              const wards = Object.keys(data.wardNos as Record<string, unknown>)
+                .filter((key) => /^[1-9][0-9]{0,2}$/.test(key))
+                .map(Number)
+                .sort((a, b) => a - b);
+              if (wards.length > 0) return wards;
+            }
+            return typeof data.wardNo === 'number' ? [data.wardNo] : null;
+          })();
+
           useSession.getState().applyProfile({
             // No `users` document at all reads as roleless — which is exactly
             // what the rules enforce for every path this uid could take. The
             // UI and the server agree on the same 'nothing is permitted'.
             role: data && typeof data.role === 'string' ? data.role : null,
             wardNo: data && typeof data.wardNo === 'number' ? data.wardNo : null,
+            wardNos,
             onboarded: data?.onboarded === true,
             displayName:
               data && typeof data.displayName === 'string' && data.displayName

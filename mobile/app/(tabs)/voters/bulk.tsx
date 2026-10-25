@@ -199,7 +199,7 @@ export default function BulkPhoneScreen() {
             phone: value,
             authorName: profile?.displayName || user?.email || 'Unknown',
             role: profile?.role ?? null,
-            myWardNo: profile?.wardNo ?? null,
+            myWards: profile?.wardNos ?? [],
           }).catch(() => undefined);
         }
       }

@@ -183,9 +183,15 @@ export function VoterDrawer({
   );
 
   const canFinalize = can(role, 'contactFinalize');
+  // A karykarta may only propose inside their assigned ward SET: `wardNos`
+  // is the complete scope (normalised by providers.tsx), with `wardNo` kept
+  // as a fallback so a legacy profile — a `wardNos` map not written yet —
+  // still matches its single ward. Empty set ⇒ no ward, i.e. fail closed.
+  const { wardNo, wardNos } = useSession.getState();
+  const assignedWards = wardNos ?? (wardNo != null ? [wardNo] : []);
   const canPropose =
     can(role, 'voterEdit') &&
-    (role !== 'karykarta' || (useSession.getState().wardNo ?? null) === row.wardNo);
+    (role !== 'karykarta' || assignedWards.includes(row.wardNo));
 
   const activeNum = activePhone(board?.finalPhone, overlay?.phone);
 

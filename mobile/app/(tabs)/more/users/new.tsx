@@ -62,12 +62,15 @@ function TrailingButton({
 /**
  * New account (plan-voters.md §6.5).
  *
- * The ward field appears only for a karykarta, and is required there. That is
- * not a UI convenience: `database.rules.json` refuses to create a karykarta
- * without a positive ward, and refuses to create any other role *with* one —
- * a `wardNo` on an admin is invisible in `visibleWards` but shows up in the
- * document, which is exactly the kind of disagreement that becomes "why can
- * this account see ward 9". The form mirrors the rule rather than guessing.
+ * The ward field appears only for a karykarta, and at least one ward is
+ * required there — the picker is MULTI-select because a karykarta can hold
+ * SEVERAL wards (profile `wardNos` map, with `wardNo` kept as the first).
+ * That is not a UI convenience: `database.rules.json` refuses to create a
+ * karykarta without a positive ward, and refuses to create any other role
+ * *with* one — a `wardNo` on an admin is invisible in `visibleWards` but
+ * shows up in the document, which is exactly the kind of disagreement that
+ * becomes "why can this account see ward 9". The form mirrors the rule
+ * rather than guessing.
  *
  * The role list is `APP_ROLES`, so a role added in `lib/roles.ts` appears here
  * with no second edit. It is not hard-coded, and it should not be.
@@ -90,7 +93,7 @@ export default function NewAccountScreen() {
   // retyping it — both worse than a toggle.
   const [revealed, setRevealed] = useState(false);
   const [role, setRole] = useState<AppRole>('karykarta');
-  const [wardNo, setWardNo] = useState('');
+  const [wardNos, setWardNos] = useState<number[]>([]);
   const [touched, setTouched] = useState(false);
 
   const copy = async (value: string) => {
@@ -116,7 +119,7 @@ export default function NewAccountScreen() {
   const passwordError =
     touched && password.length < 6 ? t('accounts.passwordShort') : undefined;
   const wardError =
-    touched && role === 'karykarta' && !(Number(wardNo) > 0)
+    touched && role === 'karykarta' && wardNos.length === 0
       ? t('accounts.wardRequired')
       : undefined;
 
@@ -124,7 +127,7 @@ export default function NewAccountScreen() {
     trimmedName.length > 0 &&
     /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(trimmedEmail) &&
     password.length >= 6 &&
-    (role !== 'karykarta' || Number(wardNo) > 0);
+    (role !== 'karykarta' || wardNos.length > 0);
 
   const submit = async () => {
     setTouched(true);
@@ -135,7 +138,7 @@ export default function NewAccountScreen() {
       password,
       displayName: trimmedName,
       role,
-      wardNo: role === 'karykarta' ? Number(wardNo) : null,
+      wardNos: role === 'karykarta' ? wardNos : null,
     });
 
     if (!ok) return;
@@ -262,11 +265,17 @@ export default function NewAccountScreen() {
             <Text variant='caption'>{t('accounts.wardScope')}</Text>
           <View style={styles.wards}>
             {wards.map((no) => {
-              const active = String(no) === wardNo;
+              const active = wardNos.includes(no);
               return (
                 <Pressable
                   key={no}
-                  onPress={() => setWardNo(String(no))}
+                  onPress={() =>
+                    setWardNos((selected) =>
+                      selected.includes(no)
+                        ? selected.filter((ward) => ward !== no)
+                        : [...selected, no].sort((a, b) => a - b)
+                    )
+                  }
                   style={({ pressed }) => [
                     styles.ward,
                     active && styles.wardActive,

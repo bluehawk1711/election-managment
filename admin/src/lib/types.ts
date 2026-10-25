@@ -142,6 +142,13 @@ export interface Profile {
   role: string | null;
   /** Present only for karykarta — absence and null mean "unrestricted". */
   wardNo?: number | null;
+  /**
+   * The full assigned ward set for a karykarta — `users/{uid}.wardNos`, a
+   * `{ward: true}` map read back as a sorted list. `wardNo` stays the FIRST
+   * assigned ward (legacy profiles carry only it), so readers union both;
+   * `visibleWards` in roles.ts does exactly that.
+   */
+  wardNos?: number[] | null;
   /** Firestore Timestamp or null on fresh docs. */
   createdAt?: unknown;
   /**

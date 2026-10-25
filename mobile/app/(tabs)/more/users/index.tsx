@@ -146,7 +146,13 @@ export default function UsersScreen() {
             title={item.displayName ?? item.email ?? item.id}
             subtitle={
               item.role === 'karykarta' && item.wardNo != null
-                ? t('voters.ward', { no: item.wardNo })
+                ? t('voters.ward', { no: item.wardNo }) +
+                  // Multi-ward karykarta: the first ward plus "+N" for the
+                  // rest — a suffix rather than a joined list so the row
+                  // stays one line at any i18n width.
+                  ((item.wardNos?.length ?? 1) > 1
+                    ? ` +${(item.wardNos?.length ?? 1) - 1}`
+                    : '')
                 : t('settings.allWards')
             }
             meta={t(roleLabelKey(item.role))}

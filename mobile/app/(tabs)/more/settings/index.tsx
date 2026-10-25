@@ -167,7 +167,14 @@ export default function SettingsScreen() {
               {t(roleLabelKey(profile?.role ?? null))}
             </Badge>
             {profile?.role === 'karykarta' ? (
-              <Badge variant='secondary'>{t('voters.ward', { no: profile.wardNo ?? 0 })}</Badge>
+              <Badge variant='secondary'>
+                {t('voters.ward', { no: profile.wardNo ?? 0 }) +
+                  // "+N" when more wards are assigned — see users/index.tsx
+                  // for why the set is summarised rather than joined.
+                  ((profile.wardNos?.length ?? 1) > 1
+                    ? ` +${(profile.wardNos?.length ?? 1) - 1}`
+                    : '')}
+              </Badge>
             ) : null}
           </View>
         </View>

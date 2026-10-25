@@ -39,13 +39,33 @@ const CAPABILITIES = {
   reportAllBooths: ['admin', 'superAdmin', 'developer'],
   accountView: ['admin', 'superAdmin', 'developer'],
   accountManage: ['superAdmin', 'developer'],
+  /**
+   * Grant or change a role and its ward scope (the "Change role & ward"
+   * dialog). Deliberately separate from `accountManage`: `database.rules`
+   * opens exactly these three roles the `role`/`wardNo`/`wardNos` profile
+   * children (never self-granted), and the claims route accepts the same
+   * three — so an admin can hand a karykarta wards, while vault access,
+   * locking, creating and deleting accounts stay super-admin-only on this
+   * panel. Mobile keeps `admin` inside its `accountManage`; this narrower
+   * capability exists so the panel can mirror the RULES' split rather than
+   * pick one side of it.
+   */
+  roleGrant: ['admin', 'superAdmin', 'developer'],
   contactFinalize: ['superAdmin', 'developer'],
   dataTools: ['developer'],
 } as const satisfies Record<string, readonly AppRole[]>;
 
 export type Capability = keyof typeof CAPABILITIES;
 
-export type Scope = { wardNo?: number | null } | null | undefined;
+export type Scope = {
+  wardNo?: number | null;
+  /**
+   * The full assigned set (`users/{uid}.wardNos`, a sorted ward list).
+   * `wardNo` remains the FIRST ward for legacy profiles and single-ward
+   * readers, so consumers should pass both and let `visibleWards` union them.
+   */
+  wardNos?: readonly number[] | null;
+} | null | undefined;
 
 /** `true` when `role` holds `capability`. Unknown/absent roles hold nothing. */
 export function can(role: unknown, capability: Capability): boolean {
@@ -71,8 +91,14 @@ export function visibleWards(
 ): number[] | null {
   if (!can(role, 'voterRead')) return [];
   if (role === 'karykarta') {
-    const wardNo = scope?.wardNo;
-    return wardNo == null ? [] : allWards.filter((n) => n === wardNo);
+    // The assigned set is the UNION of both fields: a multi-ward profile
+    // carries `wardNos`, a legacy or mid-refresh profile only `wardNo`.
+    // Union, then filter to real wards — a karykarta with nothing assigned
+    // still sees NOTHING, the same "scope must be granted" invariant.
+    const assigned = new Set<number>();
+    if (scope?.wardNo != null) assigned.add(scope.wardNo);
+    for (const wardNo of scope?.wardNos ?? []) assigned.add(wardNo);
+    return allWards.filter((n) => assigned.has(n));
   }
   return null;
 }

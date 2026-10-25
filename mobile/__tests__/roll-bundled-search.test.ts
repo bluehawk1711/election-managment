@@ -2,7 +2,7 @@
  * The bundled roll as the app actually reads it: `assets/roll/*.json` through
  * `bundledSource` → `mergeVoter` → `buildIndex` → `searchVoters`.
  *
- * This is the one place the *whole* pipeline is exercised against all 6,855
+ * This is the one place the *whole* pipeline is exercised against all 6,955
  * real rows rather than fixtures, and it is deliberately data-driven: the
  * expectations are derived from the same bundle, then the search must find
  * them from both scripts. If `scripts/generate-ward-bundles.ts` ever bakes a
@@ -33,9 +33,9 @@ const idsOf = (query: string): Set<string> =>
   new Set(searchVoters(VIEWS, INDEX, query).map((voter) => voter.id));
 
 describe('bundled roll integrity', () => {
-  it('carries all 6,855 rows across 13 wards', () => {
+  it('carries all 6,955 rows across 13 wards', () => {
     expect(BUNDLE_WARD_COUNT).toBe(13);
-    expect(ALL).toHaveLength(6855);
+    expect(ALL).toHaveLength(6955);
   });
 
   it('agrees with the wards summary on per-ward counts', () => {
@@ -52,8 +52,14 @@ describe('bundled roll integrity', () => {
   it('gives every row an English copy with no Devanagari left in it', () => {
     for (const row of ALL) {
       expect(row.nameEn).toBeTruthy();
-      expect(row.fatherOrHusbandNameEn).toBeTruthy();
       expect(row.localityEn).toBeTruthy();
+      // The relative's name is legitimately absent on a few roll rows (the
+      // roll itself lists no father/husband — w4-831, w8-290, w10-201).
+      // The English copy MIRRORS the Hindi field: present when it is, empty
+      // when it is — never a case of one side filled and the other dropped.
+      if (row.fatherOrHusbandName.trim()) {
+        expect(row.fatherOrHusbandNameEn).toBeTruthy();
+      }
       expect(row.nameEn).not.toMatch(/[ऀ-ॿ]/);
       expect(row.fatherOrHusbandNameEn).not.toMatch(/[ऀ-ॿ]/);
       expect(row.localityEn).not.toMatch(/[ऀ-ॿ]/);
@@ -67,9 +73,9 @@ describe('bundled roll integrity', () => {
 
   it('serves the same rows through the RollSource interface', async () => {
     await expect(bundledSource.getWards()).resolves.toMatchObject({
-      total: 6855,
+      total: 6955,
     });
-    await expect(bundledSource.getVoters(null)).resolves.toHaveLength(6855);
+    await expect(bundledSource.getVoters(null)).resolves.toHaveLength(6955);
     await expect(bundledSource.getVoters(1)).resolves.toHaveLength(648);
     await expect(bundledSource.getVoters(99)).resolves.toEqual([]);
   });
@@ -204,7 +210,7 @@ describe('search over the full roll stays bounded', () => {
   });
 
   it('an empty query returns everything in roll order', () => {
-    expect(searchVoters(VIEWS, INDEX, '   ')).toHaveLength(6855);
+    expect(searchVoters(VIEWS, INDEX, '   ')).toHaveLength(6955);
     expect(searchVoters(VIEWS, INDEX, '')[0].id).toBe('w1-1');
   });
 });

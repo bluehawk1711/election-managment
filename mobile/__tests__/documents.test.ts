@@ -146,6 +146,10 @@ describe('profileFromDoc', () => {
       onboarded: true,
       role: null,
       wardNo: null,
+      // No `wardNos` map on this doc and no `wardNo` either → the full
+      // assigned set is null (see the karykarta cases below for the
+      // fallback: a legacy single-ward profile fills this from `wardNo`).
+      wardNos: null,
       // Per-device lock fields — absent from this doc, so every one reads
       // as its documented default (never bound, unlocked, never stamped).
       device: null,
@@ -171,10 +175,46 @@ describe('profileFromDoc', () => {
 
     expect(result?.role).toBe('karykarta');
     expect(result?.wardNo).toBe(7);
+    // Legacy profile — only the single `wardNo` exists, so the full set is
+    // that one ward (the mapper's fallback, which every scope consumer
+    // relies on being complete).
+    expect(result?.wardNos).toEqual([7]);
 
     // An unrecognised value is not a role — the account keeps no capabilities
     // rather than silently inheriting a default (plan-voters.md §5).
     expect(profileFromDoc(docSnap('uid-1', { role: 'superuser' }))?.role).toBeNull();
+  });
+
+  it('reads the multi-ward set as a sorted list and keeps wardNo first', () => {
+    // The stored shape is an RTDB presence map — `{"3": true, "7": true}` —
+    // written by grantRole / createAccount. Keys parse to a sorted list so
+    // "first assigned ward" is deterministic, and `wardNo` mirrors it.
+    const result = profileFromDoc(
+      docSnap('uid-1', {
+        role: 'karykarta',
+        wardNo: 3,
+        wardNos: { '7': true, '3': true, '11': true },
+      })
+    );
+
+    expect(result?.wardNos).toEqual([3, 7, 11]);
+    expect(result?.wardNo).toBe(3);
+
+    // Junk keys (ward 0, out-of-range, non-numeric) are dropped rather than
+    // crashing the roster — same defensive contract as every other mapper
+    // read of untrusted profile data. A map that still has valid keys after
+    // cleaning is AUTHORITATIVE (the claims route derives claims the same
+    // way); the `wardNo` fallback only fires when nothing valid remains.
+    expect(
+      profileFromDoc(
+        docSnap('uid-1', { role: 'karykarta', wardNo: 2, wardNos: { '0': true, '99x': true, '5': true } })
+      )?.wardNos
+    ).toEqual([5]);
+    expect(
+      profileFromDoc(
+        docSnap('uid-1', { role: 'karykarta', wardNo: 2, wardNos: { '0': true } })
+      )?.wardNos
+    ).toEqual([2]);
   });
 
   it('treats a missing onboarded flag as false, never as true', () => {

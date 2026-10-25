@@ -522,7 +522,7 @@ function EditForm({
             phone: value,
             authorName,
             role: profile?.role ?? null,
-            myWardNo: profile?.wardNo ?? null,
+            myWards: profile?.wardNos ?? [],
           }).catch(() => undefined);
         }
         void contacts.propose(value, wardNo).catch(() => undefined);

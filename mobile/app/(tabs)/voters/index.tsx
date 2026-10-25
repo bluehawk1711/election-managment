@@ -169,16 +169,19 @@ export default function VotersScreen() {
    * an unscoped batch is fatal rather than merely wasteful: one denied ward
    * rejects the whole `Promise.all`).
    *
-   * `null` = unrestricted (admin and above). A karykarta's single ward is a
-   * fresh array only when the value changes — the fetch effect keys on the
-   * CONTENT of this array, but a stable identity keeps the render cheap too.
+   * `null` = unrestricted (admin and above). A karykarta's assigned ward SET
+   * is a fresh array only when the value changes — the fetch effect keys on
+   * the CONTENT of this array, but a stable identity keeps the render cheap
+   * too. `profile.wardNos` is already the complete scope (documents.ts falls
+   * back to the single legacy `wardNo` for a profile granted before
+   * multi-ward existed).
    */
   const wardScope = useMemo<readonly number[] | null>(() => {
     const role = profile?.role ?? null;
     if (!can(role, 'voterRead')) return [];
     if (role !== 'karykarta') return null;
-    return profile?.wardNo != null ? [profile.wardNo] : [];
-  }, [profile?.role, profile?.wardNo]);
+    return profile?.wardNos ?? [];
+  }, [profile?.role, profile?.wardNos]);
 
   const roll = useRoll(initialWard, { wardScope });
   const [query, setQuery] = useState('');
@@ -273,9 +276,12 @@ export default function VotersScreen() {
 
   const allowedWards = useMemo(() => {
     const role = profile?.role ?? null;
-    const scope = { wardNo: profile?.wardNo ?? null };
+    const scope = {
+      wardNo: profile?.wardNo ?? null,
+      wardNos: profile?.wardNos ?? null,
+    };
     return allWardNumbers.filter((wardNo) => canReadWard(role, scope, wardNo));
-  }, [allWardNumbers, profile?.role, profile?.wardNo]);
+  }, [allWardNumbers, profile?.role, profile?.wardNo, profile?.wardNos]);
 
   const restricted = allowedWards.length > 0 && allowedWards.length < allWardNumbers.length;
 

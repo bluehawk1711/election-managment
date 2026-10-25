@@ -13,6 +13,9 @@
  * and `scripts/probe-writes.mjs` asserts the proposal path. Skipping an
  * obviously-illegal write before it leaves the device turns a server rejection
  * (and its console error) into a quiet no-op.
+ *
+ * `myWards` is the proposer's full assigned set (multi-ward karykarta are a
+ * thing — `users/{uid}.wardNos`), normalised by `lib/documents.ts`.
  */
 import { auth } from '@/lib/firebase';
 import { setDoc } from '@/lib/db';
@@ -25,16 +28,17 @@ export interface ProposalWrite {
   phone: string;
   /** The proposer's display name — attribution shown to the whole team. */
   authorName: string;
-  /** The proposer's own role and ward, for the client-side pre-flight. */
+  /** The proposer's own role and assigned wards, for the client-side pre-flight. */
   role: AppRole | null;
-  myWardNo: number | null;
+  myWards: readonly number[] | null;
 }
 
 /**
  * Upserts **your own** proposal for one voter.
  *
  * Returns `false` when the write was skipped as illegal (not signed in, no
- * `voterEdit`, karykarta outside their ward, number shape rules would
+ * `voterEdit`, karykarta outside their assigned wards, number shape rules
+ * would
  * reject) — callers that mirror-share treat `false` as "kept local only" and
  * must not fail the local save over it. Throws only on a real error, which
  * the best-effort call sites catch.
@@ -43,7 +47,7 @@ export async function writeProposal(args: ProposalWrite): Promise<boolean> {
   const user = auth.currentUser;
   if (!user) return false;
   if (!can(args.role, 'voterEdit')) return false;
-  if (args.role === 'karykarta' && args.myWardNo !== args.wardNo) return false;
+  if (args.role === 'karykarta' && !(args.myWards ?? []).includes(args.wardNo)) return false;
 
   // Validate the RAW input before normalizing: `phoneKey` strips letters
   // too, so checking the normalized form would accept `98765abc210` as

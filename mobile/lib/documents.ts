@@ -46,6 +46,15 @@ export interface Profile {
   /** Ward a karykarta is assigned to; `null` for unrestricted roles. */
   wardNo: number | null;
   /**
+   * The karykarta's FULL assigned ward set — `users/{uid}.wardNos`, parsed
+   * from its `{ward: true}` map and falling back to the single `wardNo`, so
+   * this is always the complete scope. `null` for unrestricted roles. Scope
+   * consumers (`voters/index`, `reports/index`) pass BOTH fields to
+   * `visibleWards`; the map itself is what the rules read through the
+   * comma-delimited `wardNos` claim.
+   */
+  wardNos: number[] | null;
+  /**
    * The install this account is bound to — the per-device lock's record of
    * "the" device. `null` before the first launch and after a super-admin
    * unlock, which clears the binding on purpose so the next sign-in re-binds.
@@ -189,6 +198,21 @@ export function profileFromDoc(snapshot: DbDoc): Profile | null {
     onboarded: data.onboarded === true,
     role: toAppRole(data.role),
     wardNo: typeof data.wardNo === 'number' ? data.wardNo : null,
+    wardNos: (() => {
+      const map = data.wardNos;
+      const wards =
+        map && typeof map === 'object' && !Array.isArray(map)
+          ? Object.keys(map as Record<string, unknown>)
+              .filter((key) => /^[1-9][0-9]{0,2}$/.test(key))
+              .map(Number)
+              .sort((a, b) => a - b)
+          : [];
+      if (wards.length > 0) return wards;
+      // Legacy profile — the single `wardNo` is the whole scope.
+      return typeof data.wardNo === 'number' && data.wardNo > 0
+        ? [data.wardNo]
+        : null;
+    })(),
     device: parseDevice(data.device),
     locked: data.locked === true,
     lockedReason:

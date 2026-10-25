@@ -165,11 +165,17 @@
 
     // The roll itself. Unconditionally read-only: it is the reference copy of
     // an official document, and that guarantee should not rest on convention.
-    // Ward-scoped — `auth.token.wardNo` is a claim, so it cannot be widened by
-    // the client, and an admin sees every ward.
+    // Ward-scoped — `auth.token.wardNo`/`auth.token.wardNos` are claims, so the
+    // scope cannot be widened by the client, and an admin sees every ward.
+    // `wardNos` is a comma-delimited string with leading/trailing commas (",
+    // 1,7,13,") minted from `users/{uid}.wardNos` by /api/account/claims, so
+    // membership is an EXACT substring test — `,1,` never matches ward 11's
+    // `,11,`. The plain `wardNo` equality stays as the fallback for a token
+    // minted before a multi-ward grant (claims land on refresh, minutes later),
+    // and as the single-ward legacy shape.
     "voters": {
       "$docId": {
-        ".read": "auth != null && auth.token.locked !== true && (auth.token.role === 'karykarta' || auth.token.role === 'admin' || auth.token.role === 'superAdmin' || auth.token.role === 'developer') && (auth.token.role === 'admin' || auth.token.role === 'superAdmin' || auth.token.role === 'developer' || auth.token.wardNo === data.child('wardNo').val())",
+        ".read": "auth != null && auth.token.locked !== true && (auth.token.role === 'karykarta' || auth.token.role === 'admin' || auth.token.role === 'superAdmin' || auth.token.role === 'developer') && (auth.token.role === 'admin' || auth.token.role === 'superAdmin' || auth.token.role === 'developer' || auth.token.wardNo === data.child('wardNo').val() || (auth.token.wardNos != null && auth.token.wardNos.contains(',' + (data.child('wardNo').val() + '') + ',')))",
         ".write": false
       }
     },
@@ -410,6 +416,22 @@
         "wardNo": {
           ".write": "auth != null && auth.token.locked !== true && (auth.token.role === 'superAdmin' || auth.token.role === 'developer' || auth.token.role === 'admin') && auth.uid !== $uid",
           ".validate": "(newData.isNumber() && newData.val() > 0) || !newData.exists()"
+        },
+        // The FULL ward set for a multi-ward karykarta — an object map
+        // (`{"3": true, "7": true}`), not an array: RTDB stores arrays as
+        // numeric-keyed objects anyway, and the map form gives `$ward` a key
+        // to validate and gives /api/account/claims a stable key list to mint
+        // the `wardNos` claim from. `wardNo` above stays the FIRST assigned
+        // ward so every single-ward reader (badges, legacy tokens, scripts)
+        // keeps its meaning; leaving karykarta removes both keys, like wardNo.
+        // The write gate mirrors `role`/`wardNo` deliberately — same callers,
+        // same `auth.uid !== $uid` self-grant block.
+        "wardNos": {
+          ".write": "auth != null && auth.token.locked !== true && (auth.token.role === 'superAdmin' || auth.token.role === 'developer' || auth.token.role === 'admin') && auth.uid !== $uid",
+          ".validate": "!newData.exists() || newData.hasChildren()",
+          "$ward": {
+            ".validate": "newData.val() === true && $ward.matches(/^[1-9][0-9]{0,2}$/)"
+          }
         },
         "teamId": {
           ".write": "auth != null && auth.token.locked !== true && (auth.token.role === 'superAdmin' || auth.token.role === 'developer' || auth.token.role === 'admin') && auth.uid !== $uid",

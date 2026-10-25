@@ -352,15 +352,43 @@ export async function deleteTask(id: string): Promise<void> {
 // ------------------------------------------------------------------
 
 /**
+ * Positive, deduped, ascending ward numbers — the one shape every write path
+ * sends. Throws when nothing valid is left, because a karykarta with no ward
+ * reads nothing by design and `database.rules` rejects the grant just as hard.
+ * The 1..999 ceiling matches the rules' `$ward.matches(/^[1-9][0-9]{0,2}$/)` —
+ * validating here turns a server-side rejection into an immediate named error.
+ */
+function normalizeWards(wards: readonly number[] | null | undefined): number[] {
+  const unique = [
+    ...new Set(
+      (wards ?? []).filter(
+        (wardNo) => Number.isInteger(wardNo) && wardNo >= 1 && wardNo <= 999
+      )
+    ),
+  ].sort((a, b) => a - b);
+  if (unique.length === 0) {
+    throw new Error('A karykarta must be assigned to at least one ward.');
+  }
+  return unique;
+}
+
+/** The profile's object-map form RTDB stores: `{"3": true, "7": true}`. */
+function wardMap(wards: readonly number[]): Record<string, true> {
+  const map: Record<string, true> = {};
+  for (const wardNo of wards) map[String(wardNo)] = true;
+  return map;
+}
+
+/**
  * Grants or changes a role (and ward scope).
  *
  * Two rules constraints shape this:
  *
- *  - the profile's `role` and `wardNo` are separate child rules in
- *    `database.rules`, and a non-karykarta must end up with wardNo ABSENT,
- *    not null-ish — the rules validate the RESULTING node, and a `null`
- *    child is not stored at all in RTDB, which is exactly the "absent"
- *    state the rule wants;
+ *  - the profile's `role`, `wardNo` and `wardNos` are separate child rules
+ *    in `database.rules`, and a non-karykarta must end up with BOTH ward
+ *    keys ABSENT, not null-ish — the rules validate the RESULTING node, and
+ *    a `null` child is not stored at all in RTDB, which is exactly the
+ *    "absent" state the rule wants;
  *  - the ROLE ITSELF is authoritative only in the Auth custom claim, so the
  *    claim is set here too — otherwise the rules (which read
  *    `auth.token.role`) would keep the OLD role until the token refreshed.
@@ -368,26 +396,30 @@ export async function deleteTask(id: string): Promise<void> {
 export async function grantRole(args: {
   targetUid: string;
   role: AppRole;
-  /** Required and positive for karykarta; ignored for other roles. */
-  wardNo: number | null;
+  /** The full ward set for a karykarta (≥1 ward); ignored for other roles. */
+  wardNos: number[] | null;
   profile: Profile;
 }): Promise<void> {
   if (args.role === 'karykarta') {
-    if (args.wardNo == null || args.wardNo <= 0) {
-      throw new Error('A karykarta must be assigned to a ward.');
-    }
+    const wards = normalizeWards(args.wardNos);
     await updateDoc(`users/${args.targetUid}`, {
       role: args.role,
-      wardNo: args.wardNo,
+      // `wardNo` is the FIRST assigned ward — every single-ward reader (row
+      // badges, legacy tokens, verify scripts) keeps its meaning — while
+      // `wardNos` is the full set the claim minting and the rules'
+      // `.contains()` membership test read from.
+      wardNo: wards[0],
+      wardNos: wardMap(wards),
       updatedAt: Date.now(),
     });
   } else {
-    // Leaving karykarta: the old ward key must come OFF the node. RTDB
+    // Leaving karykarta: both ward keys must come OFF the node. RTDB
     // stores no `null` children, so writing `null` REMOVES the key — the
     // same outcome `deleteField()` had in Firestore.
     await updateDoc(`users/${args.targetUid}`, {
       role: args.role,
       wardNo: null,
+      wardNos: null,
       updatedAt: Date.now(),
     });
   }
@@ -904,8 +936,8 @@ export interface NewAccount {
   password: string;
   displayName: string;
   role: AppRole;
-  /** Required for karykarta; the key must be ABSENT for every other role. */
-  wardNo: number | null;
+  /** The full ward set for a karykarta (≥1); keys ABSENT for every other role. */
+  wardNos: number[] | null;
 }
 
 export async function createAccount(input: NewAccount): Promise<void> {
@@ -916,7 +948,7 @@ export async function createAccount(input: NewAccount): Promise<void> {
   console.info('[account-create] start', {
     stage,
     role: input.role,
-    wardNo: input.wardNo,
+    wardNos: input.wardNos,
   });
 
   try {
@@ -946,14 +978,13 @@ export async function createAccount(input: NewAccount): Promise<void> {
     };
 
     if (input.role === 'karykarta') {
-      if (input.wardNo == null || input.wardNo <= 0) {
-        throw new Error('A karykarta must be assigned to a ward.');
-      }
-      payload.wardNo = input.wardNo;
+      const wards = normalizeWards(input.wardNos);
+      payload.wardNo = wards[0];
+      payload.wardNos = wardMap(wards);
     }
-    // Non-karykarta: NO wardNo key at all — the rule rejects a present
-    // wardNo here, and RTDB stores no `null` children, so the key is simply
-    // absent.
+    // Non-karykarta: NO ward keys at all — the rules reject a present
+    // wardNo/wardNos here, and RTDB stores no `null` children, so the keys
+    // are simply absent.
 
     stage = 'profile';
     // `merge` maps to RTDB's update(), which evaluates each child against its
@@ -1002,7 +1033,7 @@ export async function createAccount(input: NewAccount): Promise<void> {
     console.info('[account-create] complete', {
       uid: created.uid,
       role: input.role,
-      wardNo: input.wardNo,
+      wardNos: input.wardNos,
       elapsedMs: Date.now() - started,
     });
   } catch (error) {
@@ -1010,7 +1041,7 @@ export async function createAccount(input: NewAccount): Promise<void> {
       stage,
       uid: created?.uid ?? null,
       role: input.role,
-      wardNo: input.wardNo,
+      wardNos: input.wardNos,
       elapsedMs: Date.now() - started,
       ...errorFields(error),
     });

@@ -152,10 +152,10 @@ export function useVoterContacts(
         phone,
         authorName,
         role,
-        myWardNo: profile?.wardNo ?? null,
+        myWards: profile?.wardNos ?? [],
       });
     },
-    [user, role, profile?.wardNo, proposals, authorName, voterId]
+    [user, role, profile?.wardNos, proposals, authorName, voterId]
   );
 
   const finalize = useCallback(

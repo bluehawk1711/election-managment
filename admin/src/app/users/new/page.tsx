@@ -6,9 +6,11 @@
  *
  * The form mirrors what `mobile/app/(tabs)/more/users/new.tsx` sends so both
  * surfaces produce byte-identical profile documents — the same rules, the
- * same keys, the same ward invariant (wardNo key SENT only for karykarta,
- * ABSENT for everyone else — rules reject presence for a non-karykarta, not
- * just a nonzero value).
+ * same keys, the same ward invariant (the wardNo/wardNos keys are SENT only
+ * for a karykarta, ABSENT for everyone else — rules reject presence for a
+ * non-karykarta, not just a nonzero value). A karykarta takes ONE OR MORE
+ * wards, entered comma-separated below; `createAccount` stores wardNo as the
+ * first of the set and wardNos as the full map.
  */
 import { ArrowLeft, Loader2, ShieldCheck, UserPlus } from 'lucide-react';
 import Link from 'next/link';
@@ -21,6 +23,23 @@ import { MotionPage } from '@/components/shell/motion-page';
 import { Button, Field, Input, Panel, Select } from '@/components/ui/kit';
 import { useSession } from '@/stores/session';
 
+/**
+ * The ward field: one or more ward numbers separated by commas, spaces or
+ * any other non-digit. Deduped, validated against the rules' 1..999 ceiling
+ * and sorted ascending — the exact shape `createAccount` normalises and
+ * writes as `wardNo` (the first ward) + `wardNos` (the full map).
+ */
+const parseWards = (text: string): number[] =>
+  [
+    ...new Set(
+      text
+        .split(/[^\d]+/)
+        .filter(Boolean)
+        .map(Number)
+        .filter((wardNo) => wardNo >= 1 && wardNo <= 999)
+    ),
+  ].sort((a, b) => a - b);
+
 export default function NewAccountPage() {
   const router = useRouter();
   const myRole = useSession((s) => s.role);
@@ -29,7 +48,7 @@ export default function NewAccountPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState<AppRole>('karykarta');
-  const [wardNo, setWardNo] = useState('');
+  const [wards, setWards] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -43,8 +62,8 @@ export default function NewAccountPage() {
       setError('A display name is required — the team sees it on proposals and tasks.');
       return;
     }
-    if (role === 'karykarta' && !/^[1-9][0-9]{0,3}$/.test(wardNo)) {
-      setError('A karykarta needs a ward number above 0.');
+    if (role === 'karykarta' && parseWards(wards).length === 0) {
+      setError('A karykarta needs at least one ward number above 0.');
       return;
     }
     if (password.length < 6) {
@@ -59,7 +78,7 @@ export default function NewAccountPage() {
       password,
       displayName: displayName.trim(),
       role,
-      wardNo: role === 'karykarta' ? Number(wardNo) : null,
+      wardNos: role === 'karykarta' ? parseWards(wards) : null,
     }).then(
       () => true,
       (caught: unknown) => {
@@ -161,12 +180,18 @@ export default function NewAccountPage() {
             </Field>
 
             <div className={role === 'karykarta' ? '' : 'pointer-events-none opacity-40'}>
-              <Field label="Ward (karykarta)" hint={role === 'karykarta' ? 'Required for this role.' : 'Only karykarta are ward-scoped.'}>
+              <Field
+                label="Wards (karykarta)"
+                hint={
+                  role === 'karykarta'
+                    ? 'One or more, comma-separated — e.g. 3, 5, 7. Required for this role.'
+                    : 'Only karykarta are ward-scoped.'
+                }
+              >
                 <Input
-                  value={wardNo}
-                  onChange={(event) => setWardNo(event.target.value.replace(/\D/g, ''))}
-                  inputMode="numeric"
-                  placeholder={role === 'karykarta' ? 'e.g. 3' : '—'}
+                  value={wards}
+                  onChange={(event) => setWards(event.target.value)}
+                  placeholder={role === 'karykarta' ? 'e.g. 3, 5, 7' : '—'}
                   disabled={role !== 'karykarta'}
                 />
               </Field>

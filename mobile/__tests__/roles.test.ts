@@ -106,6 +106,25 @@ describe('ward scoping', () => {
     expect(canReadWard('karykarta', { wardNo: 2 }, 3)).toBe(false);
   });
 
+  it('scopes a multi-ward karykarta to EVERY assigned ward', () => {
+    expect(visibleWards('karykarta', { wardNos: [1, 3] }, ALL)).toEqual([1, 3]);
+    expect(canReadWard('karykarta', { wardNos: [1, 3] }, 3)).toBe(true);
+    expect(canReadWard('karykarta', { wardNos: [1, 3] }, 2)).toBe(false);
+
+    // Both fields together — a normalised profile carries the full set AND
+    // the first-ward mirror. The scope is the UNION, never one over the other.
+    expect(
+      visibleWards('karykarta', { wardNo: 2, wardNos: [1, 3] }, ALL)
+    ).toEqual([1, 2, 3]);
+    expect(
+      visibleWards('karykarta', { wardNo: 1, wardNos: [1, 3] }, ALL)
+    ).toEqual([1, 3]);
+
+    // A set that is empty or malformed grants nothing — scope is never defaulted.
+    expect(visibleWards('karykarta', { wardNo: null, wardNos: [] }, ALL)).toEqual([]);
+    expect(canReadWard('karykarta', { wardNos: [] }, 1)).toBe(false);
+  });
+
   it('grants a karykarta with no assignment nothing at all', () => {
     // Scope has to be granted; defaulting to "all wards" would make the
     // restriction unenforceable in practice (plan-voters.md §5).
