@@ -13,8 +13,11 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
-/* next-themes with attribute="class" toggles .dark on <html> */
-@custom-variant dark (&:is(.dark *));
+/* next-themes with attribute="class" toggles .dark on <html>.
+   :where() keeps the variant at zero specificity and matches the <html>
+   element itself as well as its descendants (the documented Tailwind v4
+   pattern) — utilities can then sit anywhere, including on <html>. */
+@custom-variant dark (&:where(.dark, .dark *));
 
 /* ───────────────────────────────────────────────
    Static palette — declared once as the DARK ramp; :root below re-flips it
