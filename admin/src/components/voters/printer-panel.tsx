@@ -462,11 +462,7 @@ export function ThermalPrinterPanel({
               <b>प्रीव्यू</b>
               <span>{previewMeta ?? "384 dots चौड़ाई"}</span>
               <span>
-                {preview
-                  ? preview.photoIncluded
-                    ? "फोटो शामिल • 1-bit थर्मल"
-                    : "फोटो शामिल नहीं • 1-bit थर्मल"
-                  : "पर्ची डेटा से बनाया जाएगा"}
+                {preview ? "1-bit थर्मल रास्टर" : "पर्ची डेटा से बनाया जाएगा"}
               </span>
               <span>नीचे लगभग 1 cm खाली कागज़ (टियर-ऑफ के लिए) जोड़ा जाएगा।</span>
               <button

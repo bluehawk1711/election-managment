@@ -175,21 +175,24 @@ validation items. A successful write only means the browser accepted the bytes.
 ### Rendering details
 
 - Canvas width: **384 dots**. Side margins: 14 dots (1.75 mm) each.
-- The layout is derived from the existing `VoterSlipData`: voter name, relation
-  label + father/husband name, ward/serial, EPIC box, house/age/gender, booth
-  box, footer, date/time, optional rank/colour label.
-- The roll label and the ward/colour label both wrap and share a row, so a long
-  ward name does not overlap the left-hand label.
-- Long names and addresses wrap by grapheme cluster (`Intl.Segmenter` when
-  available), so a Devanagari matra is not split from its consonant.
+- The layout is the flat reference mock: four short centred cut dashes above a
+  dashed rectangle, then nine left-aligned `label : value` rows inside it —
+  वार्ड नंबर, मतदाता क्रम नंबर, नाम, आई कार्ड, व्यवसाय (printed blank; the roll
+  has no occupation field), लिंग, संबंधित नाम, बूथ नंबर, बूथ.
+- No badge, title, photo, EPIC/booth boxes, footer or date/time are drawn — the
+  reference mock has none. `VoterSlipData` still carries those fields for the
+  HTML slip and the WhatsApp message. The optional rank/colour label
+  (`rangLabel`) is accepted by the renderer but not printed.
+- Long values (names, booth addresses) wrap by grapheme cluster
+  (`Intl.Segmenter` when available), so a Devanagari matra is not split from
+  its consonant; continuation lines stay flush left.
 - Text uses the app's next/font Devanagari face
   (`--font-devanagari` on `<body>`), falling back to Mangal/Nirmala/system
   sans. Font loading is awaited before drawing, but a font failure does not
   block printing.
-- The optional photo is cover-fitted into a 104 x 126 dot box and
-  Floyd-Steinberg dithered, then drawn as 1-bit. Text and rules keep a hard
-  threshold for crisp edges. If the photo cannot be loaded or the canvas is
-  tainted, the placeholder box is printed and the slip still prints.
+- The canvas is thresholded to 1-bit with a hard cutoff (default luminance
+  180) so text and dashes keep crisp edges. The renderer no longer loads or
+  dithers photos.
 - The rendered bitmap excludes the feed, which is added by the ESC/POS builder.
   Default feed is **80 blank raster rows**, about 10 mm at 8 dots/mm. The exact
   distance depends on the mechanism and paper, so treat it as approximate.
@@ -305,8 +308,8 @@ feature.
   profile label, write mode, notification availability, and short
   service/write UUIDs. Hover the UUID line for the full values.
 - **Preview**: a PNG preview of the exact 384-dot bitmap, with its dot/mm
-  dimensions, whether the photo was included, and the approximate 10 mm feed
-  note. The preview is an in-memory data URL and is not persisted.
+  dimensions and the approximate 10 mm feed note. The preview is an in-memory
+  data URL and is not persisted.
 - **Print**: disabled until a transport is connected and the preview is ready.
   It is also disabled after an `uncertain` result; the operator must use the
   explicit two-click reprint action there.
@@ -383,7 +386,6 @@ data.
 | Status never becomes `confirmed` | No notify characteristic, firmware ignores `DLE EOT`, or notifications need a subscription that failed | `sent` is the honest result. Check the paper. Do not treat this as a software failure. |
 | Duplicate refused | Same voter/payload printed (or left uncertain) within 10 seconds | Check the output tray, then use **फिर भी प्रिंट करें** only if a second copy is really needed. |
 | Preview fails / "पर्ची की इमेज नहीं बन सकी" | Canvas/font failure or slip taller than the 2400-dot cap | Refresh the preview. If it persists, use the existing browser print/A4 flow. |
-| Photo is missing from the thermal slip | Photo file 404, timeout, or a cross-origin-tainted canvas | Confirm the `/photos/...` asset exists. The slip is designed to print without a photo. |
 
 ## Adding a new BLE firmware profile
 
@@ -432,7 +434,7 @@ pnpm lint
 Current software results (no hardware attached):
 
 - `pnpm typecheck` - passes.
-- `pnpm test` - **67 tests in 6 files pass**.
+- `pnpm test` - **79 tests in 8 files pass**.
 - `pnpm build` - production build passes (Next.js 16.4.2, Turbopack).
 - Targeted ESLint on the printer files and the changed slip files - clean.
 - Full `pnpm lint` still reports pre-existing errors in unrelated files
@@ -446,6 +448,9 @@ The tests cover:
   payload composition, and the absence of `ESC d`.
 - Bitmap thresholding, Bayer mode, alpha handling, dithering, and range checks.
 - Grapheme-aware wrapping, long-word breaks, newlines, and whitespace.
+- The thermal slip's nine `label : value` rows in the reference-mock order,
+  including the blank `व्यवसाय` line, no heading/footer leaking into the flat
+  field list, and a loud failure when no browser document exists.
 - GATT profile priority (ISSC over 18F0), profile fallbacks, UUID
   normalisation, standard-service exclusion, and refusal to guess at unknown
   vendor services.
@@ -472,15 +477,11 @@ Run this on a real unit before calling the feature field-ready:
       Note any driver/stack failures.
 - [ ] On Windows, pair the unit and test **USB / COM** over SPP. Record the
       outgoing COM port and the working baud rate (9600 first).
-- [ ] Print a normal slip with a photo. Check: 384-dot width, left/right
-      margins, Devanagari shaping, name/EPIC/booth legibility, photo
-      recognisability, dashed rules, the roughly 10 mm blank feed, and no cut
-      attempt.
-- [ ] Print a voter with a very long name, a long ward label, and a long booth
-      address. Confirm wrapping, no overlap in the roll/ward header, and no
-      clipped text.
-- [ ] Print a voter with no photo / a 404 photo. Confirm the placeholder box and
-      that the rest of the slip is unaffected.
+- [ ] Print a normal slip. Check: 384-dot width, left/right margins,
+      Devanagari shaping, name/EPIC/booth legibility, the four cut dashes, the
+      dashed box, the roughly 10 mm blank feed, and no cut attempt.
+- [ ] Print a voter with a very long name and a long booth address. Confirm
+      rows wrap flush left with no clipped text.
 - [ ] Print with the paper reversed deliberately. Confirm the faint/mirrored
       symptom and that flipping the paper fixes it without code changes.
 - [ ] Power the printer off during a job. Confirm the UI reports `uncertain`
@@ -499,10 +500,10 @@ Run this on a real unit before calling the feature field-ready:
       overheating, and battery behaviour. Record whether 128-byte chunks are
       sufficient; also try the 100-byte no-response path if the unit offers it.
 - [ ] In DevTools, confirm no voter fields appear in console output, no new
-      third-party requests are made, and the preview is not persisted. The
-      thermal renderer may request the same-origin photo path
-      (`/photos/.../<voterId>.jpg`) if it is not already cached; that path is
-      existing slip behaviour, not a new data flow.
+  third-party requests are made, and the preview is not persisted. The thermal
+  renderer loads no photos at all; the HTML slip's own same-origin photo path
+  (`/photos/.../<voterId>.jpg`) is existing slip behaviour, not a new data
+  flow.
 - [ ] Verify the existing browser print/A4 path still produces the unchanged
       slip and that the printer panel is absent from the printed page.
 
